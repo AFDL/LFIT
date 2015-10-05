@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Light Field Imaging Toolkit (LFIT) v2.22 - DEMO PROGRAM %
+% Light Field Imaging Toolkit (LFIT) v2.23 - DEMO PROGRAM %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % AUTHORS:

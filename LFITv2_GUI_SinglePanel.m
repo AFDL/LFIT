@@ -22,8 +22,6 @@ function varargout = LFITv2_GUI_SinglePanel(varargin)
 
 % Edit the above text to modify the response to help LFITv2_GUI_SinglePanel
 
-% Last Modified by GUIDE v2.5 11-Mar-2015 13:32:52
-
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...

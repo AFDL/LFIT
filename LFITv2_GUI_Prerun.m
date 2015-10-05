@@ -20,10 +20,6 @@ function varargout = LFITv2_GUI_Prerun(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help LFITv2_GUI_Prerun
-
-% Last Modified by GUIDE v2.5 04-Feb-2015 10:25:07
-
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
