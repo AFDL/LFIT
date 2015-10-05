@@ -17,6 +17,12 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# MATLAB autosave files
+*.asv
+
+# gedit autosave files
+*~
+
 # =========================
 # Operating System Files
 # =========================
