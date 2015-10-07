@@ -57,7 +57,7 @@ handles = setDefaults(hObject,handles);
 
 % Load last run if present
 if ~isempty(dir('lastGUI.gcfg'))
-    handles = loadState(cd,'\lastGUI.gcfg',hObject,handles);
+    handles = loadState(cd,'lastGUI.gcfg',hObject,handles);
 end
 
 % Read in workspace variables
@@ -113,7 +113,7 @@ function varargout = LFITv2_GUI_SinglePanel_OutputFcn(hObject, eventdata, handle
 varargout{1} = handles.output;
 
 % Save last run
-saveState(cd,'\lastGUI.gcfg',handles)
+saveState(cd,'lastGUI.gcfg',handles)
 
 closereq
 
@@ -159,12 +159,12 @@ else
         if directory_name ~= 0
             handles.outputPath = directory_name;
         else
-            handles.outputPath = [handles.plenopticImagesPath '\' 'Output']; % if user didn't select a folder, make one in the same directory as the plenoptic images
+            handles.outputPath = fullfile(handles.plenopticImagesPath,'Output'); % if user didn't select a folder, make one in the same directory as the plenoptic images
             fprintf('\nNo output directory selected. Output will be in: %s \n',handles.outputPath);
         end
        
     end
-    imagePath = [handles.plenopticImagesPath '\' imageName(1).name];
+    imagePath = fullfile(handles.plenopticImagesPath,imageName(1).name);
     
     % Interpolate image data
     [radArray,sRange,tRange] = interpimage2(handles.calData,imagePath,handles.sensorType,handles.microPitch,handles.pixelPitch,handles.numMicroX,handles.numMicroY);
@@ -476,7 +476,7 @@ requestVectorR = {handles.alphaR,handles.SSUVR,handles.SSSTR,0,2,handles.enhance
 tic
 refocusedImageStack = genrefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorR,handles.sRange,handles.tRange,handles.imageIndex,handles.numImages,refocusedImageStack);
 toc
-updatePerspPlot(hObject)           
+updatePerspPlot(hObject)
 
 % --- Executes on button press in tagGenSaveR.
 function tagGenSaveR_Callback(hObject, eventdata, handles)
@@ -1215,12 +1215,12 @@ function saveState(pathname,filename,handles)
 % Delete big variables from handles structure
 workspaceVariables = evalin('base','who');
 handlesSave = rmfield(handles,workspaceVariables);
-save([pathname filename], 'handlesSave','-mat');
+save(fullfile(pathname,filename), 'handlesSave','-mat');
 
 function handles = loadState(pathname,filename,hObject,handles)
 % Load last configuration
 try
-    loadedStruct = load([pathname filename], '-mat');
+    loadedStruct = load(fullfile(pathname,filename), '-mat');
     names = fieldnames(loadedStruct.handlesSave);
     % The handles structure appears to list field names in a particular order; we are only interested in the fields after colormapList, the first custom handle.
     startInd = find(strcmp('colormapList',names));

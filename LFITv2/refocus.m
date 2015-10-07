@@ -1,5 +1,5 @@
 function [syntheticImage] = refocus(radArray,alphaVal,SS_UV,SS_ST,sRange,tRange,apertureFlag,refocusType,filterInfo,telecentricInfo)
-% refocus | Refocuses a plenoptic image to a given value of alpha
+%REFOCUS Refocuses a plenoptic image to a given value of alpha
 %
 % Requires global variable sizePixelAperture, which is the conversion factor for u and v to millimeters (mm)
 % profile on
@@ -12,6 +12,7 @@ if magTypeFlag == 1
     SS_UV = 1;
     SS_ST = 1;
 end
+
 radArray = single(radArray);
 sRange = single(sRange);
 tRange = single(tRange); %double for consistency/program won't run otherwise
@@ -20,17 +21,18 @@ microRadius = single(floor(size(radArray,1)/2)) - interpPadding; %since we've pa
 
 % Define aperture mask
 switch apertureFlag
-    case 0
-        % Square/Full aperture
+    case 0 % Square/Full aperture
         circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
-    case 1
-        % Circular mask
+
+    case 1 % Circular mask
         circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
         circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
         cirlims=[min(min(circMask)) max(max(circMask))];
         circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
+
     otherwise
         error('Aperture flag defined incorrectly. Check request vector.');
+
 end
 
 uRange = linspace(microRadius,-microRadius,1+(microRadius*2));
@@ -42,6 +44,7 @@ tempSizeT = numel(tRange)*SS_ST;
 switch refocusType
     case {1,3}
         syntheticImage = zeros(tempSizeT,tempSizeS,'single');
+
     case 2
         syntheticImage = ones(tempSizeT,tempSizeS,'single');
         
@@ -54,49 +57,48 @@ vSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
 sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*SS_ST);
 tSSRange = linspace(tRange(1),tRange(end),(numel(tRange))*SS_ST);
 
-if SS_ST == 1 && SS_UV == 1
-    superSampling = 'none';
-end
-if SS_ST ~= 1 && SS_UV ~= 1
-    superSampling = 'both';
-end
-if SS_ST ~= 1 && SS_UV == 1
-    superSampling = 'st';
-end
-if SS_ST == 1 && SS_UV ~= 1
-    superSampling = 'uv';
+if SS_ST == 1
+    if SS_UV == 1,  superSampling = 'none';
+    else            superSampling = 'uv';
+    end
+else
+    if SS_UV == 1,  superSampling = 'st';
+    else            superSampling = 'both';
+    end
 end
 
-switch refocusType
-    case 3
-        filterMatrix = zeros(tempSizeT,tempSizeS);
-        noiseThreshold = filterInfo(1);
-        filterThreshold = filterInfo(2);
+if refocusType == 3
+    filterMatrix = zeros(tempSizeT,tempSizeS);
+    noiseThreshold = filterInfo(1);
+    filterThreshold = filterInfo(2);
 end
-switch magTypeFlag
-    case 1
-         xmin = telecentricInfo(2);
-         xmax = telecentricInfo(3);
-         ymin = telecentricInfo(4);
-         ymax = telecentricInfo(5);
-         nVoxX = telecentricInfo(8);
-         nVoxY = telecentricInfo(9);
-        syntheticImage = zeros(nVoxY,nVoxX,'single');
-        filterMatrix = zeros(nVoxY,nVoxX);
-        switch refocusType
-            case 2
-                syntheticImage = ones(nVoxY,nVoxX,'single');        
-        end
+
+if magTypeFlag == 1
+    xmin = telecentricInfo(2);
+    xmax = telecentricInfo(3);
+
+    ymin = telecentricInfo(4);
+    ymax = telecentricInfo(5);
+
+    nVoxX = telecentricInfo(8);
+    nVoxY = telecentricInfo(9);
+
+    syntheticImage = zeros(nVoxY,nVoxX,'single');
+    filterMatrix = zeros(nVoxY,nVoxX);
+
+    if refocusType == 2
+        syntheticImage = ones(nVoxY,nVoxX,'single');        
+    end
 end
 
 activePixelCount = 0;
  
 switch superSampling
-    
     case 'none'
-                [tActual,sActual]=ndgrid(tRange,sRange);
 
-%         [u,v,tActual,sActual]=ndgrid(uRange,vRange,tRange,sRange);
+        [tActual,sActual]=ndgrid(tRange,sRange);
+
+%       [u,v,tActual,sActual]=ndgrid(uRange,vRange,tRange,sRange);
         for u=uRange
             for v=vRange.'
                 
@@ -104,17 +106,18 @@ switch superSampling
                 uIndex = -(u) + microRadius+1 + interpPadding; %u is negative here since the uVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
                 vIndex = -(v) + microRadius+1 + interpPadding; %v is negative here since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
                 
-%                 if apertureFlag == 0 || circMask(vIndex,uIndex) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
+%               if apertureFlag == 0 || circMask(vIndex,uIndex) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
                     activePixelCount = activePixelCount + 1;
                     uAct = u.*sizePixelAperture; %u and v converted to millimeters here
                     vAct = v.*sizePixelAperture; %u and v converted to millimeters here
-%                    uAct = u.*1.254; %u and v converted to millimeters here
-%                     vAct = v.*1.254; %u and v converted to millimeters here
+%                   uAct = u.*1.254; %u and v converted to millimeters here
+%                   vAct = v.*1.254; %u and v converted to millimeters here
+
                     switch magTypeFlag
-                        case 0 
-                            % Shift-Invariant Method (Paul)
+                        case 0 % Shift-Invariant Method (Paul)
                             sQuery = uAct.*(alphaVal - 1) + sActual;
                             tQuery = vAct.*(alphaVal - 1) + tActual;
+
                         case 1
                             f = telecentricInfo(11);
                             M = telecentricInfo(12);
@@ -129,13 +132,14 @@ switch superSampling
                             sQuery = (linspace(xmin,xmax,nVoxX)).*MPrime./alphaVal + (uAct*(1 - 1./alphaVal));                 
                             tQuery = (linspace(ymin,ymax,nVoxY)).*MPrime./alphaVal + (vAct*(1 - 1./alphaVal)); 
                             [sQuery,tQuery] = meshgrid(sQuery,tQuery);
+
                     end                  
                   
                     Z = permute(radArray(uIndex,vIndex,:,:),[4 3 1 2]);                    
                     extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
-%                     syntheticImage = interpn(uRange,vRange',sRange,tRange,radArray,uAct,vAct,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
-%                     syntheticImage = nansum(nansum(syntheticImage,1),2);
-%                     syntheticImage = reshape(syntheticImage,length(tRange),length(sRange));
+%                   syntheticImage = interpn(uRange,vRange',sRange,tRange,radArray,uAct,vAct,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
+%                   syntheticImage = nansum(nansum(syntheticImage,1),2);
+%                   syntheticImage = reshape(syntheticImage,length(tRange),length(sRange));
                     
                     switch refocusType
                         case 1
@@ -152,11 +156,14 @@ switch superSampling
                             extractedImageTemp = double(extractedImageTemp);%%%new
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
                             syntheticImage = syntheticImage + extractedImageTemp*circMask(vIndex,uIndex);
-                    end
+
+                    end%switch
                  
-%                 end
-            end
-         end
+%               end
+
+            end%for
+        end%for
+
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
                 
     case {'uv', 'both'}
@@ -175,43 +182,36 @@ switch superSampling
             
             % From MATLAB's built-in 'makemonotonic' (see inside interpn)
             idim = 4;
-            if isvector(uActual)
-                if length(uActual) > 1 && uActual(1) > uActual(2)
-                    uActualM = uActual(end:-1:1);
+            if isvector(uActual) && length(uActual) > 1 && uActual(1) > uActual(2)
+                uActualM = uActual(end:-1:1);
+                VM = flipdim(V,idim);
+            elseif size(uActual,idim) > 1
+                sizeX = size(uActual);
+                if uActual(1) > uActual(prod(sizeX(1:(idim-1)))+1)
+                    uActualM = flipdim(uActual,idim);
                     VM = flipdim(V,idim);
-                end
-            else
-                if size(uActual,idim) > 1
-                    sizeX = size(uActual);
-                    if uActual(1) > uActual(prod(sizeX(1:(idim-1)))+1)
-                        uActualM = flipdim(uActual,idim);
-                        VM = flipdim(V,idim);
-                    end
                 end
             end
             
             % From MATLAB's built-in 'makemonotonic' (see inside interpn)
             idim = 3;
-            if isvector(vActual)
-                if length(vActual) > 1 && vActual(1) > vActual(2)
-                    vActualM = vActual(end:-1:1);
+            if isvector(vActual) && length(vActual) > 1 && vActual(1) > vActual(2)
+                vActualM = vActual(end:-1:1);
+                VM = flipdim(VM,idim);
+            elseif size(vActual,idim) > 1
+                sizeX = size(vActual);
+                if vActual(1) > vActual(prod(sizeX(1:(idim-1)))+1)
+                    vActualM = flipdim(vActual,idim);
                     VM = flipdim(VM,idim);
                 end
-            else
-                if size(vActual,idim) > 1
-                    sizeX = size(vActual);
-                    if vActual(1) > vActual(prod(sizeX(1:(idim-1)))+1)
-                        vActualM = flipdim(vActual,idim);
-                        VM = flipdim(VM,idim);
-                    end
-                end
             end
-           if verLessThan('matlab', '8.0') % if MATLAB version is 7.13? (2011b) and definitely 7.14 (2012a), griddedInterpolant doesn't support 'none' flag
+
+            if verLessThan('matlab', '8.0') % if MATLAB version is 7.13? (2011b) and definitely 7.14 (2012a), griddedInterpolant doesn't support 'none' flag
                 Fimg = griddedInterpolant(tActual,sActual,vActualM,uActualM,VM,'linear');
             else
                 Fimg = griddedInterpolant(tActual,sActual,vActualM,uActualM,VM,'linear','none');
             end
-        end
+        end%if
         
         for uInd=1:numel(uSSRange)
             for vInd=1:numel(vSSRange)
@@ -227,14 +227,15 @@ switch superSampling
                     
                     [tQuery, sQuery, vQuery, uQuery] = ndgrid(tEff,sEff,vPrime,uPrime);
                     
-                    switch oldMethod
-                        case false
-                            extractedImageTemp = Fimg(tQuery,sQuery,vQuery,uQuery);
-                        otherwise
-                            extractedImageTemp = interpn(tActual,sActual,vActual,uActual,I,tQuery,sQuery,vQuery,uQuery,'*linear',0);
+                    if oldMethod
+                        extractedImageTemp = interpn(tActual,sActual,vActual,uActual,I,tQuery,sQuery,vQuery,uQuery,'*linear',0);
+                    else
+                        extractedImageTemp = Fimg(tQuery,sQuery,vQuery,uQuery);
                     end
+
                     extractedImageTemp(extractedImageTemp<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
                     extractedImageTemp(isnan(extractedImageTemp)) = 0;
+
                     switch refocusType
                         case 1
                             syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
@@ -247,29 +248,33 @@ switch superSampling
                             extractedImageTemp(isnan(extractedImageTemp)) = 0; 
                 
                             new_uv = extractedImageTemp*circMask(vInd,uInd);
-                            [m,n] = size(new_uv);                    
-                            for a = 1:m     
-                                for b = 1:n
-                                    if new_uv(a,b) == 0
-                                        new_uv(a,b) = 1;
-                                    else
-                                    end
-                                end
-                            end
+                            new_uv( new_uv==0 ) = 1;  % Modified by chris
+%                           [m,n] = size(new_uv);                   
+%                           for a = 1:m
+%                               for b = 1:n
+%                                   if new_uv(a,b) == 0
+%                                       new_uv(a,b) = 1;
+%                                   else
+%                                   end
+%                               end
+%                           end
                 
                             new_uv = new_uv + 1;
 
-                        syntheticImage = syntheticImage.*new_uv;
+                            syntheticImage = syntheticImage.*new_uv;
+
                         case 3
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
                             syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
-                    end
-                end
-            end
-        end
+
+                    end%switch
+
+                end%if
+
+            end%for
+        end%for
         
-    case 'st'
-        % Separate case here because it's about 2x faster than just using the uv/both case above
+    case 'st' % Separate case here because it's about 2x faster than just using the uv/both case above
         for uInd=1:numel(uSSRange)
             for vInd=1:numel(vSSRange)
                 
@@ -309,36 +314,48 @@ switch superSampling
                 
                             new_uv = new_uv + 1;
 
-                        syntheticImage = syntheticImage.*new_uv;
+                            syntheticImage = syntheticImage.*new_uv;
+
                         case 3
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
                             syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
-                    end
-                end
-            end
-        end
+
+                    end%switch
+
+                end%if
+
+            end%for
+        end%for
+
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
+
     otherwise
         error('Incorrect supersampling logic determination. Debug refocus.m and/or check requestVector input.');
-end
-        switch refocusType
-            case 2
-                [p,q] = size(syntheticImage);                    
-                    for a = 1:p     
-                        for b = 1:q
-                            if syntheticImage(a,b) == 2
-                                syntheticImage(a,b) = 0;
-                            else
-                            end
-                        end
-                    end
-            case 3
-                filterMatrix = filterMatrix./(activePixelCount);
-                syntheticImage(filterMatrix<filterThreshold) = 0;
-        end
+
+end%switch
+
+switch refocusType
+    case 2
+        syntheticImage( syntheticImage==2 ) = 0;  % Modified by chris
+%       [p,q] = size(syntheticImage);                    
+%       for a = 1:p     
+%           for b = 1:q
+%               if syntheticImage(a,b) == 2
+%                   syntheticImage(a,b) = 0;
+%               else
+%               end
+%           end
+%       end
+
+    case 3
+        filterMatrix = filterMatrix./(activePixelCount);
+        syntheticImage(filterMatrix<filterThreshold) = 0;
+
+end%switch
+
         %%%Check constant magnification
 %         syntheticImage = imwarp(syntheticImage, affine2d([-M/MPrime 0 0; 0 -M/MPrime 0; 0 0 1]));
         %%%
-profile viewer
-toc
+%profile viewer
+%toc
 end

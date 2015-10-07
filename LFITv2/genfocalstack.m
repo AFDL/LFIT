@@ -1,5 +1,5 @@
 function [focalStack] = genfocalstack(radArray,outputPath,imageSpecificName,requestVector,sRange,tRange)
-% genfocalstack | Generates a focal stack of refocused images as defined by the request vector
+%GENFOCALSTACK Generates a focal stack of refocused images as defined by the request vector
 %
 %   requestVector:
 %       {1} alpha values vector used in refocusing; [spaceType # steps; alphaStart alphaEnd;] note: 1 = nominal focal plane
@@ -38,12 +38,13 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
         otherwise
             error('Alpha range space improperly defined in requestVector input to genfocalstack function.');
     end
-    try
-        close(focFig);
-    catch err
-        %figure not opened
+    
+    try     close(focFig);
+    catch   % figure not opened
     end
+    
     fprintf('\n   Time remaining:       ');
+    
     focFig = figure;
     set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
     set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
@@ -106,6 +107,7 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
     if requestVector{pInd,4} ~=0 % if we're going to save images, then apply captions, display, and/or save, otherwise skip this loop.
         
         for frameInd = 1:size(alphaRange,2) % for each frame of an animation
+            
             refocusedImage = rawImageArray(:,:,frameInd);
             if requestVector{pInd,6} == 1
                 refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
@@ -113,150 +115,147 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
             else
                 refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
             end
+            
             alphaVal = alphaRange(frameInd);
             SS_UV = requestVector{pInd,2};
             SS_ST = requestVector{pInd,3};
-            switch requestVector{pInd,9} % caption flag
-                case 0 % no caption
-                    if requestVector{pInd,4} == 4 || requestVector{pInd,4} == 5
-                        expImage16 = gray2ind(refocusedImage,65536); % for 16bit output
-                    end
-                    expImage = gray2ind(refocusedImage,256); %allows for colormap
-                case 1 % caption string only
+            
+            if requestVector{pInd,9} == 0
+                
+                if requestVector{pInd,4} == 4 || requestVector{pInd,4} == 5
+                    expImage16 = gray2ind(refocusedImage,65536); % for 16bit output
+                end
+                expImage = gray2ind(refocusedImage,256); %allows for colormap
+                
+            else
+            
+                switch requestVector{pInd,9} % caption flag
+                    case 1 % caption string only
+                        set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
+                        displayimage(expImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
+
+                    case 2 % caption string with position appended
+                        caption = sprintf( '%s --- [alpha = %g]', requestVector{pInd,10}, alphaVal );
+                        displayimage(expImage,requestVector{pInd,9},caption,requestVector{pInd,7},requestVector{pInd,8});                      
+                        
+                    otherwise
+                        error('Incorrect setting of the caption flag in the requestVector input variable to the genfocalstack function.');
+                        
+                end%switch
+                
+                try
+                    set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
+                catch
+                    focFig = figure;
                     set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
+                    set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+                    set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
+                end
+                
+                frame = getframe(1);
+                expImage = frame2im(frame);
+                
+            end%if
+            
+            if requestVector{pInd,4} > 0
+                
+                dout = fullfile(outputPath,'Focal Stack',imageSpecificName);
+                if ~exist(dout,'dir'), mkdir(dout); end
+                
+                fname = sprintf( '_FS_alp%4.5f_stSS%g_uvSS%g', alphaVal, SS_ST, SS_UV );
+                switch requestVector{pInd,4} % save flag
+                    case 1 % save bmp
+                        fout = fullfile(dout,[fname '.bmp']);
+                        imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),fout);
+
+                    case 2 % save png
+                        fout = fullfile(dout,[fname '.png']);
+                        imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),fout);
+
+                    case 3 % save jpg
+                        fout = fullfile(dout,[fname '.jpg']);
+                        imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),fout,'jpg','Quality',90);
+
+                    case 4 % save 16-bit png
+                        if requestVector{pInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
+                            if strcmp(requestVector{pInd,7},'gray') == 1
+                                imExp = uint16(refocusedImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
+                            else
+                                imExp = ind2rgb(expImage16,colormap([requestVector{pInd,7} '(65536)']));
+                            end
+                            fout = fullfile(dout,[fname '_16bit.png']);
+                            imwrite(imExp,fout);
+                        else
+                            fprintf('\n');
+                            warning('16-bit PNG export is not supported when captions are enabled. Image not exported.');
+                        end
+                        
+                    case 5 % save 16-bit TIFF
+                        if requestVector{pInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
+                            if strcmp(requestVector{pInd,7},'gray') == 1
+                                imExp = uint16(refocusedImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
+                            else
+                                imExp = ind2rgb(expImage16,colormap([requestVector{pInd,7} '(65536)']));
+                            end
+                            fout = fullfile(dout,[fname '_16bit.tif']);
+                            imwrite(imExp,fout,'tif');
+                        else
+                            fprintf('\n');
+                            warning('16-bit TIFF export is not supported when captions are enabled. Image not exported.');
+                        end
+                        
+                    otherwise
+                        error('Incorrect setting of the save flag in the requestVector input variable to the genfocalstack function.');
+                        
+                end%switch
+                
+            end%if
+            
+            if requestVector{pInd,5} == 0 % no display
+                
+                try     close(focFig);
+                catch   % figure already closed
+                end
+                
+            else
+                
+                if requestVector{pInd,9} == 0
+                    try
+                        set(0, 'currentfigure', focFig);  % make refocusing figure current figure (in case user clicked on another)
+                    catch
+                        focFig = figure;
+                        set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
+                        set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+                        set(0, 'currentfigure', focFig);  % make refocusing figure current figure (in case user clicked on another)
+                    end
                     displayimage(expImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                    try
-                        set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                    catch
-                        focFig = figure;
-                        set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                        set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                        set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                    end
-                    frame = getframe(1);
-                    expImage = frame2im(frame);
-                case 2 % caption string with position appended
-                    displayimage(expImage,requestVector{pInd,9},[requestVector{pInd,10} ' --- ' '[alpha = ' num2str(alphaVal) ']'],requestVector{pInd,7},requestVector{pInd,8});
-                    try
-                        set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                    catch
-                        focFig = figure;
-                        set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                        set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                        set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                    end
-                    frame = getframe(1);
-                    expImage = frame2im(frame);
-                otherwise
-                    error('Incorrect setting of the caption flag in the requestVector input variable to the genfocalstack function.');
-            end
-            
-            switch requestVector{pInd,4} % save flag
-                case 0 % no saving
-                case 1 % save bmp
-                    if exist([outputPath '\Focal Stack\' imageSpecificName],'dir') ~= 7
-                        mkdir([outputPath '\Focal Stack\' imageSpecificName]);
-                    end
-                    imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),[outputPath '\Focal Stack\' imageSpecificName '/' '_' 'FS' '_alp' num2str(alphaVal,'%4.5f') '_stSS' num2str(SS_ST) '_uvSS' num2str(SS_UV) '.bmp']);
-                    
-                case 2 % save png
-                    if exist([outputPath '\Focal Stack\' imageSpecificName],'dir') ~= 7
-                        mkdir([outputPath '\Focal Stack\' imageSpecificName]);
-                    end
-                    imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),[outputPath '\Focal Stack\' imageSpecificName '/' '_' 'FS' '_alp' num2str(alphaVal,'%4.5f') '_stSS' num2str(SS_ST) '_uvSS' num2str(SS_UV) '.png']);
-                    
-                case 3 % save jpg
-                    if exist([outputPath '\Focal Stack\' imageSpecificName],'dir') ~= 7
-                        mkdir([outputPath '\Focal Stack\' imageSpecificName]);
-                    end
-                    imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),[outputPath '\Focal Stack\' imageSpecificName '/' '_' 'FS' '_alp' num2str(alphaVal,'%4.5f') '_stSS' num2str(SS_ST) '_uvSS' num2str(SS_UV) '.jpg'],'jpg','Quality',90);
-                    
-                case 4 % save 16-bit png
-                    if exist([outputPath '\Focal Stack\' imageSpecificName],'dir') ~= 7
-                        mkdir([outputPath '\Focal Stack\' imageSpecificName]);
-                    end
-                    if requestVector{pInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
-                        if strcmp(requestVector{pInd,7},'gray') == 1
-                            imExp = uint16(refocusedImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
-                        else
-                            imExp = ind2rgb(expImage16,colormap([requestVector{pInd,7} '(65536)']));
-                        end
-                        imwrite(imExp,[outputPath '\Focal Stack\' imageSpecificName '/' '_' 'FS' '_alp' num2str(alphaVal,'%4.5f') '_stSS' num2str(SS_ST) '_uvSS' num2str(SS_UV) '_16bit' '.png']);
-                        
-                    else
-                        fprintf('\n');
-                        warning('16-bit PNG export is not supported when captions are enabled. Image not exported.');
-                    end
-                case 5 % save 16-bit TIFF
-                    if exist([outputPath '\Focal Stack\' imageSpecificName],'dir') ~= 7
-                        mkdir([outputPath '\Focal Stack\' imageSpecificName]);
-                    end
-                    if requestVector{pInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
-                        if strcmp(requestVector{pInd,7},'gray') == 1
-                            imExp = uint16(refocusedImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
-                        else
-                            imExp = ind2rgb(expImage16,colormap([requestVector{pInd,7} '(65536)']));
-                        end
-                        imwrite(imExp,[outputPath '\Focal Stack\' imageSpecificName '/' '_' 'FS' '_alp' num2str(alphaVal,'%4.5f') '_stSS' num2str(SS_ST) '_uvSS' num2str(SS_UV) '_16bit' '.tif'],'tif');
-                        
-                    else
-                        fprintf('\n');
-                        warning('16-bit TIFF export is not supported when captions are enabled. Image not exported.');
-                    end
-                otherwise
-                    error('Incorrect setting of the save flag in the requestVector input variable to the genfocalstack function.');
-            end
-            
-            switch requestVector{pInd,5} % display flag
-                case 0 % no display
-                    try
-                        close(focFig);
-                    catch err
-                        %figure already closed
-                    end
-                case 1 % display with pauses
-                    if requestVector{pInd,9} == 1 || requestVector{pInd,9} == 2
-                        pause; %image is already displayed due to caption logic above
-                    else
-                        try
-                            set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                        catch
-                            focFig = figure;
-                            set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                            set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                            set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                        end
-                        displayimage(expImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
+                end
+                
+                switch requestVector{pInd,5} % display flag
+                    case 1 % display with pauses
                         pause;
-                    end
-                case 2 % display without pauses
-                    if requestVector{pInd,9} == 0
-                        try
-                            set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                        catch
-                            focFig = figure;
-                            set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                            set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                            set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
-                        end
-                        displayimage(expImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
+                        
+                    case 2 % display without pauses
                         drawnow;
                         
-                    end
-                otherwise
-                    error('Incorrect setting of the display flag in the requestVector input variable to the genfocalstack function.');
-            end
+                    otherwise
+                        error('Incorrect setting of the display flag in the requestVector input variable to the genfocalstack function.');
+                        
+                end%switch
+                
+            end%if
             
-        end
+        end%for
+        
+    end%if
+    
+    try     set(focFig,'WindowStyle','normal'); % release focus
+    catch   % the figure couldn't be set to normal
     end
-    try
-        %release focus
-        set(focFig,'WindowStyle','normal');
-    catch
-        %the figure couldn't be set to normal
-    end
+    
     fprintf('\n   Complete.\n');
-end
+    
+end%for
 fprintf('\nFocal stack generation finished.\n');
 
-end
+end%function

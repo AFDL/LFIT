@@ -49,7 +49,7 @@ global sizePixelAperture; % Conversion from aperture pixels to millimeters as de
 LFITv2_GUI_Prerun;
 
 %% Main Program
-if startProgram == true % If not, the GUI was closed somehow without pressing "Run"
+if startProgram % If not, the GUI was closed somehow without pressing "Run"
     
     % Initialization
     if runMode == 0 % single image (NOT batch) mode
@@ -90,20 +90,20 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
             % Update variables
             imageSpecificName = [imageSetName '_' imageName(imageIndex).name(1:end-4)]; %end-4 removes .tif
             
-            if strcmp(plenopticImagesPath,newPath) == false
+            if ~strcmp(plenopticImagesPath,newPath)
                 plenopticImagesPath = newPath; % if the user selects an image outside of the main plenoptic images directory.
                 
                 % Since the user chose an image in a different directory than was defined originally, prompt for a new output folder.
-                directory_name = uigetdir([plenopticImagesPath '\'],'Select an output folder to hold all exported/processed images...');
+                directory_name = uigetdir([plenopticImagesPath filesep],'Select an output folder to hold all exported/processed images...');
                 if directory_name ~= 0
                     outputPath = directory_name;
                 else
-                    outputPath = [plenopticImagesPath '\' 'Output']; % if user didn't select a folder, make one in the same directory as the plenoptic images
-                    fprintf('\nNo output directory selected. Output will be in: %s \n',outputPath);
+                    outputPath = fullfile(plenopticImagesPath,'Output'); % if user didn't select a folder, make one in the same directory as the plenoptic images
+                    fprintf('\nNo output directory selected. Output will be in: %s\n',outputPath);
                 end
             end
             
-            imagePath = [plenopticImagesPath '\' imageName(imageIndex).name];
+            imagePath = fullfile(plenopticImagesPath,imageName(imageIndex).name);
             
             % Interpolate image data
             [radArray,sRange,tRange] = interpimage2(calData,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
@@ -117,7 +117,7 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
         %%%%---------------------------%%%%
         
         % Batch process all images in plenopticImagesPath folder
-        imageName = dir([plenopticImagesPath '\' '*.tif']);
+        imageName = dir(fullfile(plenopticImagesPath,'*.tif'));
         
         numImages = size(imageName,1);
         refocusedImageStack = 0;
@@ -138,7 +138,7 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
             
             % Update variables
             imageSpecificName = [imageSetName '_' imageName(imageIndex).name(1:end-4)]; %end-4 removes .tif
-            imagePath = [plenopticImagesPath '\' imageName(imageIndex).name];
+            imagePath = fullfile(plenopticImagesPath,imageName(imageIndex).name);
             
             % Interpolate image data
             [radArray,sRange,tRange] = interpimage2(calData,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);

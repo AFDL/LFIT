@@ -10,14 +10,14 @@ function [pathString, LFIversion] = toolkitpathv2(useAltPath,altPathString)
 %  -Last change: Limited scope of LFITv2 subfolder check by removing exist and rewriting (1/27/2015)
 
 % Check flag to see if non standard path is in use
-if useAltPath == false
+if ~useAltPath
     if ~isempty(dir('LFITv2')) %better than using 'exist', which looks on the entire search path.
         tempUserString = cd;
-        pathString = [tempUserString '\LFITv2\'];
+        pathString = fullfile(tempUserString,'LFITv2',filesep);
     else
         tempUserString = userpath;
         userString = tempUserString(1:end-1);
-        pathString = [userString '\LFITv2\'];
+        pathString = fullfile(userString,'LFITv2',filesep);
     end
 else
     % Use literally the path the user gave

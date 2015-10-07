@@ -111,18 +111,19 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
     
     fprintf('Saving video to file...');
     clear vidobj; vidobj = 0;
-    try
-        close(cF);
-    catch err
-        %figure not yet opened
+    
+    try     close(cF);
+    catch   % figure not yet opened
     end
     
     cF = figure;
     set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
     set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)])
+    
     frameLit = 0;
     for frameInd = frameVector % for each frame of an animation
         frameLit = frameLit + 1;
+        
         refocusedImage = refocusStack(:,:,frameInd);
         if requestVector{pInd,6} ~= 2 % if NOT doing intensities on a per focal stack basis
             lims=[min(min(refocusedImage)) max(max(refocusedImage))]; %refocusing movie does intensities on a slice-by-slice basis
@@ -131,131 +132,113 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
                 refocusedImage = imadjust(refocusedImage);
             end
         end
+        
         SS_ST = requestVector{pInd,3};
-        switch requestVector{pInd,9}
-            case 0 % no caption, direct output
-                [expIm,expMap] = gray2ind(refocusedImage,256);
-                cMap = [requestVector{pInd,7} '(256)'];
-                try
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                catch
-                    cF = figure;
-                    set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                end
-                frame = im2frame(expIm,colormap(cMap));
-            case 1 % no caption with border
-                displayimage(refocusedImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                try
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                catch
-                    cF = figure;
-                    set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                end
-                frame = getframe(1);
-            case 2 % caption string only
-                displayimage(refocusedImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                try
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                catch
-                    cF = figure;
-                    set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                end
-                frame = getframe(1);
-            case 3 % caption string with position appended
-                displayimage(refocusedImage,requestVector{pInd,9},[requestVector{pInd,10} ' --- ' '[alpha = ' num2str(alphaVal) ']'],requestVector{pInd,7},requestVector{pInd,8});
-                try
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                catch
-                    cF = figure;
-                    set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                    set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                end
-                frame = getframe(1);
-            otherwise
-                error('Incorrect setting of the caption flag in the requestVector input variable to the animaterefocus function.');
+        
+        try
+            set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
+        catch
+            cF = figure;
+            set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
+            set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+            set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
         end
         
-        switch requestVector{pInd,4}(1,1)
-            case 0 % no saving
-            case 1 % save GIF
-                if exist([outputPath '\Animations'],'dir') ~= 7
-                    mkdir([outputPath '\Animations']);
-                end
-                gifwrite(frame,requestVector{pInd,7},requestVector{pInd,4}(2,3),[outputPath '\Animations' '/' imageSetName '_' 'refocusAnim' '_stSS' num2str(SS_ST) '_uvSS' num2str(requestVector{pInd,2}) '_ap' num2str(requestVector{pInd,11}) '.gif'],requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),frameLit); %filename, delay, loop count, frame index
-            case 2 % save AVI
-                if exist([outputPath '\Animations'],'dir') ~= 7
-                    mkdir([outputPath '\Animations']);
-                end
-                vidobj = aviwrite(frame,requestVector{pInd,7},requestVector{pInd,4}(2,3),vidobj,[outputPath '\Animations' '/' imageSetName '_' 'refocusAnim' '_stSS' num2str(SS_ST) '_uvSS' num2str(requestVector{pInd,2}) '_ap' num2str(requestVector{pInd,11}) '.avi'],frameLit,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(frameVector,2));
-            case 3 % save MP4
-                if exist([outputPath '\Animations'],'dir') ~= 7
-                    mkdir([outputPath '\Animations']);
-                end
-                vidobj=mp4write(frame,requestVector{pInd,7},vidobj,[outputPath '\Animations' '/' imageSetName '_' 'refocusAnim' '_stSS' num2str(SS_ST) '_uvSS' num2str(requestVector{pInd,2}) '_ap' num2str(requestVector{pInd,11}) '.mp4'],frameLit,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(frameVector,2));
-            otherwise
-                error('Incorrect setting of the save flag in the requestVector input variable to the animaterefocus function.');
-        end
-        
-        switch requestVector{pInd,5}
-            case 0 % no display (not really supported for animation export)
-                try
-                    close(cF);
-                catch err
-                    %figure not yet opened
-                end
-            case 1 % display with pauses (not recommended for animation export)
-                if requestVector{pInd,9} == 1 || requestVector{pInd,9} == 2
-                    pause; %image is already displayed
-                else
-                    if requestVector{pInd,9} == 0
-                        try
-                            set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                        catch
-                            cF = figure;
-                            set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                            set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                            set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                        end
-                        displayimage(refocusedImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                    end
-                    %image is already displayed
-                    pause;
-                end
-            case 2 % display without pauses
-                if requestVector{pInd,9} == 0
-                    try
-                        set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                    catch
-                        cF = figure;
-                        set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                        set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                        set(0, 'currentfigure', cF);  %make refocusing figure current figure (in case user clicked on another)
-                    end
+        if requestVector{pInd,9} == 0
+            
+            [expIm,expMap] = gray2ind(refocusedImage,256);
+            cMap = [requestVector{pInd,7} '(256)'];
+            frame = im2frame(expIm,colormap(cMap));
+            
+        else
+            
+            switch requestVector{pInd,9}
+                case {1,2}
                     displayimage(refocusedImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                    drawnow;
+
+                case 3 % caption string with position appended
+                    caption = sprintf( '%s --- [alpha = %g]', requestVector{pInd,10}, alphaVal );
+                    displayimage(refocusedImage,requestVector{pInd,9},caption,requestVector{pInd,7},requestVector{pInd,8});
+                    
+                otherwise
+                    error('Incorrect setting of the caption flag in the requestVector input variable to the animaterefocus function.');
+                    
+            end%switch
+            
+            frame = getframe(1);
+            
+        end%if
+        
+        if requestVector{pInd,4}(1,1) > 0
+            
+            dout = fullfile(outputPath,'Animations');
+            if ~exist(dout,'dir'), mkdir(dout); end
+            
+            fname = sprintf( '%s_refocusAnim_stSS%g_uvSS%g_ap%g', iamgeSetName, SS_ST, requestVector{pInd,2}, requestVector{pInd,11} );
+            switch requestVector{pInd,4}(1,1)
+                case 1 % save GIF
+                    fout = fullfile(dout,[fname '.gif']);
+                    gifwrite(frame,requestVector{pInd,7},requestVector{pInd,4}(2,3),fout,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),frameLit); %filename, delay, loop count, frame index
+
+                case 2 % save AVI
+                    fout = fullfile(dout,[fname '.avi']);
+                    vidobj = aviwrite(frame,requestVector{pInd,7},requestVector{pInd,4}(2,3),vidobj,fout,frameLit,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(frameVector,2));
+
+                case 3 % save MP4
+                    fout = fullfile(dout,[fname '.mp4']);
+                    vidobj=mp4write(frame,requestVector{pInd,7},vidobj,fout,frameLit,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(frameVector,2));
+
+                otherwise
+                    error('Incorrect setting of the save flag in the requestVector input variable to the animaterefocus function.');
+
+            end%switch
+            
+        end%if
+        
+        
+        if requestVector{pInd,5} == 0 % no display (not really supported for animation export)
+            
+            try     close(cF);
+            catch   % figure not yet opened
+            end
+            
+        else
+            
+            if requestVector{pInd,9} == 0
+                try
+                    set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
+                catch
+                    cF = figure;
+                    set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
+                    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+                    set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
                 end
-                % nothing required
-            otherwise
-                error('Incorrect setting of the display flag in the requestVector input variable to the animaterefocus function.');
-        end
+                displayimage(refocusedImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
+            end
+            
+            switch requestVector{pInd,5}
+                case 1 % display with pauses (not recommended for animation export)
+                    pause;
+                    
+                case 2 % display without pauses
+                    drawnow;
+                    
+                otherwise
+                    error('Incorrect setting of the display flag in the requestVector input variable to the animaterefocus function.');
+                    
+            end%switch
+            
+        end%if
         
-        
+    end%for
+    
+    try set(cF,'WindowStyle','normal'); % release focus
+    catch % the figure couldn't be set to normal
     end
-    try
-        %release focus
-        set(cF,'WindowStyle','normal');
-    catch
-        %the figure couldn't be set to normal
-    end
+    
     fprintf('complete.\n');
-end
+    
+end%for
 fprintf('\nRefocusing animation generation finished.\n');
 
-end
+end%function

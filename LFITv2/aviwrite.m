@@ -1,5 +1,5 @@
 function [vidobj] = aviwrite(frame,cMap,codec,vidobj,filename,frameInd,quality,fpsVal,totalFrames)
-% writeavi | Writes the current frame to a new or existing AVI file
+%AVIWRITE Writes the current frame to a new or existing AVI file
 %   
 % Supports multiple MATLAB versions, but be careful of
 % codec/compression/output format differences between versions of MATLAB
@@ -21,7 +21,7 @@ if verLessThan('matlab', '7.11') % lower MATLAB versions don't support VideoWrit
     if frameInd==1
         try
             vidobj = avifile(filename,'compression',comp);
-        catch err
+        catch
             warning('Program was improperly closed during last AVI write.');
             clear mex % this may have greater scope than intended; uncertain of extent of behavior when calling this. It should close any open AVI files though.
             try
@@ -58,7 +58,7 @@ else
     if frameInd==1
         try
         vidobj = VideoWriter(filename,comp);
-        catch err3
+        catch
             warning('Incorrect codec setting for AVI file export. Using default Motion JPEG AVI profile...');
             vidobj = VideoWriter(filename);
         end
@@ -77,5 +77,4 @@ else
 end
 
 end
-
 

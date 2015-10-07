@@ -1,5 +1,5 @@
 function [  ] = perspectivegen(radArray,outputPath,imageSpecificName,requestVector,sRange,tRange)
-% perspectivegen | Generates a series of perspective images as defined by the request vector
+%PERSPECTIVEGEN Generates a series of perspective images as defined by the request vector
 %
 % Input Arguments:
 %   radArray = matrix of intensity values for a given u,v,s, and t index

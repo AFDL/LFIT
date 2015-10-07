@@ -51,7 +51,7 @@ handles = setDefaults(hObject,handles);
 
 % Load last run if present
 if ~isempty(dir('lastrun.cfg')) %better than using 'exist', which looks on the entire search path.
-    handles = loadState(cd,'\lastrun.cfg',hObject,handles);
+    handles = loadState(cd,'lastrun.cfg',hObject,handles);
 end
 
 % Choose default command line output for LFITv2_GUI_Prerun
@@ -109,7 +109,7 @@ handles.sizePixelAperture = sizePixelAperture;
 assignin('base','sizePixelAperture',handles.sizePixelAperture);
 
 % Save last run
-saveState(cd,'\lastrun.cfg',handles)
+saveState(cd,'lastrun.cfg',handles)
 
 % pause;
 % error;
@@ -483,12 +483,12 @@ state.v18 = handles.saveFlag;
 state.v19 = handles.sizePixelAperture;
 state.v20 = handles.sensorType;
 
-save([pathname filename], 'state','-mat');
+save(fullfile(pathname,filename), 'state','-mat');
 
 % --- Load State Function
 function handles = loadState(pathname,filename,hObject,handles)
 try
-    temp = load([pathname filename], '-mat');
+    temp = load(fullfile(pathname,filename), '-mat');
     handles.cal_path = temp.state.v01;
     handles.plen_path = temp.state.v02;
     handles.out_path = temp.state.v03;
@@ -599,7 +599,7 @@ function [handles] = setDefaults(hObject,handles)
 % Put default values into handles structure
 handles.cal_path = 'C:\TestFolder\Calibration';
 handles.plen_path = 'C:\TestFolder\Images';
-handles.out_path =  [handles.plen_path '\Output'];
+handles.out_path =  fullfile(handles.plen_path,'Output');
 handles.imageSetName = 'Test';
 handles.runMode = 0; %0 = single, 1 = batch
 handles.focLenMain = 50;

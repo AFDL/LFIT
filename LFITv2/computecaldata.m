@@ -1,5 +1,5 @@
 function [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,calType,numMicroX,numMicroY,microPitch,pixelPitch)
-% computecal | Generates calibration data matrix for the microlens array.
+%COMPUTECALDATA Generates calibration data matrix for the microlens array.
 %
 %  Finds microlens center locations and returns accompanying calibration data array.
 %
@@ -16,14 +16,13 @@ function [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag
 
 
 switch loadFlag
-    case 0
-        % No load/save
+    case 0 % No load/save
         recompute = true;
-    case 1
-        % Auto load/save
+        
+    case 1 % Auto load/save
         fprintf('Loading calibration data from file...');
         try
-            load([calFolderPath '\' imageSetName '_' 'calData.mat'],'calData');
+            load(fullfile(calFolderPath,[imageSetName '_calData.mat']),'calData');
             fprintf('complete.\n');
             recompute = false;
         catch generror1
@@ -31,10 +30,10 @@ switch loadFlag
             recompute = true;
             warning('Calibration data failed to load. Recomputing calibration...');
         end
-    case 2
-        % Clear calibration and save new
+        
+    case 2 % Clear calibration and save new
         try
-            delete([calFolderPath '\' imageSetName '_' 'calData.mat'],'calData');
+            delete(fullfile(calFolderPath,[imageSetName '_calData.mat']),'calData');
             [warnmsg, msgid] = lastwarn;
             if strcmp(msgid,'MATLAB:DELETE:FileNotFound')
                 fprintf('Previous calibration for the given Image Set Name not found. Recomputing calibration...\n');
@@ -42,11 +41,12 @@ switch loadFlag
                 fprintf('Successfully deleted old calibration. Recomputing calibration...\n');
             end
             recompute = true;
-        catch generror1
+        catch
             %load failed
             recompute = true;
             warning('Calibration data unable to be deleted. Recomputing calibration...');
         end
+        
     case 3
         % Load points from file
         
@@ -116,10 +116,12 @@ switch loadFlag
         calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax};
         
         recompute = false;
+        
     otherwise
         warning('Load flag defined incorrectly internally. Recomputing calibration...');
         recompute = true;
-end
+        
+end%switch
 
 
 if recompute == true
@@ -132,20 +134,22 @@ if recompute == true
             % Check whether user accepted or rejected the fast calibration from above.
             while tfAcceptCal == false
                 
-                inputLoop = true;
-                while inputLoop == true
+                loop = true;
+                while loop
                     userInput = input('Do you wish to reattempt the quick calibration method? Type Y for quick calibration or N for alternate algorithm: ','s');
-                    switch userInput
-                        case {'Y','y','yes','YES','Yes'}
+                    switch lower(userInput)
+                        case {'y','yes'}
                             tfReattemptQuick = true;
                             fprintf('Re.\n');
-                            inputLoop = false;
+                            loop = false;
+                            
                             % Run fast method (Kyle's)
                             [calData,tfAcceptCal] = calrect(calImagePath);
-                        case {'N','n','no','NO','No'}
+                            
+                        case {'n','no'}
                             tfReattemptQuick = false;
                             fprintf('Calibration rejected. Now preparing alternate method...\n');
-                            inputLoop = false;
+                            loop = false;
                             fprintf('\nAlternate Calibration Method\n');
                             fprintf('  Setting a threshold value between 0 and 1:\n');
                             fprintf('   Lower values increase sensitivity, but are more likely to pick up noise/artifacts as well.\n');
@@ -161,11 +165,15 @@ if recompute == true
                             
                             % Call alternate calibration method (slower fallback/Jeffrey's)
                             [calData,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch);
+                            
                         otherwise
                             disp('Please type Y or N and then press the <Enter> key.');
-                    end
-                end
-            end
+                            
+                    end%switch
+                    
+                end%while
+                
+            end%while
             
         case 'hexa'
             
@@ -173,24 +181,26 @@ if recompute == true
             [calData,tfAcceptCal] = calgeneral(calImagePath,'hexafast',0,numMicroX,numMicroY,microPitch,pixelPitch);
             
             % Check whether user accepted or rejected the fast calibration from above.
-            while tfAcceptCal == false
+            while ~tfAcceptCal
                 
-                inputLoop = true;
                 fprintf('\n|   CALIBRATION MENU   |\n');
                 fprintf('-----------------------------------------------------------------\n');
                 fprintf('[1] = Select new points to recompute fast hexagonal calibration. \n');
                 fprintf('[2] = Use alternate hexagonal calibration method (slower). \n');
                 fprintf('[3] = QUIT.\n');
                 fprintf('\n');
-                while inputLoop == true
+                
+                loop = true;
+                while loop
                     userInput = input('Enter a number from the menu above to proceed: ','s');
-                    switch userInput
-                        case {'1','one','[1]','ONE','One',' 1'}
+                    switch lower(strtrim(userInput))
+                        case {'1','one'}
                             % Fast Hexagonal Calibration (modified rectangular algorithm)
                             fprintf('\nRecomputing calibration with fast algorithm...\n');
                             [calData,tfAcceptCal] = calgeneral(calImagePath,'hexafast',0,numMicroX,numMicroY,microPitch,pixelPitch);
-                            inputLoop = false;
-                        case {'2','two','[2]','TWO','Two',' 2'}
+                            loop = false;
+                            
+                        case {'2','two'}
                             fprintf('\nRecomputing calibration with alternate algorithm...\n');
                             % Old/Legacy Hexagonal Calibration Method
                             fprintf('\nAlternate Hexagonal Calibration Method\n');
@@ -206,24 +216,30 @@ if recompute == true
                                 end
                             end
                             [calData,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch);
-                            inputLoop = false;
+                            loop = false;
                             
-                        case {'3','three','[3]','THREE','Three',' 3'}
+                        case {'3','three'}
                             error('PROGRAM EXECUTION ENDED BY USER.');
+                            
                         otherwise
                             disp('Please enter a number from the above menu then press the <Enter> key.');
-                    end
-                end
-            end
+                            
+                    end%switch
+                    
+                end%while
+                
+            end%while
+            
         otherwise
             error('Incorrect calibration type indicated.');
-    end
+            
+    end%switch
     
     if saveFlag == true
         if tfAcceptCal == true
             % Save matrix to file
             fprintf('Saving matrix to file...');
-            save([calFolderPath '\' imageSetName '_' 'calData.mat'],'calData');
+            save(fullfile(calFolderPath,[imageSetName '_calData.mat']),'calData');
             fprintf('complete.\n');
         end
     end
