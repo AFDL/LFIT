@@ -1,12 +1,12 @@
 function [ sRange,tRange ] = computestrange(calData,imagePath,microPitchX,microPitchY,pixelPitch)
-% computestrange | Calculates the s and t ranges for the calibration set
+%COMPUTESTRANGE Calculates the s and t ranges for the calibration set
 
 % From calibration data
 centers = calData{1};
 xPoints = calData{2};
 yPoints = calData{3};
-kMax = calData{4};
-lMax = calData{5};
+kMax    = calData{4};
+lMax    = calData{5};
 
 xCenter = size(im2double(imread(imagePath)),2)/2;
 yCenter = size(im2double(imread(imagePath)),1)/2;
@@ -34,9 +34,9 @@ indexL = dsearchn(yCenters(:),locationCenterMicrolens(2));
 [unused,kCenter] = ind2sub(size(xCenters),indexK);
 [lCenter,unused] = ind2sub(size(yCenters),indexL);
 
-leftLimit = min(min(xCenters(lCenter,:))); % find the minimum x pixel value from the center row
-topLimit = min(min(yCenters(:,kCenter))); % find the minimum y pixel value from the center column
-rightLimit = max(max(xCenters(lCenter,:))); % find the maximum x pixel value from the center row
+leftLimit   = min(min(xCenters(lCenter,:))); % find the minimum x pixel value from the center row
+topLimit    = min(min(yCenters(:,kCenter))); % find the minimum y pixel value from the center column
+rightLimit  = max(max(xCenters(lCenter,:))); % find the maximum x pixel value from the center row
 bottomLimit = max(max(yCenters(:,kCenter))); % find the maximum y pixel value from the center column
 
 sRange = linspace(leftLimit-imageCenter(1),rightLimit-imageCenter(1),kMax).*pixelPitch;

@@ -53,10 +53,10 @@ if imageIndex == numImages || directoryFlag == 0
                 lims=[min(min(min(refocusedImageStack(:,:,alphaInd,:)))) max(max(max(refocusedImageStack(:,:,alphaInd,:))))]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
             end
             if requestVector{alphaInd,6} == 1
-                refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
+                refocusedImage = (refocusedImage-lims(1))/(lims(2) - lims(1));
                 refocusedImage = imadjust(refocusedImage);
             else
-                refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
+                refocusedImage = (refocusedImage-lims(1))/(lims(2) - lims(1));
             end
             
             alphaVal = alphaList(alphaInd);

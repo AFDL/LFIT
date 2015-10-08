@@ -63,6 +63,7 @@ if mod(size(RAD,1),2)  %Is this odd?
 else %then it's even
     kx = -floor(size(RAD,1)/2) : floor(size(RAD,1)/2) - 1;
 end
+
 if mod(size(RAD,2),2)  %Is this odd?  
     ky = -floor(size(RAD,2)/2) : floor(size(RAD,2)/2);
 else %then it's even
@@ -114,8 +115,8 @@ KYIndx = 1:length(ky);
 % aliased samples further from the center of the image so that they can be
 % cropped off.
 
-kxOS_2x = linspace(kx(1),kx(end),2*length(kx));
-kyOS_2x = linspace(ky(1),ky(end),2*length(ky));
+kxOS_2x     = linspace(kx(1),kx(end),2*length(kx));
+kyOS_2x     = linspace(ky(1),ky(end),2*length(ky));
 [KXOS KYOS] = ndgrid(kxOS_2x, kyOS_2x);
 
 
@@ -128,10 +129,10 @@ G = (zeros(size(KX,1), size(KY,2)));
 
 %These variables store our spectral slices for creating plots.
 
-spec = zeros(size(G,1), size(G,2), length(focalPlanes));
-specOS = single(zeros(size(KXOS,1), size(KYOS,2), length(focalPlanes)));
+spec    = zeros(size(G,1), size(G,2), length(focalPlanes));
+specOS  = zeros(size(KXOS,1), size(KYOS,2), length(focalPlanes), 'single');
 
-newimageFFT_lin = single(zeros([nx, ny, length(focalPlanes)]));
+newimageFFT_lin = zeros(nx, ny, length(focalPlanes), 'single');
 
 
 
@@ -200,7 +201,7 @@ for kk = 1:length(focalPlanes)
         wnU = max(1-abs(dU),0);
 
         
-        dIdxU = find(abs(dU)<w/2); %Check for pixels outside the window - These will be weighted by 0
+        dIdxU = find( abs(dU) < w/2 ); %Check for pixels outside the window - These will be weighted by 0
         
         if ~isempty(dIdxU) %Only computer values we need
             
@@ -210,10 +211,10 @@ for kk = 1:length(focalPlanes)
                 
                 wnV = 0*wnV; 
         
-                dV = kv_alphaPix - (kv_alphaIdx + win(vIdx));
+                dV      = kv_alphaPix - (kv_alphaIdx + win(vIdx));
                 vInterp = kv_alphaIdx + win(vIdx);
-                dIdxV = find(abs(dV)<w/2);
-                dIdxV = intersect(dIdxU, dIdxV);
+                dIdxV   = find( abs(dV) < w/2 );
+                dIdxV   = intersect(dIdxU, dIdxV);
                 
                 wnV = max(1-abs(dV),0);
         
@@ -269,8 +270,8 @@ for kk = 1:length(focalPlanes)
 
     %Reset our variables
     
-    G = 0.*G;
-    GOS = 0.*GOS;
+    G = zeros(size(G));
+    GOS = zeros(size(GOS));
     
 
 end

@@ -124,7 +124,7 @@ switch loadFlag
 end%switch
 
 
-if recompute == true
+if recompute
     
     switch calType
         case 'rect'
@@ -132,7 +132,7 @@ if recompute == true
             [calData,tfAcceptCal] = calrect(calImagePath);
             
             % Check whether user accepted or rejected the fast calibration from above.
-            while tfAcceptCal == false
+            while ~tfAcceptCal
                 
                 loop = true;
                 while loop
@@ -235,15 +235,13 @@ if recompute == true
             
     end%switch
     
-    if saveFlag == true
-        if tfAcceptCal == true
-            % Save matrix to file
-            fprintf('Saving matrix to file...');
-            save(fullfile(calFolderPath,[imageSetName '_calData.mat']),'calData');
-            fprintf('complete.\n');
-        end
+    if saveFlag && tfAcceptCal
+        % Save matrix to file
+        fprintf('Saving matrix to file...');
+        save(fullfile(calFolderPath,[imageSetName '_calData.mat']),'calData');
+        fprintf('complete.\n');
     end
     
-end
+end%if
 
-end
+end%function

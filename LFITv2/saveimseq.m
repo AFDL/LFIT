@@ -1,10 +1,10 @@
 function [] = saveimseq(imageArray,imSavePath,tfAskUserForDir,fileTypeFlag,tfNorm)
-% readimseq | Reads in a sequence of images in a folder into a 3D array
+%READIMSEQ Reads in a sequence of images in a folder into a 3D array
 %
 %   imageArray          =  image stack to save slice by slice
 %   imSavePath          =  path to save directory for image sequence (no trailing slash)
 %   tfAskUserForDir     =  true or false; controls whether function prompts the user to select a directory
-%   fileTypeFlag   =  integer; 0 for no saving, 1 for saving a bmp, 2 for saving a png, 3 for saving a jpg of the image, 4 for a 16-bit PNG, 5 for a 16-bit TIFF
+%   fileTypeFlag        =  integer; 0 for no saving, 1 for saving a bmp, 2 for saving a png, 3 for saving a jpg of the image, 4 for a 16-bit PNG, 5 for a 16-bit TIFF
 %   tfNorm              =  true or false; if true, normalizes the image array by the maximum intensity in the entire array
 %
 % Authored by: Jeffrey Bolan based on Kyle Johnson's code | 10/2/2014
@@ -13,53 +13,53 @@ if tfAskUserForDir == true
    imSavePath = uigetdir(userpath,'Select the folder to save the image sequence into...'); 
 end
 
-switch fileTypeFlag
-    case 0
-        error('0 is not a valid fileTypeFlag for readImageSeq(..). Check function call.');
-    case 1
-        fileTypeExtension = '*.bmp';
-    case 2
-        fileTypeExtension = '*.png';
-    case 3
-        fileTypeExtension = '*.jpg';
-    case 4
-        fileTypeExtension = '*.png';
-    case 5
-        fileTypeExtension = '*.tif';
-    otherwise
-        error('Bad fileTypeFlag passed to readImageSeq. Check function call.');
-end
+% switch fileTypeFlag
+%     case 0,     error('0 is not a valid fileTypeFlag for readImageSeq(..). Check function call.');
+%     case 1,     fileTypeExtension = '*.bmp';
+%     case 2,     fileTypeExtension = '*.png';
+%     case 3,     fileTypeExtension = '*.jpg';
+%     case 4,     fileTypeExtension = '*.png';
+%     case 5,     fileTypeExtension = '*.tif';
+%     otherwise,  error('Bad fileTypeFlag passed to readImageSeq. Check function call.');
+% end
 
 disp('Reading in image sequence...');
 
 imageArray = im2double(imageArray);
 
-if tfNorm == true
-    imageArray = imageArray./max(max(max(imageArray)));
+if tfNorm
+    imageArray = imageArray/max(imageArray(:));
 end
 
 num=0; %timer logic
 fprintf('   Time remaining:           ');
 
-
-
 for imInd = 1:size(imageArray,3)
-    if exist(imSavePath,'dir') ~= 7
-        mkdir(imSavePath);
-    end
+    
+    if ~exist(imSavePath,'dir'), mkdir(imSavePath); end
+    
     time=tic;
+    
+    fname = sprintf( '_%04.f', imInd );
     switch fileTypeFlag
         case 2
-            imwrite(imageArray(:,:,imInd),[imSavePath '/' '_' num2str(imInd,'%04.f') '.png']);
+            fout = fullfile(imSavePath,[fname '.png']);
+            imwrite(imageArray(:,:,imInd),fout);
+            
         case 4
             imExp = uint16(imageArray(:,:,imInd)*65536);
-            imwrite(imExp,[imSavePath '/' '_' num2str(imInd,'%04.f') '.png']);
+            fout = fullfile(imSavePath,[fname '.png']);
+            imwrite(imExp,fout);
+            
         case 5
             imExp = uint16(imageArray(:,:,imInd)*65536);
-            imwrite(imExp,[imSavePath '/' '_' num2str(imInd,'%04.f') '.tif'],'tif');
+            fout = fullfile(imSavePath,[fname '.tif']);
+            imwrite(imExp,fout,'tif');
+            
         otherwise
             error('Not yet supported. Only PNG output (flag 2 and flag 4) and TIFF output (flag 5) supported currently.');
-    end
+            
+    end%switch
     
     % Timer logic
     time=toc(time);
@@ -79,8 +79,8 @@ for imInd = 1:size(imageArray,3)
         num=numel(num2str(timerVar));
         fprintf('%g s',timerVar)
     end
-end
-
-
+    
+end%for
 fprintf('\n   Complete.\n');
-end
+
+end%function

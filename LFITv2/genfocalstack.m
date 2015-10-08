@@ -53,20 +53,20 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
     switch magTypeFlag
         case 1
             %%% user inputs
-            zmin = requestVector{pInd,14}(6);
-            zmax = requestVector{pInd,14}(7);
-            nVoxX = requestVector{pInd,14}(8);
-            nVoxY = requestVector{pInd,14}(9);
-            nVoxZ = requestVector{pInd,14}(10);
-            f = requestVector{pInd,14}(11);
-            M = requestVector{pInd,14}(12);
+            zmin    = requestVector{pInd,14}(6);
+            zmax    = requestVector{pInd,14}(7);
+            nVoxX   = requestVector{pInd,14}(8);
+            nVoxY   = requestVector{pInd,14}(9);
+            nVoxZ   = requestVector{pInd,14}(10);
+            f       = requestVector{pInd,14}(11);
+            M       = requestVector{pInd,14}(12);
             %%%
-            si = (1-M)*f;
-            so = -si/M;
-            z = linspace(zmin, zmax, nVoxZ);
+            si      = (1-M)*f;
+            so      = -si/M;
+            z       = linspace(zmin, zmax, nVoxZ);
             soPrime = so + z;
             siPrime = (1/f - 1./soPrime).^(-1);
-            MPrime = siPrime./soPrime;
+            MPrime  = siPrime./soPrime;
             alphaRange = siPrime/si;
 
             % Preallocate focal stack
@@ -100,9 +100,9 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
         
     end
     
-    lims=[min(min(min(rawImageArray))) max(max(max(rawImageArray)))]; %set max intensity based on max intensity slice from entire FS; this keeps intensities correct relative to each slice
+    lims = [ min(rawImageArray(:)) max(rawImageArray(:)) ]; %set max intensity based on max intensity slice from entire FS; this keeps intensities correct relative to each slice
     
-    focalStack = (rawImageArray-lims(1))./(lims(2) - lims(1)); %normalize raw intensities by the MAX intensity of the entire focal stack.
+    focalStack = ( rawImageArray - lims(1) )/( lims(2) - lims(1) ); %normalize raw intensities by the MAX intensity of the entire focal stack.
     
     if requestVector{pInd,4} ~=0 % if we're going to save images, then apply captions, display, and/or save, otherwise skip this loop.
         
@@ -110,10 +110,10 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
             
             refocusedImage = rawImageArray(:,:,frameInd);
             if requestVector{pInd,6} == 1
-                refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
+                refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
                 refocusedImage = imadjust(refocusedImage);
             else
-                refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
+                refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
             end
             
             alphaVal = alphaRange(frameInd);
@@ -149,7 +149,7 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
                     focFig = figure;
                     set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
                     set(focFig,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
-                    set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
+                    set(0, 'currentfigure', focFig);  % make refocusing figure current figure (in case user clicked on another)
                 end
                 
                 frame = getframe(1);

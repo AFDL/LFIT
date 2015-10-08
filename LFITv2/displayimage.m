@@ -1,5 +1,5 @@
 function displayimage(imageName,captionFlag,captionString,colormapType,backgroundColor)
-% displayimage | Displays a scaled-intensity image via imagesc with colormap
+%DISPLAYIMAGE Displays a scaled-intensity image via imagesc with colormap
 
 set(gcf, 'color', backgroundColor);
 imagesc(imageName);

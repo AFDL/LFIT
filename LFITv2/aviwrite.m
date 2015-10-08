@@ -6,18 +6,15 @@ function [vidobj] = aviwrite(frame,cMap,codec,vidobj,filename,frameInd,quality,f
 % older than R2010b and newer versions.
 
 if verLessThan('matlab', '7.11') % lower MATLAB versions don't support VideoWriter, but do support avifile
+    
     switch codec
-        case 0
-            comp='None';
-        case 1
-            comp='MSVC';
-        case 2
-            comp='RLE';
-        case 3
-            comp='Cinepak';
-        otherwise
-            error('Invalid codec/compression selection in requestVector input to movie generating function.');
+        case 0,     comp='None';
+        case 1,     comp='MSVC';
+        case 2,     comp='RLE';
+        case 3,     comp='Cinepak';
+        otherwise,  error('Invalid codec/compression selection in requestVector input to movie generating function.');
     end
+    
     if frameInd==1
         try
             vidobj = avifile(filename,'compression',comp);
@@ -35,10 +32,13 @@ if verLessThan('matlab', '7.11') % lower MATLAB versions don't support VideoWrit
         vidobj.quality=quality;
     end
     vidobj = addframe(vidobj,frame);
+    
     if frameInd == totalFrames
         vidobj = close(vidobj);
     end
+    
 else
+    
     switch codec
         case 0
             comp='Uncompressed AVI';
@@ -55,9 +55,10 @@ else
         otherwise
             error('Invalid codec/compression selection in requestVector input to movie generating function.');
     end
+    
     if frameInd==1
         try
-        vidobj = VideoWriter(filename,comp);
+            vidobj = VideoWriter(filename,comp);
         catch
             warning('Incorrect codec setting for AVI file export. Using default Motion JPEG AVI profile...');
             vidobj = VideoWriter(filename);
@@ -71,10 +72,11 @@ else
     else
         writeVideo(vidobj,frame);
     end
+    
     if frameInd == totalFrames
         close(vidobj);
     end
-end
+    
+end%if
 
-end
-
+end%function

@@ -1,5 +1,5 @@
 function gifwrite(frame,cMap,dither,filename,delayTime,loopCount,ind)
-% gifwrite | Use inside a loop to create a GIF file frame-by-frame
+%GIFWRITE Use inside a loop to create a GIF file frame-by-frame
 %
 % frame = image to write to GIF file
 % cMap = colormap used to display the image
@@ -19,14 +19,10 @@ im = frame2im(frame);
 
 % Colormap logic
 try
-[imind,cm] = rgb2ind(im,256,dOpt);
-catch err
-    try
-        imind = im;
-        cm = colormap([cMap '(256)']);
-    catch err2
-        rethrow(err);
-    end
+    [imind,cm] = rgb2ind(im,256,dOpt);
+catch
+    imind = im;
+    cm = colormap([cMap '(256)']);
 end
 
 % On the first loop, create the file. In subsequent loops, append.
@@ -36,4 +32,4 @@ else
     imwrite(imind,cm,filename,'gif','DelayTime',delayTime,'writemode','append');
 end
 
-end
+end%function

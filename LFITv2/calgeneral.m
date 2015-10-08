@@ -56,11 +56,13 @@ switch lower(calType)
         plot(centroidArrayUnsorted); hold off;
         
         title('Select the first calibration point (preferably on 2nd row or below):');
-            clickPoint(1,:) = ginput(1);
+        clickPoint(1,:) = ginput(1);
+        
         title('Select the next calibration point directly to the right of the first point:');
-            clickPoint(2,:) = ginput(1);
+        clickPoint(2,:) = ginput(1);
+        
         title('Now select the first point on the row beneath the first 2 points:');
-            clickPoint(3,:) = ginput(1);
+        clickPoint(3,:) = ginput(1);
             
         clickPointInd = dsearchn(centroidArrayUnsorted(:,:),clickPoint);
         initialPoints = centroidArrayUnsorted(clickPointInd,:);
@@ -85,9 +87,10 @@ switch lower(calType)
         updateRowSpc    = false; % update row spacing and row starting point flag
         
         % Preallocate matrices
-        rowWidth(tHeight) = 0;
-        closestPointRC = zeros([sWidth tHeight 2],'double');
-        closestPointRC(1,1,:) = initialPoints(1,:);
+        rowWidth(tHeight)       = 0;
+        closestPointRC          = zeros([sWidth tHeight 2],'double');
+        closestPointRC(1,1,:)   = initialPoints(1,:);
+        
         fprintf('complete.\n');
         fprintf('Beginning algorithm: ');
         fprintf('\nProgress: [');
@@ -149,10 +152,10 @@ switch lower(calType)
         end
         
         % Crop the image
-        rowWidth(rowWidth==0) = Inf; % keep zeros out of minimum calculation
-        maxRowWidth = min(rowWidth);
-        maxColHeight = rowInd - 1;
-        calibrationPoints = closestPointRC(1:maxColHeight,1:maxRowWidth,:);
+        rowWidth(rowWidth==0)   = Inf; % keep zeros out of minimum calculation
+        maxRowWidth             = min(rowWidth);
+        maxColHeight            = rowInd - 1;
+        calibrationPoints       = closestPointRC(1:maxColHeight,1:maxRowWidth,:);
         
         
         % User interface update
@@ -189,38 +192,39 @@ switch lower(calType)
         
         title('Select the first calibration point on the 1st overhanging row');
         clickPoint(1,:) = ginput(1);
+        
         title('Select the next calibration point to the right of the first point');
         clickPoint(2,:) = ginput(1);
+        
         title('Now select the first point on the inset row beneath the first 2 points');
         clickPoint(3,:) = ginput(1);
-        hold on;
+        
         for k=1:size(centroidArraySel,1)
             localXYList(k,:) = [centroidArraySel(k).WeightedCentroid(1) centroidArraySel(k).WeightedCentroid(2)];
         end
         clickPointInd = dsearchn(localXYList,clickPoint);
         initialPoints = localXYList(clickPointInd,:);
-        try
-            close(cF);
-        catch err
-            %figure already closed
+        
+        try     close(cF);
+        catch   % figure already closed
         end
         
         
         % Set up predictor/microlens ordering algorithm
         
-        num = 0; % initialize time remaining for display
-        lastDistX = initialPoints(2,1) - initialPoints(1,1); %x2-x1
-        lastDistY = initialPoints(2,2) - initialPoints(1,2); %y2-y1
-        rowSpc = initialPoints(3,2) - initialPoints(1,2); %y3-y1 (row spacing)
-        imageSize = size(calImage); % define image dimensions
-        rowInd = 1; % row index
-        colInd = 2; % column index % start from 2 so that the first point is registered
-        bottomMargin = imageSize(1,1) - 4*rowSpc; % bottom limit (to prevent selection of row pixels from a row that appears or disappears at the bottom; this crops it out essentially.)
-        ind = 1; % current index
-        updateRowSpc = false; % update row spacing and row starting point flag
-        inset = false; % flags if on an inset or outset row. Always start with outset row. This is the "odd-r" horizontal layout on http://www.redblobgames.com/grids/hexagons/
-        rowStarterPoints = initialPoints(1,:); % first point of a row (x,y)
-        lastPoints = initialPoints(1,:); % last points used
+        num             = 0; % initialize time remaining for display
+        lastDistX       = initialPoints(2,1) - initialPoints(1,1); %x2-x1
+        lastDistY       = initialPoints(2,2) - initialPoints(1,2); %y2-y1
+        rowSpc          = initialPoints(3,2) - initialPoints(1,2); %y3-y1 (row spacing)
+        imageSize       = size(calImage); % define image dimensions
+        rowInd          = 1; % row index
+        colInd          = 2; % column index % start from 2 so that the first point is registered
+        bottomMargin    = imageSize(1,1) - 4*rowSpc; % bottom limit (to prevent selection of row pixels from a row that appears or disappears at the bottom; this crops it out essentially.)
+        ind             = 1; % current index
+        updateRowSpc    = false; % update row spacing and row starting point flag
+        inset           = false; % flags if on an inset or outset row. Always start with outset row. This is the "odd-r" horizontal layout on http://www.redblobgames.com/grids/hexagons/
+        rowStarterPoints= initialPoints(1,:); % first point of a row (x,y)
+        lastPoints      = initialPoints(1,:); % last points used
         
         % Check that initial points aren't too close to either the left or top of the image
         if rowStarterPoints(1,1) < 2*(subRadX +xEdgeBuffer)
@@ -251,9 +255,10 @@ switch lower(calType)
         lastPoints = rowStarterPoints(1,:); % start with whatever we moved the row starting point to.
         
         % Preallocate matrices
-        rowWidth(tHeight) = 0;
-        closestPointRC = zeros([sWidth tHeight 2],'double');
-        closestPointRC(1,1,:) = rowStarterPoints(1,:);
+        rowWidth(tHeight)       = 0;
+        closestPointRC          = zeros([sWidth tHeight 2],'double');
+        closestPointRC(1,1,:)   = rowStarterPoints(1,:);
+        
         fprintf('complete.\n');
         
         fprintf('Beginning algorithm: ');

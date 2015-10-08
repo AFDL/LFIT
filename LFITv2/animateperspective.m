@@ -1,5 +1,5 @@
 function animateperspective(radArray,outputPath,imageSpecificName,requestVector,sRange,tRange)
-% animateperspective | Generates a perspective animation as defined by the request vector
+%ANIMATEPERSPECTIVE Generates a perspective animation as defined by the request vector
 %
 %  requestVector:
 %       {1} Edge buffer to keep the perspective sweep from pulling in poor data at image edge.

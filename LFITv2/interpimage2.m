@@ -5,16 +5,16 @@ function [radArray,sRange,tRange] = interpimage2(calData,imagePath,calType,micro
 % interpolating them onto a plaid grid in a 4D matrix (radArray)
 
 % From the calibration data set
-centers = calData{1};
-xPoints = calData{2}; %used in visualization/debugging
-yPoints = calData{3}; %used in visualization/debugging
-kMax = calData{4};
-lMax = calData{5}; % note that the notation is lowercase letter "L" max, not the number "1" max
+centers     = calData{1};
+xPoints     = calData{2}; %used in visualization/debugging
+yPoints     = calData{3}; %used in visualization/debugging
+kMax        = calData{4};
+lMax        = calData{5}; % note that the notation is lowercase letter "L" max, not the number "1" max
 
 % Read in image data
-imageData=im2double(imread(imagePath));
-imWidth = size(imageData,2);
-imHeight = size(imageData,1);
+imageData   =im2double(imread(imagePath));
+imWidth     = size(imageData,2);
+imHeight    = size(imageData,1);
 
 % Calculate microlens radius in pixels
 microRadius = floor((microPitch/pixelPitch)/2); % removed -1; should be 8 for rectangular and 7 for hexagonal now. Note that this is the 'x' microPitch.
@@ -26,24 +26,24 @@ microPitchY = (size(imageData,1)/numMicroY).*pixelPitch;
 % Define max extent of i and j
 
 % Define u and v coordinate vectors in pixels
-uVect = (microRadius:-1:-microRadius);
-vVect = (microRadius:-1:-microRadius);
-% uVect = (-microRadius:1:microRadius);
-% vVect = (-microRadius:1:microRadius);
+uVect       = (microRadius:-1:-microRadius);
+vVect       = (microRadius:-1:-microRadius);
+% uVect       = (-microRadius:1:microRadius);
+% vVect       = (-microRadius:1:microRadius);
 
 % Define padding
 interpPadding = 1;
 
 % Define u and v coordinate system vectors, padded by 1 pixel on each side.
-uVectPad = (microRadius+interpPadding:-1:-microRadius-interpPadding);
-vVectPad = (microRadius+interpPadding:-1:-microRadius-interpPadding);
-% uVectPad = (-microRadius-interpPadding:1:microRadius+interpPadding);
-% vVectPad = (-microRadius-interpPadding:1:microRadius+interpPadding);
+uVectPad    = (microRadius+interpPadding:-1:-microRadius-interpPadding);
+vVectPad    = (microRadius+interpPadding:-1:-microRadius-interpPadding);
+% uVectPad    = (-microRadius-interpPadding:1:microRadius+interpPadding);
+% vVectPad    = (-microRadius-interpPadding:1:microRadius+interpPadding);
 
-[v,u]=ndgrid(vVect,uVect);
+[v,u]       = ndgrid(vVect,uVect);
 
 % Preallocate matrix
-radArrayRaw=zeros(numel(vVect),numel(uVect),kMax,lMax);
+radArrayRaw = zeros(numel(vVect),numel(uVect),kMax,lMax);
 
 % Initialize timer and update command line
 num=0;
@@ -52,11 +52,13 @@ fprintf('\n   Time remaining:           ');
 
 % Loop through each microlens
 for k=1:kMax % column
+    
     time=tic;
+    
     for l=1:lMax % row % careful! It's for L = ONE : L MAX
         
         % Read in center in pixel coordinates at the current microlens from the calibration data
-        xExact = centers(l,k,1);
+        xExact= centers(l,k,1);
         yExact = centers(l,k,2);
         
         % Round the centers in order to prepare vectors for extracting a small grid of image data.
@@ -70,10 +72,10 @@ for k=1:kMax % column
         vKnown = yExact - yPixel;
         
         % Grid the coordinate vectors (via ndgrid as required for interpn)
-        [vKnownGrid,uKnownGrid]=ndgrid(vKnown,uKnown);
+        [vKnownGrid,uKnownGrid] = ndgrid(vKnown,uKnown);
         
         % Extract microimage (grid of pixels/intensities behind the given microlens)
-        extractedI=imageData(yPixel,xPixel); % MATLAB indexing works via array(row,col) so be careful!
+        extractedI = imageData(yPixel,xPixel); % MATLAB indexing works via array(row,col) so be careful!
         
         % Window out data in square about circular aperture
         switch calType
@@ -137,7 +139,8 @@ for k=1:kMax % column
         num=numel(num2str(timerVar));
         fprintf('%g s',timerVar)
     end
-end
+    
+end%for
 fprintf('\n   Complete.\n');
 
 % Calculate sRange and tRange (in mm)
@@ -160,11 +163,11 @@ switch calType
         tRange = single(tRange);
         
         % Create a rectilinear sampling grid
-        spacingFactor = 2; % essentially supersampling factor in s. By setting this to 2, the resampled grid in the s direction will be twice as dense as the original s range.
-        sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*spacingFactor); % this SS in the s direction allows some values to line up
-        spacing = sSSRange(2) - sSSRange(1); % mm in horizontal direction
-        tSSRange = linspace(tRange(1),tRange(end),round((tRange(end) - tRange(1))/spacing)  ); %t spacing should be the same as s spacing
-        [tSSGrid, sSSGrid] = ndgrid(double(tSSRange),double(sSSRange));
+        spacingFactor   = 2; % essentially supersampling factor in s. By setting this to 2, the resampled grid in the s direction will be twice as dense as the original s range.
+        sSSRange        = linspace(sRange(1),sRange(end),(numel(sRange))*spacingFactor); % this SS in the s direction allows some values to line up
+        spacing         = sSSRange(2) - sSSRange(1); % mm in horizontal direction
+        tSSRange        = linspace(tRange(1),tRange(end),round((tRange(end) - tRange(1))/spacing)  ); %t spacing should be the same as s spacing
+        [tSSGrid sSSGrid]= ndgrid(double(tSSRange),double(sSSRange));
         
 
         % Relate known x and y coordinate microlens locations to physical s and t locations in millimeters
@@ -230,8 +233,7 @@ switch calType
         sRange = sSSRange;
         tRange = tSSRange;
         fprintf('\n   Complete.\n');
-end
+        
+end%switch
 
-end
-
-
+end%function

@@ -1,5 +1,5 @@
 function [outputPSF] = genrawpsf(microDiameterExact,psfFlag)
-% genrawpsf | Generates a raw, unpadded PSF to be used in refocusing
+%GENRAWPSF Generates a raw, unpadded PSF to be used in refocusing
 %
 %  microDiameterExact: exact diameter of a microlens in pixels
 %
@@ -13,26 +13,27 @@ function [outputPSF] = genrawpsf(microDiameterExact,psfFlag)
 
 microRadius = (microDiameterExact/2) - 1;
 
-switch psfFlag
-    case 0
-        % do nothing  
-    case 1
-        % disk, forced to all ones
-        flatPSF = fspecial('disk', microRadius);
-        flatPSF(flatPSF>0) = 1;
-    case 2
-        % intensities sum to 1
-        flatPSF = fspecial('disk', microRadius);
-    case 3
-        % normalized to a max of 1
-        flatPSF = fspecial('disk', microRadius);
-        flatPSF = flatPSF./max(max(flatPSF));
-    otherwise
-        error('Invalid psfFlag passed to genpsf.m');
-end
+if psfFlag > 0
+    
+    flatPSF = fspecial('disk', microRadius);
+    
+    switch psfFlag
+        case 1 % disk, forced to all ones
+            flatPSF(flatPSF>0) = 1;
+            
+        case 2 % intensities sum to 1
+            % Nothing to do
+
+        case 3 % normalized to a max of 1
+            flatPSF = flatPSF./max(max(flatPSF));
+
+        otherwise
+            error('Invalid psfFlag passed to genpsf.m');
+
+    end%switch
+    
+end%if
 
 outputPSF = flatPSF; % note that this will need to be padded to match the experimental focal stack dimensions.
 
-
-end
-
+end%function

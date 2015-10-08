@@ -1,5 +1,5 @@
 function animaterefocus(radArray,outputPath,imageSetName,requestVector,sRange,tRange)
-% animaterefocus | Generates a refocusing animation as defined by the request vector
+%ANIMATEREFOCUS Generates a refocusing animation as defined by the request vector
 %
 %   requestVector:
 %       {1} alpha values vector used in refocusing; [spaceType # steps; alphaStart alphaEnd; palindrome 0;]note: 1 = nominal focal plane
@@ -95,8 +95,8 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
     fprintf('\n   Complete.\n');
     
     if requestVector{pInd,6} == 2
-        lims=[min(min(min(refocusStack))) max(max(max(refocusStack)))]; %set max intensity based on max intensity slice from entire FS; this keeps intensities correct relative to each slice
-        refocusStack = (refocusStack-lims(1))./(lims(2) - lims(1)); %normalize raw intensities by the MAX intensity of the entire focal stack.
+        lims = [ min(refocusStack(:)) max(refocusStack(:)) ]; %set max intensity based on max intensity slice from entire FS; this keeps intensities correct relative to each slice
+        refocusStack = ( refocusStack - lims(1) )/( lims(2) - lims(1) ); %normalize raw intensities by the MAX intensity of the entire focal stack.
     end
     
     
@@ -126,8 +126,8 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
         
         refocusedImage = refocusStack(:,:,frameInd);
         if requestVector{pInd,6} ~= 2 % if NOT doing intensities on a per focal stack basis
-            lims=[min(min(refocusedImage)) max(max(refocusedImage))]; %refocusing movie does intensities on a slice-by-slice basis
-            refocusedImage=(refocusedImage-lims(1))./(lims(2) - lims(1));
+            lims = [ min(refocusedImage(:)) max(refocusedImage(:)) ]; %refocusing movie does intensities on a slice-by-slice basis
+            refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
             if requestVector{pInd,6} == 1
                 refocusedImage = imadjust(refocusedImage);
             end

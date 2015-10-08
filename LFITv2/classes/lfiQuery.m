@@ -1,5 +1,5 @@
-classdef query
-    %QUERY Summary of this class goes here
+classdef lfiQuery
+    %LFIQUERY Summary of this class goes here
     %   Detailed explanation goes here
     
     properties

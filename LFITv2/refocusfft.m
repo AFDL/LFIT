@@ -15,18 +15,19 @@ microRadius = single(floor(size(radArray,1)/2)) - interpPadding; %since we've pa
 
 % Define aperture mask
 switch apertureFlag
-    case 0
-        % Square/Full aperture
+    case 0 % Square/Full aperture
         circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
-    case 1
-        % Circular mask
+        
+    case 1 % Circular mask
         circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
         circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
         cirlims=[min(min(circMask)) max(max(circMask))];
         circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
+        
     otherwise
         error('Aperture flag defined incorrectly. Check request vector.');
-end
+        
+end%switch
 
 uRange = linspace(microRadius,-microRadius,1+(microRadius*2));
 vRange(:,1) = linspace(microRadius,-microRadius,1+(microRadius*2));
@@ -41,18 +42,16 @@ vSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
 sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*SS_ST);
 tSSRange = linspace(tRange(1),tRange(end),(numel(tRange))*SS_ST);
 
-if SS_ST == 1 && SS_UV == 1
-    superSampling = 'none';
+if SS_ST == 1
+    if SS_UV == 1,  superSampling = 'none';
+    else            superSampling = 'uv';
+    end
+else
+    if SS_UV == 1,  superSampling = 'st';
+    else            superSampling = 'both';
+    end
 end
-if SS_ST ~= 1 && SS_UV ~= 1
-    superSampling = 'both';
-end
-if SS_ST ~= 1 && SS_UV == 1
-    superSampling = 'st';
-end
-if SS_ST == 1 && SS_UV ~= 1
-    superSampling = 'uv';
-end
+
 % tic
 
 % -----------------
@@ -86,6 +85,7 @@ if mod(size(RAD,1),2)  %Is this odd?
 else %then it's even
     kx = -floor(size(RAD,1)/2) : floor(size(RAD,1)/2) - 1;
 end
+
 if mod(size(RAD,2),2)  %Is this odd?  
     ky = -floor(size(RAD,2)/2) : floor(size(RAD,2)/2);
 else %then it's even
@@ -292,8 +292,8 @@ for kk = 1:length(focalPlanes)
 
     %Reset our variables
     
-    G = 0.*G;
-    GOS = 0.*GOS;
+    G = zeros(size(G));
+    GOS = zeros(size(GOS));
     
 
 end

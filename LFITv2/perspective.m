@@ -8,10 +8,10 @@ radArray = single(radArray);
 % Define supersampling cases for clarity in code below
 if SS_ST == 1
     SS = 'none';
-end
-if SS_ST ~= 1
+else
     SS = 'st';
 end
+
 if round(u0) ~= u0 || round(v0) ~= v0 %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
     SS = 'both'; 
 end
@@ -35,6 +35,7 @@ switch SS
         [t,s]=ndgrid(tRange,sRange);
         [tt,ss]=ndgrid(tSSRange,sSSRange);
         perspectiveImage=interpn(t,s,permute(radArray(uIndex,vIndex,:,:),[4,3,2,1]),tt,ss,'linear',0);
+        
     case 'both'
         % uv supersampling (only makes sense in the case of evaluating the perspective at a non-integer value of u and v)
         % If you supersampled u,v in the traditional sense, it wouldn't make any sense since you're pulling a single u,v value from every s,t. It doesn't
@@ -42,10 +43,10 @@ switch SS
         [tActual,sActual,vActual,uActual] = ndgrid(tRange,sRange,vRange.*single(sizePixelAperture),uRange.*single(sizePixelAperture)); %u,v to mm to match s,t which are in mm
         [tQuery, sQuery, vQuery, uQuery] = ndgrid(tSSRange,sSSRange,v0.*single(sizePixelAperture),u0.*single(sizePixelAperture));
         perspectiveImage = interpn(tActual,sActual,vActual,uActual,permute(radArray,[4,3,2,1]),tQuery,sQuery,vQuery,uQuery,'linear',0);
+        
     otherwise
         error('The supersampling variable "SS_ST" in the perspective function was not set correctly.');
-end
+        
+end%switch
 
-end
-
-
+end%function
