@@ -147,7 +147,7 @@ classdef lfiQuery
         function obj = set.saveas( obj, val )
             opts = {'bmp','png','jpg','png16','tif16'};
             if ~val
-                obj.saveas = false;
+                obj.saveas = false;         % Enforce FALSE over 0
             elseif istring(val) && any(strcmpi(val,opts))
                 obj.saveas = val;
             else

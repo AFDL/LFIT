@@ -32,9 +32,9 @@ vIndex = -(v0) + microRadius+1; %v0 is negative since the vVector decreases from
 switch SS
     case {'none', 'st'}
         % st supersampling
-        [t,s]=ndgrid(tRange,sRange);
-        [tt,ss]=ndgrid(tSSRange,sSSRange);
-        perspectiveImage=interpn(t,s,permute(radArray(uIndex,vIndex,:,:),[4,3,2,1]),tt,ss,'linear',0);
+        [t,s] = ndgrid(tRange,sRange);
+        [tt,ss] = ndgrid(tSSRange,sSSRange);
+        perspectiveImage = interpn(t,s,permute(radArray(uIndex,vIndex,:,:),[4,3,2,1]),tt,ss,'linear',0);
         
     case 'both'
         % uv supersampling (only makes sense in the case of evaluating the perspective at a non-integer value of u and v)

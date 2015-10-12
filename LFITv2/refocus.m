@@ -1,9 +1,12 @@
 function [syntheticImage] = refocus(radArray,alphaVal,SS_UV,SS_ST,sRange,tRange,apertureFlag,refocusType,filterInfo,telecentricInfo)
-%REFOCUS Refocuses a plenoptic image to a given value of alpha
+%REFOCUS Refocuses a plenoptic image to a given value of alpha.
 %
-% Requires global variable sizePixelAperture, which is the conversion factor for u and v to millimeters (mm)
+%	Requires global variable sizePixelAperture, which is the conversion
+%   factor for u and v to millimeters (mm).
+
 % profile on
-tic
+% tic
+
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
 
 magTypeFlag = telecentricInfo(1); % 0 = legacy, 1 = constant magnification
@@ -27,8 +30,7 @@ switch apertureFlag
     case 1 % Circular mask
         circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
         circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
-        cirlims=[min(min(circMask)) max(max(circMask))];
-        circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
+        circMask = ( circMask - min(circMask(:)) )/range(circMask(:));
 
     otherwise
         error('Aperture flag defined incorrectly. Check request vector.');
@@ -42,20 +44,16 @@ tempSizeS = numel(sRange)*SS_ST;
 tempSizeT = numel(tRange)*SS_ST;
 
 switch refocusType
-    case {1,3}
-        syntheticImage = zeros(tempSizeT,tempSizeS,'single');
-
-    case 2
-        syntheticImage = ones(tempSizeT,tempSizeS,'single');
-        
+    case {1,3},     syntheticImage = zeros(tempSizeT,tempSizeS,'single');
+    case 2,         syntheticImage = ones(tempSizeT,tempSizeS,'single');
 end
 
 extractedImageTemp = zeros(tempSizeT,tempSizeS,'single');
 
 uSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
 vSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
-sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*SS_ST);
-tSSRange = linspace(tRange(1),tRange(end),(numel(tRange))*SS_ST);
+sSSRange = linspace(sRange(1),sRange(end),tempSizeS);
+tSSRange = linspace(tRange(1),tRange(end),tempSizeT);
 
 if SS_ST == 1
     if SS_UV == 1,  superSampling = 'none';
@@ -68,8 +66,8 @@ else
 end
 
 if refocusType == 3
-    filterMatrix = zeros(tempSizeT,tempSizeS);
-    noiseThreshold = filterInfo(1);
+    filterMatrix    = zeros(tempSizeT,tempSizeS);
+    noiseThreshold  = filterInfo(1);
     filterThreshold = filterInfo(2);
 end
 
@@ -83,11 +81,12 @@ if magTypeFlag == 1
     nVoxX = telecentricInfo(8);
     nVoxY = telecentricInfo(9);
 
-    syntheticImage = zeros(nVoxY,nVoxX,'single');
     filterMatrix = zeros(nVoxY,nVoxX);
 
     if refocusType == 2
         syntheticImage = ones(nVoxY,nVoxX,'single');        
+    else
+        syntheticImage = zeros(nVoxY,nVoxX,'single');
     end
 end
 
@@ -96,7 +95,7 @@ activePixelCount = 0;
 switch superSampling
     case 'none'
 
-        [tActual,sActual]=ndgrid(tRange,sRange);
+        [tActual,sActual] = ndgrid(tRange,sRange);
 
 %       [u,v,tActual,sActual]=ndgrid(uRange,vRange,tRange,sRange);
         for u=uRange
@@ -115,28 +114,28 @@ switch superSampling
 
                     switch magTypeFlag
                         case 0 % Shift-Invariant Method (Paul)
-                            sQuery = uAct.*(alphaVal - 1) + sActual;
-                            tQuery = vAct.*(alphaVal - 1) + tActual;
+                            sQuery  = uAct*(alphaVal - 1) + sActual;
+                            tQuery  = vAct*(alphaVal - 1) + tActual;
 
                         case 1
-                            f = telecentricInfo(11);
-                            M = telecentricInfo(12);
-                            si = (1-M)*f;
-                            so = -si/M;
+                            f       = telecentricInfo(11);
+                            M       = telecentricInfo(12);
+                            si      = (1-M)*f;
+                            so      = -si/M;
                             siPrime = alphaVal*si;
-                            z = telecentricInfo(13);
+                            z       = telecentricInfo(13);
                             soPrime = so + z;
-                            MPrime = siPrime./soPrime;
+                            MPrime  = siPrime/soPrime;
                             extractedImageTemp = zeros(nVoxY,nVoxX,'single');
 
-                            sQuery = (linspace(xmin,xmax,nVoxX)).*MPrime./alphaVal + (uAct*(1 - 1./alphaVal));                 
-                            tQuery = (linspace(ymin,ymax,nVoxY)).*MPrime./alphaVal + (vAct*(1 - 1./alphaVal)); 
+                            sQuery = linspace(xmin,xmax,nVoxX)*MPrime/alphaVal + uAct*(1 - 1/alphaVal);
+                            tQuery = linspace(ymin,ymax,nVoxY)*MPrime/alphaVal + vAct*(1 - 1/alphaVal);
                             [sQuery,tQuery] = meshgrid(sQuery,tQuery);
 
                     end                  
                   
                     Z = permute(radArray(uIndex,vIndex,:,:),[4 3 1 2]);                    
-                    extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
+                    extractedImageTemp = interp2(sRange,tRange.',Z,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
 %                   syntheticImage = interpn(uRange,vRange',sRange,tRange,radArray,uAct,vAct,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
 %                   syntheticImage = nansum(nansum(syntheticImage,1),2);
 %                   syntheticImage = reshape(syntheticImage,length(tRange),length(sRange));
@@ -348,7 +347,7 @@ switch refocusType
 %       end
 
     case 3
-        filterMatrix = filterMatrix./(activePixelCount);
+        filterMatrix = filterMatrix./activePixelCount;
         syntheticImage(filterMatrix<filterThreshold) = 0;
 
 end%switch
@@ -356,6 +355,8 @@ end%switch
         %%%Check constant magnification
 %         syntheticImage = imwarp(syntheticImage, affine2d([-M/MPrime 0 0; 0 -M/MPrime 0; 0 0 1]));
         %%%
-%profile viewer
-%toc
-end
+
+% profile viewer
+% toc
+
+end%function

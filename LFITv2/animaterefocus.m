@@ -174,7 +174,7 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
             dout = fullfile(outputPath,'Animations');
             if ~exist(dout,'dir'), mkdir(dout); end
             
-            fname = sprintf( '%s_refocusAnim_stSS%g_uvSS%g_ap%g', iamgeSetName, SS_ST, requestVector{pInd,2}, requestVector{pInd,11} );
+            fname = sprintf( '%s_refocusAnim_stSS%g_uvSS%g_ap%g', imageSetName, SS_ST, requestVector{pInd,2}, requestVector{pInd,11} );
             switch requestVector{pInd,4}(1,1)
                 case 1 % save GIF
                     fout = fullfile(dout,[fname '.gif']);

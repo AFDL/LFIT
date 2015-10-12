@@ -3,7 +3,6 @@ function [calData,tfAcceptCal] = calrect(calImagePath)
 
 
 k	= 7;        % hard coded; tolerance around microlens centers
-z	= 10;       % ???
 
 %% Gather three calibration points from the user
 
@@ -46,7 +45,7 @@ pixHorz     = round(points(1,1));
 
 done = false; first = false;
 
-b = 1;
+z = 10; b = 1;
 while pixHorz < imPixelWidth
     
     a = 1;
@@ -134,19 +133,19 @@ Y   = permute(Y,[2 1]);
 xc  = round(X(:,:)); % microlens centers to nearest pixel
 yc  = round(Y(:,:));
 
-for r = -k:k
-    u(:,:,r+k+1) = -X + (xc-r);
-    v(:,:,r+k+1) = -Y + (yc+r);
-end
+% for r = -k:k
+%     u(:,:,r+k+1) = -X + (xc-r);
+%     v(:,:,r+k+1) = -Y + (yc+r);
+% end
 
-for sInd = 1:size(X,1) 
-    for tInd = 1:size(X,2)
-        uhat(sInd,tInd,:)   = u(sInd,tInd,:);
-        vhat(sInd,tInd,:)   = v(sInd,tInd,:); 
-        i(sInd,tInd,:)      = X(sInd,tInd) + uhat(sInd,tInd,:);
-        j(sInd,tInd,:)      = Y(sInd,tInd) + vhat(sInd,tInd,:);
-    end
-end
+% for sInd = 1:size(X,1) 
+%     for tInd = 1:size(X,2)
+%         uhat(sInd,tInd,:)   = u(sInd,tInd,:);
+%         vhat(sInd,tInd,:)   = v(sInd,tInd,:); 
+%         i(sInd,tInd,:)      = X(sInd,tInd) + uhat(sInd,tInd,:);
+%         j(sInd,tInd,:)      = Y(sInd,tInd) + vhat(sInd,tInd,:);
+%     end
+% end
 
 % calData={i,j,uhat,vhat};
 calibrationPoints(:,:,1) = permute(X,[2 1]);

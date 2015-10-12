@@ -22,8 +22,7 @@ for pInd = 1:size(requestVector,1)
     
     perspectiveImage = perspective(radArray,requestVector{pInd,1},requestVector{pInd,2},requestVector{pInd,3},sRange,tRange);
     if requestVector{pInd,6} == 1
-        lims=[min(min(perspectiveImage)) max(max(perspectiveImage))];
-        perspectiveImage=(perspectiveImage-lims(1))./(lims(2) - lims(1));
+        perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/range(perspectiveImage(:));
         perspectiveImage = imadjust(perspectiveImage);
     end
 

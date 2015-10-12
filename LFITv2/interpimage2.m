@@ -1,18 +1,19 @@
 function [radArray,sRange,tRange] = interpimage2(calData,imagePath,calType,microPitch,pixelPitch,numMicroX,numMicroY)
-% interpimage2 | Generates the plaid radArray of intensities for a given image
+%INTERPIMAGE2 Generates the plaid radArray of intensities for a given image
 %
-% Uses input calibration data to extract microimages from the raw image,
-% interpolating them onto a plaid grid in a 4D matrix (radArray)
+%	Uses input calibration data to extract microimages from the raw image,
+%	interpolating them onto a plaid grid in a 4D matrix (radArray).
 
 % From the calibration data set
+% This should really be a structure --cjc
 centers     = calData{1};
-xPoints     = calData{2}; %used in visualization/debugging
-yPoints     = calData{3}; %used in visualization/debugging
+xPoints     = calData{2}; % used in visualization/debugging
+yPoints     = calData{3}; % used in visualization/debugging
 kMax        = calData{4};
 lMax        = calData{5}; % note that the notation is lowercase letter "L" max, not the number "1" max
 
 % Read in image data
-imageData   =im2double(imread(imagePath));
+imageData   = im2double(imread(imagePath));
 imWidth     = size(imageData,2);
 imHeight    = size(imageData,1);
 
@@ -79,29 +80,28 @@ for k=1:kMax % column
         
         % Window out data in square about circular aperture
         switch calType
-            case 'rect'
-                apertureFlag = 0; %allow the full square in
-            case 'hexa'
-                apertureFlag = 1; %allow only in the circular portion of the microimage to window out the overlap
+            case 'rect',    apertureFlag = 0; %allow the full square in
+            case 'hexa',    apertureFlag = 1; %allow only in the circular portion of the microimage to window out the overlap
         end
         
         switch apertureFlag
-            case 0
-                % Square/Full aperture
+            case 0 % Square/Full aperture
                 circMask = ones(1+(2*((microRadius+interpPadding))));
-            case 1
-                % Circular mask close
+                
+            case 1 % Circular mask close
                 circMask = zeros(1+(2*((microRadius+interpPadding))));
                 circMask(1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding) = fspecial('disk', double(microRadius)); %interpPadding here makes circMask same size as u,v dimensions of radArray
                 cirlims=[min(min(circMask)) max(max(circMask))];
                 circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
-            case 2
-                % Circular mask wider
+                
+            case 2 % Circular mask wider
                 circMask = fspecial('disk', double(microRadius+interpPadding)); %interpPadding here makes circMask same size as u,v dimensions of radArray
                 cirlims=[min(min(circMask)) max(max(circMask))];
                 circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
+                
             otherwise
                 error('Aperture flag defined incorrectly. Check request vector.');
+                
         end
         
         extractedI = extractedI.*circMask;
@@ -109,8 +109,8 @@ for k=1:kMax % column
         % Interpolate. 
         % We know the pixel intensities at (decimal) u,v locations. 
         % Thus, we interpolate to get intensities at uniform/integer u,v locations.
-        I=interpn(vKnownGrid,uKnownGrid,extractedI,v,u,'linear');
-        I(I<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
+        I = interpn(vKnownGrid,uKnownGrid,extractedI,v,u,'linear');
+        I( I<0 ) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
 
         % Note generally how I is indexed I(v,u) or I(row,col).
         % Thus, if we're going to store this in a matrix indexed by (i,j,k,l), we must account for this.
@@ -118,7 +118,8 @@ for k=1:kMax % column
         
         % Store data in temporary raw radArray
         radArrayRaw(:,:,k,l) = single(Ip); %store as single
-    end
+        
+    end%for
     
     % Timer logic
     time=toc(time);
@@ -148,9 +149,8 @@ fprintf('\n   Complete.\n');
 
 % If it's a hexagonal array, resample onto a rectilinear grid
 switch calType
-    case 'rect'
-        % no resampling required
-        radArray = single(radArrayRaw);
+    case 'rect' % no resampling required
+        radArray = single(radArrayRaw);     % This is redundant, radArrayRaw is already single
    
     case 'hexa'
         
@@ -163,11 +163,11 @@ switch calType
         tRange = single(tRange);
         
         % Create a rectilinear sampling grid
-        spacingFactor   = 2; % essentially supersampling factor in s. By setting this to 2, the resampled grid in the s direction will be twice as dense as the original s range.
-        sSSRange        = linspace(sRange(1),sRange(end),(numel(sRange))*spacingFactor); % this SS in the s direction allows some values to line up
-        spacing         = sSSRange(2) - sSSRange(1); % mm in horizontal direction
-        tSSRange        = linspace(tRange(1),tRange(end),round((tRange(end) - tRange(1))/spacing)  ); %t spacing should be the same as s spacing
-        [tSSGrid sSSGrid]= ndgrid(double(tSSRange),double(sSSRange));
+        spacingFactor       = 2; % essentially supersampling factor in s. By setting this to 2, the resampled grid in the s direction will be twice as dense as the original s range.
+        sSSRange            = linspace(sRange(1),sRange(end),(numel(sRange))*spacingFactor); % this SS in the s direction allows some values to line up
+        spacing             = sSSRange(2) - sSSRange(1); % mm in horizontal direction
+        tSSRange            = linspace(tRange(1),tRange(end),round((tRange(end) - tRange(1))/spacing)  ); %t spacing should be the same as s spacing
+        [tSSGrid sSSGrid]   = ndgrid(double(tSSRange),double(sSSRange));
         
 
         % Relate known x and y coordinate microlens locations to physical s and t locations in millimeters
