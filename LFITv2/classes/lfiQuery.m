@@ -4,31 +4,33 @@ classdef lfiQuery
     
     properties
         
-        % Focus-adjustment parameters
-        alpha       = 1;        % alpha value used in refocusing; a=1 nominal focal plane; a<1 focuses further away; a>1 focuses closer to the camera
-        refocus     = 'add';    % refocus type: 'add', 'mult', 'filt'
-        filter      = [0 0];    % filter parameters (does nothing if REFOCUS isn't 'filt')
+        adjust      = '';       % Reconstruction type: 'focus', 'perspective'
+        
+        % Focus-adjust parameters
+        alpha       = [];       % alpha value used in refocusing; a=1 nominal focal plane; a<1 focuses further away; a>1 focuses closer to the camera
+        refocus     = '';       % refocus type: 'add', 'mult', 'filt'
+        filter      = [];       % filter parameters (does nothing if REFOCUS isn't 'filt')
                                 %       1. threshold below which intensity will be disregarded as noise
                                 %       2. filter intensity threshold
+        magnification = '';     % magnification type: 'legacy', 'telecentric'. See documentation for more info.
         
-        % Perspective-adjustment parameters
-        uv          = [0 0];    % (u,v) position for which to generate a perspective view; non-integer values ARE indeed supported
+        % Perspective-adjust parameters
+        uv          = [];       % (u,v) position for which to generate a perspective view; non-integer values ARE indeed supported
         
         % Other processing parameters
         uvFactor    = 1;        % supersampling factor in (u,v) is an integer by which to supersample: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
         stFactor    = 1;        % supersampling factor in (s,t) is an integer by which to supersample: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
         contrast    = 'simple'; % contrast stretching style: 'simple', 'imadjust'
         aperture    = 'full';   % aperture enforcing of microlenses: 'full', 'circ'
-        magnification = 0;      % magnification type is 0 for legacy algorithm, 1 for constant magnification (aka telecentric). See documentation for more info.
         
         % Output configuration
         saveas      = false;    % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16'
         display     = false;    % image display speed: false, 'slow', 'fast'
-        colormap    = jet;      % the colormap used in displaying the image, eg jet or gray (no quotes)
-        background  = [1 1 1];  % background color of the figure if the caption is enabled, eg [.8 .8 .8] or [1 1 1]
-        caption     = false;    % caption flag is 0 for no caption, 1 for caption string only, 2 for caption string + alpha value
-        title       = '';       % caption string is the string used in the caption for caption flag of 1 or 2.
-        grouping    = 'image';  % directory flag is 0 to save refocused images on a per-image basis or 1 to save on a per-alpha basis (must be constant across queries)
+        colormap    = 'jet';    % the colormap used in displaying the image, eg 'jet' or 'gray'
+        background  = [1 1 1];  % background color of the figure if the title is enabled, eg [.8 .8 .8] or [1 1 1]
+        title       = false;    % title flag: FALSE for no caption, 'caption' for caption string only, 'annotation' for alpha/uv value only, 'both' for caption string + alpha/uv value
+        caption     = '';       % caption string is the string used in the title for title flag of 'caption' or 'both'
+        grouping    = 'image';  % directory flag: 'image' to save refocused images on a per-image basis or 'alpha' to save on a per-alpha/uv basis
         
     end%properties
     
@@ -37,19 +39,27 @@ classdef lfiQuery
         %
         % Constructor
         %
-        function q = query( type )
+        function q = lfiQuery( mode )
             if nargin==1
-                switch lower(type)
+                switch lower(mode)
                     case 'focus'
-                        % Do things
+                        % Set adjust-mode to 'focus' with sensible defaults
+                        q.adjust        = 'focus';
+                        q.alpha         = 1;
+                        q.refocus       = 'add';
+                        q.magnification = 'legacy';
 
                     case 'perspective'
-                        % Do things
-
+                        % Set adjust-mode to 'perspective' with sensible defaults
+                        q.adjust        = 'perspective';
+                        q.uv            = [0 0];
+                        
                     otherwise
-                        % Do things
+                        error('Bad query type provided. Query type must be FOCUS or PERSPECTIVE.');
 
                 end
+            else
+                error('No query type provided. Query type must be FOCUS or PERSPECTIVE.');
             end
         end
         
@@ -67,7 +77,7 @@ classdef lfiQuery
         function obj = set.aperture( obj, val )
             opts = {'full','circ'};
             if istring(val) && any(strcmpi(val,opts))
-                obj.aperture = val;
+                obj.aperture = lower(val);
             else
                 error('APERATURE must be one of: .');
             end
@@ -82,21 +92,30 @@ classdef lfiQuery
         end
         
         function obj = set.caption( obj, val )
-            % Saved for later
+            if isstring(val)
+                obj.caption = val;
+            else
+                error('CAPTION must be a string.');
+            end
         end
         
         function obj = set.colormap( obj, val )
-            if isnumeric(val) && ismatrix(val) && size(val,2)==3
-                obj.colormap = val;
+            if isstring(val)
+                try
+                    h = figure; colormap(val); close(h);
+                    obj.colormap = lower(val);
+                catch
+                    error('COLORMAP must be a valid colormap.');
+                end
             else
-                error('COLORMAP must be an M by 3 matrix.');
+                error('COLORMAP must be a string.');
             end
         end
         
         function obj = set.contrast( obj, val )
             opts = {'simple','imadjust'};
             if istring(val) && any(strcmpi(val,opts))
-                obj.contrast = val;
+                obj.contrast = lower(val);
             else
                 error('CONTRAST must be one of: .');
             end
@@ -107,7 +126,7 @@ classdef lfiQuery
             if ~val
                 obj.display = false;        % Enforce FALSE over 0
             elseif istring(val) && any(strcmpi(val,opts))
-                obj.display = val;
+                obj.display = lower(val);
             else
                 error('DISPLAY must be one of: .');
             end
@@ -124,20 +143,25 @@ classdef lfiQuery
         function obj = set.grouping( obj, val )
             opts = {'image','alpha'};
             if istring(val) && any(strcmpi(val,opts))
-                obj.grouping = val;
+                obj.grouping = lower(val);
             else
                 error('GROUPING must be one of: .');
             end
         end
            
         function obj = set.magnification( obj, val )
-            % Saved for later
+            opts = {'legacy','telecentric'};
+            if istring(val) && any(strcmpi(val,opts))
+                obj.magnification = lower(val);
+            else
+                error('MAGNIFICATION must be one of: .');
+            end
         end
         
         function obj = set.refocus( obj, val )
             opts = {'add','mult','filt'};
             if istring(val) && any(strcmpi(val,opts))
-                obj.refocus = val;
+                obj.caption = lower(val);
             else
                 error('REFOCUS must be one of: .');
             end
@@ -149,7 +173,7 @@ classdef lfiQuery
             if ~val
                 obj.saveas = false;         % Enforce FALSE over 0
             elseif istring(val) && any(strcmpi(val,opts))
-                obj.saveas = val;
+                obj.saveas = lower(val);
             else
                 error('SAVEAS must be one of: .');
             end
@@ -162,10 +186,13 @@ classdef lfiQuery
         end
         
         function obj = set.title( obj, val )
-            if isstring(val)
-                obj.title = val;
+            opts = {'caption','annotation','both'};
+            if ~val
+                obj.title = false;          % Enforce FALSE over 0
+            elseif istring(val) && any(strcmpi(val,opts))
+                obj.title = lower(val);
             else
-                error('TITLE must be a string.');
+                error('CAPTION must be one of: .');
             end
         end
         
