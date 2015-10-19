@@ -30,7 +30,7 @@ switch apertureFlag
     case 1 % Circular mask
         circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
         circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
-        circMask = ( circMask - min(circMask(:)) )/range(circMask(:));
+        circMask = ( circMask - min(circMask(:)) )/( max(circMask(:)) - min(circMask(:)) );
 
     otherwise
         error('Aperture flag defined incorrectly. Check request vector.');

@@ -59,7 +59,7 @@ for k=1:kMax % column
     for l=1:lMax % row % careful! It's for L = ONE : L MAX
         
         % Read in center in pixel coordinates at the current microlens from the calibration data
-        xExact= centers(l,k,1);
+        xExact = centers(l,k,1);
         yExact = centers(l,k,2);
         
         % Round the centers in order to prepare vectors for extracting a small grid of image data.
@@ -150,7 +150,7 @@ fprintf('\n   Complete.\n');
 % If it's a hexagonal array, resample onto a rectilinear grid
 switch calType
     case 'rect' % no resampling required
-        radArray = single(radArrayRaw);     % This is redundant, radArrayRaw is already single
+        radArray = single(radArrayRaw);     % This is redundant, radArrayRaw is already single --cjc
    
     case 'hexa'
         

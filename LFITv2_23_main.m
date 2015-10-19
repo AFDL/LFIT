@@ -55,8 +55,8 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
     if runMode == 0 % single image (NOT batch) mode
         
         % Process a single image
-        numImages = 1;
-        imageIndex = 1;
+        numImages           = 1;
+        imageIndex          = 1;
         refocusedImageStack = 0;
         
         % Update command line

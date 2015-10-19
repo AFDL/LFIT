@@ -22,9 +22,8 @@ for pInd = 1:size(requestVector,1)
     
     perspectiveImage = perspective(radArray,requestVector{pInd,1},requestVector{pInd,2},requestVector{pInd,3},sRange,tRange);
     if requestVector{pInd,6} == 1
-        lims=[min(min(perspectiveImage)) max(max(perspectiveImage))];
-        perspectiveImage=(perspectiveImage-lims(1))./(lims(2) - lims(1));
-        perspectiveImage = imadjust(perspectiveImage);
+        perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/( max(perspectiveImage(:)) - min(perspectiveImage(:)) );
+        perspectiveImage = imadjust(perspectiveImage);      % This makes the above line pointless --cjc
     end
 
     SS_ST = requestVector{pInd,3};

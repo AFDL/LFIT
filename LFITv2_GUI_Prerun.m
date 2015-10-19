@@ -388,40 +388,40 @@ switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
     
     % 16 MP (Rectangular Microlens Array) Camera
     case 'tagRect'
-        handles.sensorType = 'rect';
-        handles.pixelPitch = 0.0074; %mm
-        handles.focLenMicro = 0.5; %mm
-        handles.sensorHeight = 24.272; %mm
+        handles.sensorType          = 'rect';
+        handles.pixelPitch          = 0.0074;   % mm
+        handles.focLenMicro         = 0.5;      % mm
+        handles.sensorHeight        = 24.272;   % mm
         
         % Not visualized in GUI
-        handles.microPitch = 0.125; %mm
-        handles.numMicroX = 289;
-        handles.numMicroY = 193; 
-        handles.microDiameterExact = 16.9689; %pixels
+        handles.microPitch          = 0.125;    % mm
+        handles.numMicroX           = 289;
+        handles.numMicroY           = 193; 
+        handles.microDiameterExact  = 16.9689;  % pixels
         
     % 29 MP (Hexagonal Microlens Array) Camera
     case 'tagHexa'
-        handles.sensorType = 'hexa';
-        handles.pixelPitch = 0.0055; %mm
-        handles.focLenMicro = 0.308; %mm
-        handles.sensorHeight = 24.272; %mm
+        handles.sensorType          = 'hexa';
+        handles.pixelPitch          = 0.0055;	% mm
+        handles.focLenMicro         = 0.308;	% mm
+        handles.sensorHeight        = 24.272;   % mm
         
         % Not visualized in GUI
-        handles.microPitch = 0.077; %mm
-        handles.numMicroX = 471; 
-        handles.numMicroY = 362; 
-        handles.microDiameterExact = 14.0127; %pixels
+        handles.microPitch          = 0.077;	% mm
+        handles.numMicroX           = 471; 
+        handles.numMicroY           = 362; 
+        handles.microDiameterExact  = 14.0127;  % pixels
     
      % Other User Defined Camera
     case 'tagOtherCamera'
-        handles.sensorType = input('Please type the arrangement of the microlens array:''hexa'' or ''rect''\n');
-        handles.pixelPitch = input('Please type the pixel pitch in mm\n');
-        handles.focLenMicro = input('Please type the microlens focal length in mm\n');
-        handles.sensorHeight = input('Please type the image sensor height in mm\n');
-        handles.microPitch = input('Please type the microlens pitch in mm\n');
-        handles.numMicroX = input('Please type the number of microlens in the horizontal direction\n'); 
-        handles.numMicroY = input('Please type the number of microlens in the vertical direction\n');
-        handles.microDiameterExact = input('Please type the diameter of a microlens in pixels\n');
+        handles.sensorType          = input('Please type the arrangement of the microlens array:''hexa'' or ''rect''\n');
+        handles.pixelPitch          = input('Please type the pixel pitch in mm\n');
+        handles.focLenMicro         = input('Please type the microlens focal length in mm\n');
+        handles.sensorHeight        = input('Please type the image sensor height in mm\n');
+        handles.microPitch          = input('Please type the microlens pitch in mm\n');
+        handles.numMicroX           = input('Please type the number of microlens in the horizontal direction\n'); 
+        handles.numMicroY           = input('Please type the number of microlens in the vertical direction\n');
+        handles.microDiameterExact  = input('Please type the diameter of a microlens in pixels\n');
         
 end
 
@@ -489,25 +489,26 @@ save(fullfile(pathname,filename), 'state','-mat');
 function handles = loadState(pathname,filename,hObject,handles)
 try
     temp = load(fullfile(pathname,filename), '-mat');
-    handles.cal_path = temp.state.v01;
-    handles.plen_path = temp.state.v02;
-    handles.out_path = temp.state.v03;
-    handles.imageSetName = temp.state.v04;
-    handles.runMode = temp.state.v05;
-    handles.focLenMain = temp.state.v07;
-    handles.pixelPitch = temp.state.v08;
-    handles.rulerHeight = temp.state.v09;
-    handles.focLenMicro = temp.state.v10;
-    handles.sensorHeight = temp.state.v11;
-    handles.magnification = temp.state.v12;
-    handles.microPitch = temp.state.v13;
-    handles.numMicroX = temp.state.v14;
-    handles.numMicroY = temp.state.v15;
-    handles.microDiameterExact = temp.state.v16;
-    handles.loadFlag = temp.state.v17;
-    handles.saveFlag = temp.state.v18;
-    handles.sizePixelAperture = temp.state.v19;
-    handles.sensorType = temp.state.v20;
+    
+    handles.cal_path            = temp.state.v01;
+    handles.plen_path           = temp.state.v02;
+    handles.out_path            = temp.state.v03;
+    handles.imageSetName        = temp.state.v04;
+    handles.runMode             = temp.state.v05;
+    handles.focLenMain          = temp.state.v07;
+    handles.pixelPitch          = temp.state.v08;
+    handles.rulerHeight         = temp.state.v09;
+    handles.focLenMicro         = temp.state.v10;
+    handles.sensorHeight        = temp.state.v11;
+    handles.magnification       = temp.state.v12;
+    handles.microPitch          = temp.state.v13;
+    handles.numMicroX           = temp.state.v14;
+    handles.numMicroY           = temp.state.v15;
+    handles.microDiameterExact  = temp.state.v16;
+    handles.loadFlag            = temp.state.v17;
+    handles.saveFlag            = temp.state.v18;
+    handles.sizePixelAperture   = temp.state.v19;
+    handles.sensorType          = temp.state.v20;
         
     set(handles.tagTextCal, 'String', handles.cal_path);
     set(handles.tagTextPlen, 'String', handles.plen_path);
@@ -597,31 +598,31 @@ guidata(hObject, handles);
 
 function [handles] = setDefaults(hObject,handles)
 % Put default values into handles structure
-handles.cal_path = 'C:\TestFolder\Calibration';
-handles.plen_path = 'C:\TestFolder\Images';
-handles.out_path =  fullfile(handles.plen_path,'Output');
-handles.imageSetName = 'Test';
-handles.runMode = 0; %0 = single, 1 = batch
-handles.focLenMain = 50;
-% handles.focLenMain = 80;
-handles.pixelPitch = 0.0055;
-% handles.pixelPitch = 0.0074;
-handles.rulerHeight = 24.2;
-% handles.rulerHeight = 406;
-handles.focLenMicro = 0.308;
-% handles.focLenMicro = 0.5;
-handles.sensorHeight = 24.272; %mm
-handles.magnification = -handles.sensorHeight/handles.rulerHeight;
-handles.microPitch = 0.077; %mm
-% handles.microPitch = 0.125; %mm
+handles.cal_path        = 'C:\TestFolder\Calibration';
+handles.plen_path       = 'C:\TestFolder\Images';
+handles.out_path        =  fullfile(handles.plen_path,'Output');
+handles.imageSetName    = 'Test';
+handles.runMode         = 0; %0 = single, 1 = batch
+handles.focLenMain      = 50;
+% handles.focLenMain      = 80;
+handles.pixelPitch      = 0.0055;
+% handles.pixelPitch      = 0.0074;
+handles.rulerHeight     = 24.2;
+% handles.rulerHeight     = 406;
+handles.focLenMicro     = 0.308;
+% handles.focLenMicro     = 0.5;
+handles.sensorHeight    = 24.272;   % mm
+handles.magnification   = -handles.sensorHeight/handles.rulerHeight;
+handles.microPitch      = 0.077;	% mm
+% handles.microPitch      = 0.125;	% mm
 
-handles.numMicroX = 471; %mm
-handles.numMicroY = 362; %mm
-handles.microDiameterExact = 14.0127; %pixels
-handles.loadFlag = 1;
-handles.saveFlag = 1;
-handles.startProgram = false;
-handles.sensorType = 'hexa'; %'rect' or 'hexa' (string)
+handles.numMicroX           = 471;      % mm
+handles.numMicroY           = 362;      % mm
+handles.microDiameterExact  = 14.0127;  % pixels
+handles.loadFlag            = 1;
+handles.saveFlag            = 1;
+handles.startProgram        = false;
+handles.sensorType          = 'hexa';   % 'rect' or 'hexa' (string)
 
 set(handles.tagTextCal, 'String', handles.cal_path);
 set(handles.tagTextPlen, 'String', handles.plen_path);

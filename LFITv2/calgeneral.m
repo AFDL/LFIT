@@ -316,7 +316,7 @@ switch lower(calType)
             end
             
             % Logic to include dim points, varying according to whether it's a new row or not
-            if updateRowSpc == false
+            if ~updateRowSpc
                 % Regular dim logic
                 if closestPointDist > maxAllowRadius % can tweak this number to reduce the allowable variance between the guessed value and the searched value
                     closestPointRC(rowInd,colInd,:) = nextGuess; % distance to closest centroid exceeds above bound; assume prediction is correct and microlens was too faint
@@ -335,7 +335,7 @@ switch lower(calType)
             
             clear localXYList absXYList;
             
-            if updateRowSpc == true % new row
+            if updateRowSpc % new row
                 rowSpc = closestPointRC(rowInd,colInd,2) - rowStarterPointsOld(1,2); % update row spacing if it varies
                 rowStarterPoints = closestPointRC(rowInd,colInd,:); % also properly update row starting point
                 updateRowSpc = false;
@@ -371,10 +371,9 @@ switch lower(calType)
             
             ind = ind + 1;
             
-            
-            
-        end
-        if calFail == false
+        end%while
+        
+        if ~calFail
             % Crop the image from bottom and right
             rowWidth(rowWidth==0) = Inf; % keep zeros out of minimum calculation
             maxRowWidth = min(rowWidth);
@@ -408,34 +407,37 @@ switch lower(calType)
         % FAST HEXAGONAL CAL
     case 'hexafast'
         
-        k=6;                % hard coded; tolerance around microlens centers
-        dC = 0;             % basic counter
+        k           = 6;    % hard coded; tolerance around microlens centers
+        dC          = 0;    % basic counter
         startOffset = 1;    % 1 if overhanging, 0 if offset. We're enforcing the first row as overhanging.
-        hexOrRect = 1;      % 1 if hex, 0 if rect.
+        hexOrRect   = 1;    % 1 if hex, 0 if rect.
         
         calImage=im2double(imread(calImagePath));
         disp('Follow the instructions in the window to select the three initial microlens centers.');
-        try
-            cF = figure('Name','Calibration','units','normalized','outerposition',[0 0 1 1]); %try to maximize
-        catch
-            cF = figure('Name','Calibration');
+        
+        try     cF = figure('Name','Calibration','units','normalized','outerposition',[0 0 1 1]); %try to maximize
+        catch   cF = figure('Name','Calibration');
         end
+        
         imagesc(calImage(1:256,1:256)); axis image; axis off; colormap(jet); hold on;
+        
         title('1: Select the first microlens center calibration point...');
-            points(1,:) = ginput(1);
-            scatter(points(1,1),points(1,2),'r+');
+        points(1,:) = ginput(1);
+        scatter(points(1,1),points(1,2),'r+');
+            
         title('2: Select the next calibration point to the right of the first point');
-            points(2,:) = ginput(1);
-            scatter(points(2,1),points(2,2),'r+');
+        points(2,:) = ginput(1);
+        scatter(points(2,1),points(2,2),'r+');
+            
         title('3: Select the point on the next row that is directly between the first two points');
-            points(3,:) = ginput(1);
-            scatter(points(3,1),points(3,2),'r+');
+        points(3,:) = ginput(1);
+        scatter(points(3,1),points(3,2),'r+');
+            
         drawnow;
         
         try     close(cF);
         catch   % figure already closed
         end
-        drawnow; % what is this for? --cjc
         
         fprintf('\nIdentifying microlens centers');
         
@@ -453,43 +455,43 @@ switch lower(calType)
             a=1;
             while pixVert<imPixelHeight
                 if pixVert-8<0
-                    X(1,:)=[];
-                    Y(1,:)=[];
-                    pixVert=round(pixVert+yspace);
+                    X(1,:)      = [];
+                    Y(1,:)      = [];
+                    pixVert     = round(pixVert+yspace);
                 end
                 if pixHorz-8<0
-                    X(:,1)=[];
-                    Y(:,1)=[];
-                    pixVert=round(points(1,2));
-                    pixHorz=round(points(2,1));
-                    first=true;
+                    X(:,1)      = [];
+                    Y(:,1)      = [];
+                    pixVert     = round(points(1,2));
+                    pixHorz     = round(points(2,1));
+                    first       = true;
                     break
                     
                 end
                 if pixHorz+10>imPixelWidth %used to be +8; modified to +10 (Jeffrey; 2/3/15)
-                    X(:,end)=[];
-                    Y(:,end)=[];
-                    pixHorz=imPixelWidth;
-                    pixVert=imPixelHeight;
-                    done=true;
+                    X(:,end)    = [];
+                    Y(:,end)    = [];
+                    pixHorz     = imPixelWidth;
+                    pixVert     = imPixelHeight;
+                    done        = true;
                     break
                 end
                 if pixVert+z > imPixelHeight
-                    X(end,:)=[];
-                    Y(end,:)=[];
-                    imPixelHeight=Y(a-2,b)+yspace-2;
-                    z=0;
+                    X(end,:)    = [];
+                    Y(end,:)    = [];
+                    imPixelHeight = Y(a-2,b) + yspace-2;
+                    z = 0;
                 else
                     Rvert=0;Rhorz=0;m=0;
-                    for y=(pixVert-4):(pixVert+4)
-                        for x=(pixHorz-4):(pixHorz+4)
-                            m=calImage(y,x)+m;
-                            Rhorz=x*calImage(y,x)+Rhorz;
-                            Rvert=y*calImage(y,x)+Rvert;
+                    for y=pixVert+(-4:4)
+                        for x=pixHorz+(-4:4)
+                            m       = calImage(y,x)+m;
+                            Rhorz   = x*calImage(y,x) + Rhorz;
+                            Rvert   = y*calImage(y,x) + Rvert;
                         end
                     end
-                    X(a,b)=Rhorz/m;
-                    Y(a,b)=Rvert/m;
+                    X(a,b) = Rhorz/m;
+                    Y(a,b) = Rvert/m;
                                       
                     % Modified from Tim
                     if mod((a+1 + startOffset),2) == 0
@@ -500,65 +502,69 @@ switch lower(calType)
                     offset = hexOrRect.*tempOff; % do we offset this row? (1 = yes, 0 = no)                   
                     
                     % New row points
-                    pixVert=round(Rvert/m+yspace);
-                    pixHorz=round(Rhorz/m) + round(hexOrRect.*offset.*(xspace./2));
+                    pixVert = round(Rvert/m+yspace);
+                    pixHorz = round(Rhorz/m) + round(hexOrRect.*offset.*(xspace./2));
                     
                     a=a+1;
                 end
-            end
+            end%while
+            
             if dC >=6
                 fprintf('.');
                 dC = 0;
             else
                 dC = dC + 1;
             end
+            
             if done
                 fprintf('.complete!\n');
                 break
             end
+            
             if ~first %if first = false, calculate 
-                pixVert=round(Y(1,b));
-                pixHorz=round(X(1,b)+xspace);
-                b=b+1;
+                pixVert = round(Y(1,b));
+                pixHorz = round(X(1,b)+xspace);
+                b       = b + 1;
             else
                 first=false;
             end
-        end
+            
+        end%while
         
         fprintf('Internally arranging center location data into appropriate variables.');
         
         % Remove partial rows
-        while any(X(end,10:end-10)==0)
-            X(end,:)=[];
-            Y(end,:)=[];
+        while any( X(end,10:end-10) == 0 )
+            X(end,:) = [];
+            Y(end,:) = [];
         end
         
         % Remove partial columns
-        while any(X(10:end-10,end)==0)
-            X(:,end)=[];
-            Y(:,end)=[];
+        while any( X(10:end-10,end) == 0 )
+            X(:,end) = [];
+            Y(:,end) = [];
         end
         fprintf('.');
         
         % Assigning (s,t,u,v) coordinates to pixel values
         
-        X=permute(X,[2 1]);
-        Y=permute(Y,[2 1]);
+        X = permute(X,[2 1]);
+        Y = permute(Y,[2 1]);
         
-        xc=round(X(:,:)); % microlens centers to nearest pixel
-        yc=round(Y(:,:));
+        xc = round(X(:,:)); % microlens centers to nearest pixel
+        yc = round(Y(:,:));
         
         for r=-k:k
-            u(:,:,r+k+1)=-X+(xc-r);
-            v(:,:,r+k+1)=-Y+(yc+r);
+            u(:,:,r+k+1) = -X + (xc-r);
+            v(:,:,r+k+1) = -Y + (yc+r);
         end
         fprintf('.');
         for sInd=1:size(X,1)
             for tInd=1:size(X,2)
-                uhat(sInd,tInd,:)=u(sInd,tInd,:);
-                vhat(sInd,tInd,:)=v(sInd,tInd,:);
-                i(sInd,tInd,:)=X(sInd,tInd)+uhat(sInd,tInd,:);
-                j(sInd,tInd,:)=Y(sInd,tInd)+vhat(sInd,tInd,:);
+                uhat(sInd,tInd,:)   = u(sInd,tInd,:);
+                vhat(sInd,tInd,:)   = v(sInd,tInd,:);
+                i(sInd,tInd,:)      = X(sInd,tInd) + uhat(sInd,tInd,:);
+                j(sInd,tInd,:)      = Y(sInd,tInd) + vhat(sInd,tInd,:);
             end
         end
         fprintf('.');
@@ -586,42 +592,37 @@ if calFail == false
     % Nothing above has flagged this as a bad calibration
       
     % SUBPLOTS
-    try
-        cF = figure('Name','Inspect the corners then press any key to continue to the next step...','units','normalized','outerposition',[0 0 1 1]);
-    catch
-        cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
+    try     cF = figure('Name','Inspect the corners then press any key to continue to the next step...','units','normalized','outerposition',[0 0 1 1]);
+    catch   cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
     end
-    calLimX = (0.05*size(calImage,2));
-    calLimY = (0.05*size(calImage,1));
-    calLimXU = size(calImage,2);
-    calLimYU = size(calImage,1);
+    
+    calLimX     = (0.05*size(calImage,2));
+    calLimY     = (0.05*size(calImage,1));
+    calLimXU    = size(calImage,2);
+    calLimYU    = size(calImage,1);
     
     subplot(2,2,1); %TL
-    imshow(calImage(1:calLimY,1:calLimX),[]);
-    hold on;
+    imshow(calImage(1:calLimY,1:calLimX),[]); hold on;
+    
     % Find all the points within the displayed window
     tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=1 & closestPoint(:,2)<=calLimY);
     scatter(closestPoint(tempI,1),closestPoint(tempI,2),'r+');
     title('Top Left');
     
     subplot(2,2,2); %TR
-    imshow(calImage(1:calLimY,calLimXU-calLimX:calLimXU),[]); % resets coordinate system from 1:... instead of #:end; must account for this when plotting below
-    hold on;
+    imshow(calImage(1:calLimY,calLimXU-calLimX:calLimXU),[]); hold on; % resets coordinate system from 1:... instead of #:end; must account for this when plotting below
     tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>1 & closestPoint(:,2)<=calLimY);
-    % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
-    scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2),'r+');
+    scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2),'r+'); % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
     title('Top Right');
     
     subplot(2,2,3); %BL
-    imshow(calImage(calLimYU-calLimY:calLimYU,1:calLimX),[]);
-    hold on;
+    imshow(calImage(calLimYU-calLimY:calLimYU,1:calLimX),[]); hold on;
     tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=(calLimYU-calLimY) & closestPoint(:,2)<=calLimYU);
     scatter(closestPoint(tempI,1),closestPoint(tempI,2) - (calLimYU-calLimY) + 1,'r+');
     title('Bottom Left');
     
     subplot(2,2,4); %BR
-    imshow(calImage(end-calLimY:end,end-calLimX:end),[]);
-    hold on;
+    imshow(calImage(end-calLimY:end,end-calLimX:end),[]); hold on;
     tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>=(calLimYU-calLimY) & closestPoint(:,2)<=calLimYU);
     scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2) - (calLimYU-calLimY) + 1,'r+');
     title('Bottom Right');
@@ -671,30 +672,26 @@ if calFail == false
                 
             case {'4','four'}
                 % SUBPLOTS
-                try
-                    cF = figure('Name','Inspect the corners then press any key to continue to the next step...','units','normalized','outerposition',[0 0 1 1]);
-                catch
-                    cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
+                try     cF = figure('Name','Inspect the corners then press any key to continue to the next step...','units','normalized','outerposition',[0 0 1 1]);
+                catch   cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
                 end
+                
                 calLimX = (0.05*size(calImage,2));
                 calLimY = (0.05*size(calImage,1));
                 calLimXU = size(calImage,2);
                 calLimYU = size(calImage,1);
                 
                 subplot(2,2,1); %TL
-                imshow(calImage(1:calLimY,1:calLimX),[]);
-                hold on;
+                imshow(calImage(1:calLimY,1:calLimX),[]); hold on;
                 % Find all the points within the displayed window
                 tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=1 & closestPoint(:,2)<=calLimY);
                 scatter(closestPoint(tempI,1),closestPoint(tempI,2),'r+');
                 title('Top Left');
                 
                 subplot(2,2,2); %TR
-                imshow(calImage(1:calLimY,calLimXU-calLimX:calLimXU),[]); % resets coordinate system from 1:... instead of #:end; must account for this when plotting below
-                hold on;
+                imshow(calImage(1:calLimY,calLimXU-calLimX:calLimXU),[]); hold on; % resets coordinate system from 1:... instead of #:end; must account for this when plotting below
                 tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>1 & closestPoint(:,2)<=calLimY);
-                % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
-                scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2),'r+');
+                scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2),'r+'); % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
                 title('Top Right');
                 
                 subplot(2,2,3); %BL
