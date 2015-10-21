@@ -1,4 +1,4 @@
-function [perspectiveImage] = perspectivegenParallel(radArray,outputPath,imageSpecificName,requestVector,sRange,tRange)
+function [perspectiveImage] = perspectivegenParallel(q,radArray,sRange,tRange,outputPath,imageSpecificName)
 % perspectivegen | Generates a series of perspective images as defined by the request vector
 %
 % Input Arguments:

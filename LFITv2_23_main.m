@@ -153,30 +153,38 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             %%%%---PERSPECTIVE SHIFT---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[u,v,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,backgroundColor,captionFlag,'A caption string'];
-            requestVectorP = {0.0, 0.0,1,4,2,1,'gray',[.8 .8 .8],0,'No caption';
-                             -6.0, 0.0,1,4,2,1,'gray',[.8 .8 .8],0,'No caption';
-                              6.0, 0.0,1,4,2,1,'gray',[.8 .8 .8],0,'No caption';};
-            perspectivegen(radArray,outputPath,imageSpecificName,requestVectorP,sRange,tRange);
+            q               = lfiQuery( 'perspective' );
+            q.pUV           = [0 0; -6 0; 6 0];         % List of (u,v) coordinates
+            q.saveas        = 'jpg';
+            q.display       = 'fast';
+            q.contrast      = 'imadjust';
+            perspectivegen(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
             %%%%---IMAGE REFOCUSING---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[alpha,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,directoryFlag,refocusType,filterInfo,TelecentricInfo];
             % MUST CHOOSE SAME SS_ST for each image!
-            requestVectorR = {0.9500,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 0];
-                              0.9528,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 1];
-                              1.0000,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 2];
-                              1.0710,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 3];
-                              1.1354,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 4];
-                              1.0700,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 5];};
-            %(x,y,alphaIndex,imageIndex)
-            refocusedImageStack = genrefocus(radArray,outputPath,imageSpecificName,requestVectorR,sRange,tRange,imageIndex,numImages,refocusedImageStack);
+            q               = lfiQuery( 'focus' );
+            q.fMethod       = 'filt';
+            q.fFilter       = [0 0.9];
+            q.fZoom         = 'telecentric';
+            q.fGridX        = linspace(-18,18,300);
+            q.fGridY        = linspace(-12,12,200);
+            q.fPlane        = [0 1 2 3 4 5];            % List of focal planes
+            q.fLength       = 50;
+            q.fMag          = -1;
+            q.saveas        = 'jpg';
+            q.display       = 'fast';
+            q.contrast      = 'simple';
+            q.mask          = 'circ';
+            refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName,imageIndex,numImages);
             
             %%%%---FOCAL STACK GENERATION---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,refocusType,filterInfo,TelecentricInfo];
             requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0];};
-            [focalStack] = genfocalstack(radArray,outputPath,imageSpecificName,requestVectorFS,sRange,tRange); % has output argument (optional). [focalStack] = genfocalstack(...)
+            [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageSpecificName); % has output argument (optional). [focalStack] = genfocalstack(...)
             
             %%%%---ANIMATION - PERSPECTIVES---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)

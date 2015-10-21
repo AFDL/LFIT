@@ -1,4 +1,4 @@
-function refocusedImageStack = genrefocus(radArray,outputPath,imageSpecificName,requestVector,sRange,tRange,imageIndex,numImages,refocusedImageStack)
+function refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName,imageIndex,numImages,refocusedImageStack)
 %GENREFOCUS Generates a series of refocused images as defined by the request vector
 %
 %   requestVector = [alpha value, supersampling factor in (u,v), supersampling factor in (s,t), save flag, display flag, imadjust flag, colormap, background color, caption flag, caption string]
@@ -22,8 +22,7 @@ function refocusedImageStack = genrefocus(radArray,outputPath,imageSpecificName,
 
 
 % Check to see if saving on a per-image basis (normal) or per-alpha basis (some types of PSF experiments)
-directoryFlag = requestVector{1,12}; %it only really matters what the first directory flag is; they all must be the same, so we just take the first.
-if directoryFlag == 0
+if strcmpi( q.grouping, 'image' )
     % start refocusedImageStack over from scratch
     imageIndex = 1;
 end
@@ -31,102 +30,94 @@ end
 % Build up the refocused image stack without saving until the whole array is built
 if imageIndex == 1
     clear refocusedImageStack
-    refocusedImageStack = genrefocusraw(radArray,requestVector,sRange,tRange);
+    refocusedImageStack = genrefocusraw(q,radArray,sRange,tRange);
 else
-    refocusedImageStack(:,:,:,imageIndex) = genrefocusraw(radArray,requestVector,sRange,tRange);
+    refocusedImageStack(:,:,:,imageIndex) = genrefocusraw(q,radArray,sRange,tRange);
 end
 
 % if the last image in the folder is processed or if processing on a per image basis (typical)
-if imageIndex == numImages || directoryFlag == 0
-    for i = 1:size(requestVector(:,1),1)
-        alphaList(i,1) = requestVector{i,1};
-    end
+if imageIndex == numImages || strcmpi( q.grouping, 'image' )
     for depthInd = 1:size(refocusedImageStack,4) % for each different raw plenoptic particle image at different depths
-        if directoryFlag == 0 %as in typical plenoptic processing
+        
+        if strcmpi( q.grouping, 'image' ) % as in typical plenoptic processing
             subdir = imageSpecificName;
             lims=[min(min(min(refocusedImageStack(:,:,:,imageIndex)))) max(max(max(refocusedImageStack(:,:,:,imageIndex))))]; %set max intensity based on a per-image basis
         end
-        for alphaInd = 1:size(refocusedImageStack,3)
-            refocusedImage = refocusedImageStack(:,:,alphaInd,depthInd);
-            if directoryFlag == 1
-                subdir = num2str(alphaList(alphaInd),'%4.5f');
-                lims=[min(min(min(refocusedImageStack(:,:,alphaInd,:)))) max(max(max(refocusedImageStack(:,:,alphaInd,:))))]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
-            end
-            if requestVector{alphaInd,6} == 1
-                refocusedImage = (refocusedImage-lims(1))/(lims(2) - lims(1));
-                refocusedImage = imadjust(refocusedImage);
-            else
-                refocusedImage = (refocusedImage-lims(1))/(lims(2) - lims(1));
+        
+        for fIdx = 1:size(refocusedImageStack,3)
+            
+            refocusedImage = refocusedImageStack(:,:,fIdx,depthInd);
+            
+            if strcmpi( q.grouping, 'alpha' )
+                subdir = num2str(alphaList(fIdx),'%4.5f');
+                lims=[min(min(min(refocusedImageStack(:,:,fIdx,:)))) max(max(max(refocusedImageStack(:,:,fIdx,:))))]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
             end
             
-            alphaVal = alphaList(alphaInd);
+            switch q.contrast
+                case 'simple',      refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
+                case 'imadjust',    refocusedImage = imadjust(refocusedImage);
+            end
             
-            SS_UV = requestVector{alphaInd,2};
-            SS_ST = requestVector{alphaInd,3};
-            
-            if requestVector{alphaInd,9} == 0 % no caption
+            SS_UV = q.uvFactor;
+            SS_ST = q.stFactor;
                 
-                if requestVector{alphaInd,4} == 4 || requestVector{alphaInd,4} == 5
-                    expImage16 = gray2ind(refocusedImage,65536); % for 16bit output
-                end
-                expImage = gray2ind(refocusedImage,256); %allows for colormap
-                
-            else
+            if q.title % Title image?
                 
                 try     close(cF);
                 catch   % figure already closed
                 end
                 
                 cF = figure;
-                switch requestVector{alphaInd,9} % caption flag
-                    case 1 % caption string only
-                        displayimage(refocusedImage,requestVector{alphaInd,9},requestVector{alphaInd,10},requestVector{alphaInd,7},requestVector{alphaInd,8});
-                        
-                        
-                    case 2 % caption string with position appended
-                        caption = sprintf( '%s --- [alpha = %g]', requestVector{alphaInd,10}, alphaVal );
-                        displayimage(refocusedImage,requestVector{alphaInd,9},caption,requestVector{alphaInd,7},requestVector{alphaInd,8});
-                        
-                    otherwise
-                        error('Incorrect setting of the caption flag in the requestVector input variable to the genfocalstack function.');
-                        
-                end%switch
+                switch q.title % caption flag
+                    case 'caption',     caption = q.caption;
+                    case 'annotation',  caption = sprintf( 'alpha = %g', q.caption, q.fAlpha(fIdx) );
+                    case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, q.fAlpha(fIdx) );
+                    otherwise,          error('Incorrect setting of the caption flag in the requestVector input variable to the genfocalstack function.');
+                end
+                displayimage(refocusedImage,caption,q.colormap,q.background);
                 
                 frame = getframe(1);
                 expImage = frame2im(frame);
                 
+            else % no title
+                
+                if any(strcmpi( q.saveas, {'png16','tif16'} ))
+                    expImage16 = gray2ind(refocusedImage,65536); % for 16-bit output
+                end
+                expImage = gray2ind(refocusedImage,256); % allows for colormap
+                
             end%if
             
-            if requestVector{alphaInd,4}>0
+            if q.saveas % Save image?
                 
                 dout = fullfile(outputPath,'Refocused',subdir);
                 if ~exist(dout,'dir'), mkdir(dout); end
                 
-                if requestVector{alphaInd,15}(1) == 0 %telecentric flag
-                    fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', alphaList(alphaInd), SS_ST, SS_UV );
+                if strcmpi( q.fZoom, 'telecentric' ) %telecentric flag
+                    fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', q.fAlpha(fIdx), SS_ST, SS_UV );
                 else
-                    fname = sprintf( '_z%4.5f', requestVector{alphaInd,15}(13) );
+                    fname = sprintf( '_z%4.5f', q.fPlane(fIdx) );
                 end
                 
-                switch requestVector{alphaInd,4} % save flag
-                    case 1 % save bmp
+                switch q.saveas
+                    case 'bmp'
                         fout = fullfile(dout,[fname '.bmp']);
-                        imwrite(expImage,colormap([requestVector{alphaInd,7} '(256)']),fout);
+                        imwrite(expImage,colormap([q.colormap '(256)']),fout);
 
-                    case 2 % save png
+                    case 'png'
                         fout = fullfile(dout,[fname '.png']);
-                        imwrite(expImage,colormap([requestVector{alphaInd,7} '(256)']),fout);
+                        imwrite(expImage,colormap([q.colormap '(256)']),fout);
 
-                    case 3 % save jpg
+                    case 'jpg'
                         fout = fullfile(dout,[fname '.jpg']);
-                        imwrite(expImage,colormap([requestVector{alphaInd,7} '(256)']),fout,'jpg','Quality',90);
+                        imwrite(expImage,colormap([q.colormap '(256)']),fout,'jpg','Quality',90);
 
-                    case 4 % save 16-bit png
-                        if requestVector{alphaInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
-                            if strcmp(requestVector{alphaInd,7},'gray') == 1
+                    case 'png16'
+                        if ~q.title % write colormap with file if no caption; otherwise, it is implied
+                            if strcmp(q.colormap,'gray')
                                 imExp = uint16(refocusedImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
                             else
-                                imExp = ind2rgb(expImage16,colormap([requestVector{alphaInd,7} '(65536)']));
+                                imExp = ind2rgb(expImage16,colormap([q.colormap '(65536)']));
                             end
                             fout = fullfile(dout,[fname '_16bit.png']);
                             imwrite(imExp,fout);
@@ -135,12 +126,12 @@ if imageIndex == numImages || directoryFlag == 0
                             warning('16-bit PNG export is not supported when captions are enabled. Image not exported.');
                         end
 
-                    case 5 % save 16-bit TIFF
-                        if requestVector{alphaInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
-                            if strcmp(requestVector{alphaInd,7},'gray') == 1
+                    case 'tif16'
+                        if ~q.title % write colormap with file if no caption; otherwise, it is implied
+                            if strcmp(q.colormap,'gray')
                                 imExp = uint16(refocusedImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
                             else
-                                imExp = ind2rgb(expImage16,colormap([requestVector{alphaInd,7} '(65536)']));
+                                imExp = ind2rgb(expImage16,colormap([q.colormap '(65536)']));
                             end
                             fout = fullfile(dout,[fname '_16bit.tif']);
                             imwrite(imExp,fout,'tif');
@@ -155,35 +146,32 @@ if imageIndex == numImages || directoryFlag == 0
                 end%switch
                 
             end%if
-            
-            if requestVector{alphaInd,5} == 0
+ 
+            if q.display % Display image?
                 
+                if q.title
+                    % Image already displayed, nothing to do
+                else
+                    cF = figure;
+                    displayimage(expImage,'',q.colormap,q.background);
+                end
+                    
+                switch q.display % How fast?
+                    case 'slow',   pause;
+                    case 'fast',   drawnow;
+                    otherwise,     error('Incorrect setting of the display flag in the requestVector input variable to the genrefocus function.');
+                end
+                
+            else
+                 
                 try     close(cF);
                 catch   % figure already closed
                 end
                 
-            else
-                
-                if requestVector{alphaInd,9} == 0
-                    cF = figure;
-                    displayimage(expImage,requestVector{alphaInd,9},requestVector{alphaInd,10},requestVector{alphaInd,7},requestVector{alphaInd,8});
-                end
-                    
-                switch requestVector{alphaInd,5} % display flag
-                    case 1 % display with pauses
-                        pause;
-                        
-                    case 2 % display without pauses
-                        drawnow;
-                        
-                    otherwise
-                        error('Incorrect setting of the display flag in the requestVector input variable to the genrefocus function.');
-                        
-                end%switch
-                
             end%if
             
         end%for
+        
     end%for
     
 end%if

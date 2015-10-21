@@ -1,9 +1,11 @@
-function [perspectiveImage] = perspective(radArray,u0,v0,SS_ST,sRange,tRange)
+function [perspectiveImage] = perspective(q,radArray,sRange,tRange)
 % perspective | Generates a perspective shift view at a (u,v) location
 
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
 
 radArray = single(radArray);
+
+SS_ST = q.stFactor;
 
 % Define supersampling cases for clarity in code below
 if SS_ST == 1
@@ -26,8 +28,8 @@ vRange(:,1) = linspace(microRadius,-microRadius,1+(microRadius*2));
 sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*SS_ST);
 tSSRange = linspace(tRange(1),tRange(end),(numel(tRange))*SS_ST); % negative sign fixes image flip. Since s goes from - to +, t apparently needs to as well
 
-uIndex = -(u0) + microRadius+1; %u0 is negative since the uVector decreases from left to right (ie +7 to -7) while MATLAB image indexing increases from top to bottom
-vIndex = -(v0) + microRadius+1; %v0 is negative since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
+uIndex = -q.pUV(1) + microRadius+1; %u0 is negative since the uVector decreases from left to right (ie +7 to -7) while MATLAB image indexing increases from top to bottom
+vIndex = -q.pUV(2) + microRadius+1; %v0 is negative since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
 
 switch SS
     case {'none', 'st'}

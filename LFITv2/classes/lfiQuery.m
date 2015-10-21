@@ -42,7 +42,7 @@ classdef lfiQuery
         %
         saveas      = false;        % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16'
         display     = false;        % image display speed: false, 'slow', 'fast'
-        colormap    = 'jet';        % the colormap used in displaying the image, e.g. 'jet' or 'gray'
+        colormap    = 'gray';       % the colormap used in displaying the image, e.g. 'jet' or 'gray'
         background  = [1 1 1];      % background color of the figure if the title is enabled, e.g. [.8 .8 .8] or [1 1 1]
         title       = false;        % title flag: FALSE for no caption, 'caption' for caption string only, 'annotation' for alpha/uv value only, 'both' for caption string + alpha/uv value
         caption     = '';           % caption string is the string used in the title for title flag of 'caption' or 'both'
@@ -87,16 +87,18 @@ classdef lfiQuery
         %  Object set methods (alphabetical)
         %
         function obj = set.background( obj, val )
-            if isnumeric(val) && isrow(val) && numel(val)==3
-                obj.background = val;
+            if isnumeric(val) && isvector(val) && numel(val)==3
+                obj.background = val(:);
             else
-                error('BACKGROUND must be a 1 by 3 matrix.');
+                error('BACKGROUND must a vector of length 3.');
             end
         end
         
         function obj = set.caption( obj, val )
             if ischar(val)
-                obj.caption = strtrim(val);
+                obj.caption = {val};
+            elseif iscell(val)
+                obj.caption = val(:)';
             else
                 error('CAPTION must be a string.');
             end
@@ -135,29 +137,33 @@ classdef lfiQuery
         
         function obj = set.fAlpha( obj, val )
             if isnumeric(val) && isvector(val) && all(val>0)
-                obj.fAlpha = val;
+                obj.fAlpha = val(:)';
             else
                 error('FALPHA must be a vector of positive numbers.');
             end
         end
         
         function obj = set.fFilter( obj, val )
-            if isnumeric(val) && isrow(val) && numel(val)==2
-                obj.fFilter = val;
+            if isnumeric(val) && isvector(val) && numel(val)==2
+                obj.fFilter = val(:);
             else
-                error('FFILTER must be a 1 by 2 matrix.');
+                error('FFILTER must be vector of length 2.');
             end
         end
         
         function obj = set.fGridX( obj, val )
-            if isnumeric(val),  obj.fGridX = val;
-            else                error('FGRIDX must be a vector or matrix.');
+            if isnumeric(val) && isvector(val)
+                obj.fGridX = val(:);
+            else
+                error('FGRIDX must be a vector.');
             end
         end
         
         function obj = set.fGridY( obj, val )
-            if isnumeric(val),  obj.fGridY = val;
-            else                error('FGRIDY must be a vector or matrix.');
+            if isnumeric(val) && isvector(val)
+                obj.fGridY = val(:);
+            else
+                error('FGRIDY must be a vector.');
             end
         end
         
@@ -188,9 +194,9 @@ classdef lfiQuery
         
         function obj = set.fPlane( obj, val )
             if isnumeric(val) && isvector(val)
-                obj.fPlane = val;
+                obj.fPlane = val(:)';
             else
-                error('FPLANE must be a vector of numbers.');
+                error('FPLANE must be a vector.');
             end
         end
         
@@ -224,7 +230,10 @@ classdef lfiQuery
         end
 
         function obj = set.saveas( obj, val )
-            opts = {'bmp','png','jpg','png16','tif16'};
+            opts = { ...
+                'bmp','png','jpg','png16','tif16', ...  % Still images
+                'gif','avi','mp4' ...                   % Animation/movie
+                };
             if ~val
                 obj.saveas = false;         % Enforce FALSE over 0
             elseif ischar(val) && any(strcmpi(val,opts))

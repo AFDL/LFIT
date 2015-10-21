@@ -1,4 +1,4 @@
-function [syntheticImage] = refocusfft(radArray,alphaVal,SS_UV,SS_ST,sRange,tRange,apertureFlag)
+function [syntheticImage] = refocusfft(q,radArray,sRange,tRange)
 % refocus | Refocuses a plenoptic image to a given value of alpha
 %
 % Requires global variable sizePixelAperture, which is the conversion factor for u and v to millimeters (mm)
@@ -13,21 +13,20 @@ tRange = single(tRange); %double for consistency/program won't run otherwise
 interpPadding = 1; %HARDCODED; if the padding in interpimage2.m changes, change this accordingly.
 microRadius = single(floor(size(radArray,1)/2)) - interpPadding; %since we've padded the extracted data by a pixel in interpimage2, subtract 1
 
+SS_UV = q.uvFactor;
+SS_ST = q.stFactor;
+
 % Define aperture mask
-switch apertureFlag
-    case 0 % Square/Full aperture
-        circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
-        
-    case 1 % Circular mask
-        circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
-        circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
-        cirlims=[min(min(circMask)) max(max(circMask))];
-        circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
-        
-    otherwise
-        error('Aperture flag defined incorrectly. Check request vector.');
-        
-end%switch
+if strcmpi( q.mask, 'circ' )
+    % Circular mask
+    circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
+    circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
+    cirlims=[min(min(circMask)) max(max(circMask))];
+    circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
+else
+    % No mask
+    circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
+end
 
 uRange = linspace(microRadius,-microRadius,1+(microRadius*2));
 vRange(:,1) = linspace(microRadius,-microRadius,1+(microRadius*2));
