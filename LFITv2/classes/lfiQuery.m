@@ -9,12 +9,12 @@ classdef lfiQuery
         %
         %  Focus-adjust parameters (defaults set during construction)
         %
-        fMethod     = '';           % refocus method: 'add', 'mult', 'filt'
+        fMethod     = '';           % focus-adjust method: 'add', 'mult', 'filt'
         fFilter     = [];           % filter parameters (does nothing if METHOD isn't 'filt')
                                     %       1. threshold below which intensity will be disregarded as noise
                                     %       2. filter intensity threshold
         
-        fSlice      = '';           % slice type: 'legacy', 'telecentric'. See documentation for more info.
+        fZoom       = '';           % zoom type: 'legacy', 'telecentric'. See documentation for more info.
         
         fAlpha      = [];           % alpha value(s) used in legacy focus-adjust: a=1 nominal focal plane, a<1 focuses further away, a>1 focuses closer to the camera
         
@@ -59,14 +59,14 @@ classdef lfiQuery
             opts = {'focus','perspective','both'};
             if nargin==1
                 switch lower(mode)
-                    case 'focus'
+                    case {'focus','foc','f'}
                         % Set adjust-mode to 'focus' with sensible defaults
                         q.adjust        = 'focus';
                         q.fMethod       = 'add';
-                        q.fSlice        = 'legacy';
+                        q.fZoom         = 'legacy';
                         q.fAlpha        = 1;
 
-                    case 'perspective'
+                    case {'perspective','persp','per','p'}
                         % Set adjust-mode to 'perspective' with sensible defaults
                         q.adjust        = 'perspective';
                         q.pUV           = [0 0];
@@ -194,12 +194,12 @@ classdef lfiQuery
             end
         end
         
-        function obj = set.fSlice( obj, val )
+        function obj = set.fZoom( obj, val )
             opts = {'legacy','telecentric'};
             if ischar(val) && any(strcmpi(val,opts))
-                obj.fSlice = lower(val);
+                obj.fZoom = lower(val);
             else
-                error(listOpts('FSLICE',opts));
+                error(listOpts('FZOOM',opts));
             end
         end
         
@@ -274,6 +274,6 @@ classdef lfiQuery
 end%classdef
 
 function list = listOpts( var, opts )
-    % Use sprintf to that error call leads to parent
+    % Use sprintf so that error call leads to parent
     list = sprintf( '%s must be one of: %s.', var, strjoin( strcat('''',opts,''''), ', ' ) );
 end
