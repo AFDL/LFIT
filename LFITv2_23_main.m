@@ -151,8 +151,6 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             %         just comment out the non-perspective shift functions below for example.
             
             %%%%---PERSPECTIVE SHIFT---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[u,v,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,backgroundColor,captionFlag,'A caption string'];
             q               = lfiQuery( 'perspective' );
             q.pUV           = [0 0; -6 0; 6 0];         % List of (u,v) coordinates
             q.saveas        = 'jpg';
@@ -162,9 +160,6 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             
             
             %%%%---IMAGE REFOCUSING---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[alpha,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,directoryFlag,refocusType,filterInfo,TelecentricInfo];
-            % MUST CHOOSE SAME SS_ST for each image!
             q               = lfiQuery( 'focus' );
             q.fMethod       = 'filt';
             q.fFilter       = [0 0.9];
@@ -183,22 +178,37 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             %%%%---FOCAL STACK GENERATION---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,refocusType,filterInfo,TelecentricInfo];
-            requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0];};
+            requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]};
+            q = lfiQuery('focus'); importVector(q,requestVectorFS);         % Request vectors may be converted to queries for legacy support
             [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageSpecificName); % has output argument (optional). [focalStack] = genfocalstack(...)
             
             %%%%---ANIMATION - PERSPECTIVES---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[edgeBuffer,SS_UV, SS_ST, saveFlag, displayFlag, imadjustFlag, captionFlag, caption string,travelVectorIndex]
-            requestVectorPM = {3,1,2,[1 0 0; 0 inf 1;],2,1,'gray',[.8 .8 .8],0,'No caption',2; %GIF example
-                               3,1,2,[3 0 0; 95 30 1;],2,1,'gray',[0 0 0],0,'No caption',2;}; %MP4 example
-            animateperspective(radArray,outputPath,imageSpecificName,requestVectorPM,sRange,tRange);
+            q               = lfiQuery( 'perspective' );
+            q.pUV           = gentravelvector( 3, 000, 000, 1, 2 );
+            q.stFactor      = 2;
+            q.saveas        = 'gif';
+            q.display       = 'fast';
+            q.contrast      = 'imadjust';
+            animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);
+            
+            q.saveas        = 'mp4';
+            animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);      % Same animation, different format
             
             %%%%---ANIMATION - REFOCUSING---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,background color,caption flag,caption string,apertureFlag,refocusType,filterInfo,TelecentricInfo]
             requestVectorRM = {[1 5; .8 1.2; 1 0;],1,1,[1 0 0; 0 inf 1;],2,1,'gray',[.8 .8 .8],0,'No caption',1,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]}; %GIF example
-%                                [1 280; .6 1.4; 1 0;],1,1,[3 0 0; 95 30 1;],2,1,'gray',[0 0 0],0,'No caption',1,2,[0 0.9]}; %MP4 example
-            animaterefocus(radArray,outputPath,imageSpecificName,requestVectorRM,sRange,tRange);
+            q               = lfiQuery( 'focus' );
+            q.fMethod       = 'filt';
+            q.fFilter       = [0 0.9];
+            q.fZoom         = 'telecentric';
+            q.fGridX        = linspace(-18,18,300);
+            q.fGridY        = linspace(-12,12,200);
+            q.fPlane        = [0 1 2 3 4 5];            % List of focal planes
+            q.fLength       = 50;
+            q.fMag          = -1;
+            q.saveas        = 'gif';
+            q.display       = 'fast';
+            q.contrast      = 'imadjust';
+            animaterefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
             %%%%%%%%-------------------------------%%%%%%%%

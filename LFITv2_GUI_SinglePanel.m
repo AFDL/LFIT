@@ -185,10 +185,8 @@ else
     refreshFields(hObject,handles);
     
     % Tell the user
-    try
-        close(loadHandle);
-    catch generr4
-        % user must have closed it already; good!
+    try     close(loadHandle);
+    catch   % user must have closed it already; good!
     end
     stringLoaded = [handles.firstImage ' successfully loaded and processed.'];
     uiwait(msgbox(stringLoaded,'Load Complete','modal'));
@@ -297,10 +295,14 @@ function tagGenerateDispP_Callback(hObject, eventdata, handles)
 % hObject    handle to tagGenerateDispP (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-%[u,v,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,backgroundColor,captionFlag,'A caption string'];
 disp('Calculating perspective view...');
-requestVectorP = {handles.uVal,handles.vVal,handles.SSSTP,0,2,handles.enhanceContrastP,handles.colormapP,'white',0,'No caption';};
-perspectivegen(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorP,handles.sRange,handles.tRange);
+q           = lfiQuery('perspective');
+q.pUV       = [handles.uVal handles.vVal];
+q.stFactor  = handles.SSSTP;
+q.display   = 'fast';
+q.colormap  = handles.colormapP;
+if handles.enhanceContrastP, q.contrast = 'imadjust'; end
+perspectivegen(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 updatePerspPlot(hObject)
 
 % --- Executes on button press in tagGenerateSaveP.
@@ -309,8 +311,13 @@ function tagGenerateSaveP_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 disp('Calculating perspective view...');
-requestVectorP = {handles.uVal,handles.vVal,handles.SSSTP,handles.imFileType,2,handles.enhanceContrastP,handles.colormapP,'white',0,'No caption';};
-perspectivegen(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorP,handles.sRange,handles.tRange);
+q           = lfiQuery('perspective');
+q.pUV       = [handles.uVal handles.vVal];
+q.stFactor  = handles.SSSTP;
+q.saveas    = handles.imFileType;
+q.display   = 'fast';
+q.colormap  = handles.colormapP;
+perspectivegen(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 updatePerspPlot(hObject)
 
 % --- Executes on selection change in tagColormapMenuP.
@@ -473,8 +480,7 @@ telecentricInfo = [handles.telecentric,handles.Xmin,handles.Xmax,handles.Ymin,ha
 %[alpha,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,directoryFlag,Refocus Type,Filter Info, Telecentric Info];
 requestVectorR = {handles.alphaR,handles.SSUVR,handles.SSSTR,0,2,handles.enhanceContrastR,handles.colormapR,'white',0,'No caption',handles.aperMask,0,handles.refocusType,[handles.noiseThreshold handles.filterThreshold],telecentricInfo;};
 %(x,y,alphaIndex,imageIndex)
-tic
-refocusedImageStack = genrefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorR,handles.sRange,handles.tRange,handles.imageIndex,handles.numImages,refocusedImageStack);
+refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages,refocusedImageStack);
 toc
 updatePerspPlot(hObject)
 
@@ -892,7 +898,7 @@ function tagPerspectiveGIF_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 fileType = 1; %GIF
 if handles.limitLoopsGIF == false
-    loops = inf; %literally inf, NOT a string 'inf'
+    loops = INF; %literally inf, NOT a string 'inf'
 else
     loops = handles.loopLimitGIF;
 end
@@ -908,7 +914,7 @@ function tagRefocusGIF_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 fileType = 1; %GIF
 if handles.limitLoopsGIF == false
-    loops = inf; %literally inf, NOT a string 'inf'
+    loops = INF; %literally inf, NOT a string 'inf'
 else
     loops = handles.loopLimitGIF;
 end
@@ -946,11 +952,11 @@ function tagImageType_Callback(hObject, eventdata, handles)
 % hObject    handle to tagImageType (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+fileTypes = {'bmp','png','jpg','png16','tif16'};        % MUST BE IN SAME ORDER AS DROPDOWN
 % Hints: contents = cellstr(get(hObject,'String')) returns tagImageType contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagImageType
 index_selected = get(hObject,'Value');
-handles.imFileType = index_selected;
+handles.imFileType = fileTypes{index_selected};
 
 % Update handles structure
 guidata(hObject, handles);
@@ -980,9 +986,9 @@ function tagEnforceMask_SelectionChangeFcn(hObject, eventdata, handles)
 
 switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
     case 'tagApertureNone'
-        handles.aperMask = 0;
+        handles.aperMask = false;
     case 'tagCircAper'
-        handles.aperMask = 1;
+        handles.aperMask = 'circ';
 end
 
 % Update handles structure
@@ -1228,7 +1234,7 @@ try
         handles.(names{k}) = loadedStruct.handlesSave.(names{k});
     end
     refreshFields(hObject,handles); %handles loaded behind the scenes; now update the GUI to match the actual values
-catch generror2
+catch
     warning('Loading of previous configuration settings failed. Resetting to default values...');
     % Could delete old run config here, but for now let's leave that up to the user and just load defaults.
     setDefaults(hObject,handles);

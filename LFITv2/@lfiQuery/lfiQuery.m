@@ -34,19 +34,19 @@ classdef lfiQuery
         %
         uvFactor    = 1;            % (u,v) supersampling factor: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
         stFactor    = 1;            % (s,t) supersampling factor: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
-        contrast    = 'simple';     % contrast stretching style: 'simple', 'imadjust'
+        contrast    = 'simple';     % contrast stretching style: 'simple', 'imadjust', 'stack'
         mask        = 'circ';       % aperture masking of microlenses: false, 'circ'
         
         %
         %  Output configuration
         %
-        saveas      = false;        % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16'
+        saveas      = false;        % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16', 'gif', 'avi', 'mp4'
         display     = false;        % image display speed: false, 'slow', 'fast'
         colormap    = 'gray';       % the colormap used in displaying the image, e.g. 'jet' or 'gray'
         background  = [1 1 1];      % background color of the figure if the title is enabled, e.g. [.8 .8 .8] or [1 1 1]
         title       = false;        % title flag: FALSE for no caption, 'caption' for caption string only, 'annotation' for alpha/uv value only, 'both' for caption string + alpha/uv value
         caption     = '';           % caption string is the string used in the title for title flag of 'caption' or 'both'
-        grouping    = 'image';      % directory flag: 'image' to save refocused images on a per-image basis or 'alpha' to save on a per-alpha/uv basis
+        grouping    = 'image';      % directory flag: 'image' to save refocused images on a per-image basis or 'alpha' to save on a per-alpha basis
         
     end%properties
     
@@ -96,9 +96,7 @@ classdef lfiQuery
         
         function obj = set.caption( obj, val )
             if ischar(val)
-                obj.caption = {val};
-            elseif iscell(val)
-                obj.caption = val(:)';
+                obj.caption = strtrim(val);
             else
                 error('CAPTION must be a string.');
             end
@@ -137,7 +135,7 @@ classdef lfiQuery
         
         function obj = set.fAlpha( obj, val )
             if isnumeric(val) && isvector(val) && all(val>0)
-                obj.fAlpha = val(:)';
+                obj.fAlpha = val(:)';       % Primary variable, indexed by row
             else
                 error('FALPHA must be a vector of positive numbers.');
             end
@@ -194,7 +192,7 @@ classdef lfiQuery
         
         function obj = set.fPlane( obj, val )
             if isnumeric(val) && isvector(val)
-                obj.fPlane = val(:)';
+                obj.fPlane = val(:)';       % Primary variable, indexed by row
             else
                 error('FPLANE must be a vector.');
             end
@@ -210,7 +208,7 @@ classdef lfiQuery
         end
         
         function obj = set.grouping( obj, val )
-            opts = {'image','alpha'};
+            opts = {'image','alpha','stack'};
             if ischar(val) && any(strcmpi(val,opts))
                 obj.grouping = lower(val);
             else
@@ -244,10 +242,10 @@ classdef lfiQuery
         end
         
         function obj = set.stFactor( obj, val )
-            if isnumeric(val) && numel(val)==1
+            if isnumeric(val) && numel(val)==1 && val>=1
                 obj.stFactor = uint8(val);
             else
-                error('STFACTOR must be a number.');
+                error('STFACTOR must be a positive integer.');
             end
         end
         
@@ -263,18 +261,18 @@ classdef lfiQuery
         end
         
         function obj = set.pUV( obj, val )
-            if isnumeric(val) && size(val,2)==2
-                obj.pUV = val;
+            if isnumeric(val) && ismatrix(val) && size(val,2)==2
+                obj.pUV = val;              % Primary variable, indexed by row
             else
                 error('PUV must be an M by 2 matrix.');
             end
         end
         
         function obj = set.uvFactor( obj, val )
-            if isnumeric(val) && numel(val)==1
+            if isnumeric(val) && numel(val)==1 && val>=1
                 obj.uvFactor = uint8(val);
             else
-                error('UVFACTOR must be a number.');
+                error('UVFACTOR must be a positive integer.');
             end
         end
         

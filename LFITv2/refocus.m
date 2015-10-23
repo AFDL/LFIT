@@ -70,12 +70,12 @@ if strcmpi( q.fMethod, 'filt' )
 end
 
 if strcmpi( q.fZoom, 'telecentric' )
-    filterMatrix = zeros( size(q.fGridX) );
+    filterMatrix = zeros( length(q.fGridY), length(q.fGridX) );
 
     if strmpci( q.fMethod, 'mult' )
-        syntheticImage = ones( size(q.fGridX) ,'single' );        
+        syntheticImage = ones( length(q.fGridY), length(q.fGridX), 'single' );        
     else
-        syntheticImage = zeros( size(q.fGridX), 'single' );
+        syntheticImage = zeros( length(q.fGridY), length(q.fGridX), 'single' );
     end
 end
 
@@ -91,22 +91,20 @@ switch superSampling
             for v=vRange.'
                 
                 % The plus 1 is to make the index start at 0 not 1. The interpPadding accounts for any pixel padding in interpimage2.m
-                uIdx = -(u) + microRadius+1 + interpPadding; %u is negative here since the uVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
-                vIdx = -(v) + microRadius+1 + interpPadding; %v is negative here since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
+                uIdx = -(u) + microRadius+1 + interpPadding; % u is negative here since the uVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
+                vIdx = -(v) + microRadius+1 + interpPadding; % v is negative here since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
                 
 %               if ~q.mask || circMask(vIdx,uIdx) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
                     activePixelCount = activePixelCount + 1;
-                    uAct = u.*sizePixelAperture; %u and v converted to millimeters here
-                    vAct = v.*sizePixelAperture; %u and v converted to millimeters here
-%                   uAct = u.*1.254; %u and v converted to millimeters here
-%                   vAct = v.*1.254; %u and v converted to millimeters here
+                    uAct = u.*sizePixelAperture; % u and v converted to millimeters here
+                    vAct = v.*sizePixelAperture; % u and v converted to millimeters here
 
-                    switch magTypeFlag
-                        case 0 % Shift-Invariant Method (Paul)
+                    switch q.fZoom
+                        case 'legacy'
                             sQuery  = uAct*(q.fAlpha - 1) + sActual;
                             tQuery  = vAct*(q.fAlpha - 1) + tActual;
 
-                        case 1
+                        case 'telecentric'
                             si      = ( 1 - q.fMag )*q.fLength;
                             so      = -si/q.fMag;
                             siPrime = q.fAlpha*si;

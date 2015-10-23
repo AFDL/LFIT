@@ -1,4 +1,4 @@
-function animateperspective(radArray,outputPath,imageSpecificName,requestVector,sRange,tRange)
+function animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName)
 %ANIMATEPERSPECTIVE Generates a perspective animation as defined by the request vector
 %
 %  requestVector:
@@ -19,10 +19,9 @@ function animateperspective(radArray,outputPath,imageSpecificName,requestVector,
 
 fprintf('\nBeginning perspective animation generation.\n');
 fastTime = false;
+% for pInd = 1:size(requestVector,1) % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
 
-for pInd = 1:size(requestVector,1) % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
-
-    fprintf('\nGenerating perspective animation (%i of %i)...',pInd,size(requestVector,1));
+%     fprintf('\nGenerating perspective animation (%i of %i)...',pInd,size(requestVector,1));
     timerVar=0; timeInd=0; 
     timeFlag = false; timeVector=[0]; timeAvg = .5; timeRate = ceil(requestVector{pInd,2}*1.5); % timing logic
     if requestVector{pInd,2} == 1
@@ -41,7 +40,8 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
     
     fprintf('\n   Time remaining:       ');
     
-    for frameInd = 1:size(travelVector,1) % for each frame of a GIF (each specific u,v location as defined in travelVector)
+    nFrames = length(q.pUV);
+    for frameInd = 1:nFrames
         
         % Timer logic
         timeInd = timeInd + 1; %timing logic
@@ -53,13 +53,15 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
         end
         
         % Generate perspective image frame
-        perspectiveImage = perspective(radArray,travelVector(frameInd,2),travelVector(frameInd,1),requestVector{pInd,3},sRange,tRange);
+        qi      = q;
+        qi.pUV  = q.pUV(frameInd);
+        perspectiveImage = perspective(qi,radArray,sRange,tRange);
         
-        if requestVector{pInd,6} == 1
+        if strcmpi( q.contrast, 'imadjust' )
             perspectiveImage = imadjust(perspectiveImage);
         end
         
-        SS_ST = requestVector{pInd,3};
+        SS_ST = q.stFactor;
         
         try
             set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
@@ -70,66 +72,54 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
             set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
         end
         
-        if requestVector{pInd,9} == 0 % no caption, direct output
-
-            [expIm,expMap] = gray2ind(perspectiveImage,256);
-            cMap = [requestVector{pInd,7} '(256)'];
-            frame = im2frame(expIm,colormap(cMap));
+        if q.title % Title image?
             
-        else
-            
-            switch requestVector{pInd,9} % captionFlag
-                case {1,2}
-                    displayimage(perspectiveImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                    
-                case 3 % caption string with position appended
-                    caption = sprintf( '%s --- (%g,%g)', requestVector{pInd,10}, requestVector{pInd,1}, requestVector{pInd,2} );
-                    displayimage(perspectiveImage,requestVector{pInd,9},caption,requestVector{pInd,7},requestVector{pInd,8});
-                    
-                otherwise
-                    error('Incorrect setting of the caption flag in the requestVector input variable to the animateperspective function.');
+            switch q.title
+                case 'caption',     caption = qi.caption;
+                case 'annotation',  caption = sprintf( '(%g,%g)', qi.pUV(1), qi.pUV(2) );
+                case 'both',        caption = sprintf( '%s --- (%g,%g)', qi.caption, qi.pUV(1), qi.pUV(2) );
                     
             end%switch
+            displayimage( perspectiveImage, caption, q.colormap, q.background );
             
             frame = getframe(1);
             
+        else
+            
+            expIm   = gray2ind(perspectiveImage,256);
+            cMap    = [q.colormap '(256)'];
+            frame   = im2frame(expIm,colormap(cMap));
+            
         end%if
         
-        if requestVector{pInd,4}(1,1) > 0
+        if q.saveas
             
             dout = fullfile(outputPath,'Animations');
             if ~exist(dout,'dir'), mkdir(dout); end
 
             fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, SS_ST, requestVector{pInd,2}, requestVector{pInd,9} );
-            switch requestVector{pInd,4}(1,1) % saveFlag
-                case 1 % save GIF
+            switch q.saveas
+                case 'gif'
                     fout = fullfile(dout,[fname '.gif']);
-                    gifwrite(frame,requestVector{pInd,7},requestVector{pInd,4}(2,3),fout,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),frameInd); % filename, delay, loop count, frame index
+                    gifwrite(frame,q.colormap,requestVector{pInd,4}(2,3),fout,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),frameInd); % filename, delay, loop count, frame index
 
-                case 2 % save AVI
+                case 'avi'
                     fout = fullfile(dout,[fname '.avi']);
-                    vidobj = aviwrite(frame,requestVector{pInd,7},requestVector{pInd,4}(2,3),vidobj,fout,frameInd,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(travelVector,1));
+                    vidobj = aviwrite(frame,q.colormap,requestVector{pInd,4}(2,3),vidobj,fout,frameInd,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),nFrames);
  
-                case 3 % save MP4
+                case 'mp4'
                     fout = fullfile(dout,[fname '.mp4']);
-                    vidobj = mp4write(frame,requestVector{pInd,7},vidobj,fout,frameInd,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(travelVector,1));
-
-                otherwise
-                    error('Incorrect setting of the save flag in the requestVector input variable to the animateperspective function.');
+                    vidobj = mp4write(frame,q.colormap,vidobj,fout,frameInd,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),nFrames);
  
             end%switch
             
         end%if
         
-        if requestVector{pInd,5} == 0 % no display (not really supported for animation export)
+        if q.display
             
-            try     close(cF);
-            catch   % figure already closed
-            end
-            
-        else
-            
-            if requestVector{pInd,9} == 0
+            if q.title
+                % Image already displayed, nothing to do
+            else
                 try
                     set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
                 catch
@@ -138,20 +128,19 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
                     set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
                     set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
                 end
-                displayimage(perspectiveImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
+                displayimage(perspectiveImage,'',q.colormap,q.background);
             end
             
-            switch requestVector{pInd,5} % displayFlag
-                case 1 % display with pauses (not recommended for animation export)
-                    pause; % image is already displayed
-                        
-                case 2 % display without pauses
-                    drawnow;
-
-                otherwise
-                    error('Incorrect setting of the display flag in the requestVector input variable to the animateperspective function.');
-                    
+            switch q.display
+                case 'slow',    pause;
+                case 'fast',    drawnow;
             end%switch
+            
+        else
+            
+            try     close(cF);
+            catch   % figure already closed
+            end
             
         end%if
         
@@ -193,7 +182,7 @@ for pInd = 1:size(requestVector,1) % for each image format defined in request ve
     
     fprintf('\n   Complete.\n');
     
-end%for
+% end%for
 fprintf('\nPerspective animation generation finished.\n');
 
 end%function
