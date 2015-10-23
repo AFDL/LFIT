@@ -2,9 +2,13 @@ classdef lfiQuery
     %LFIQUERY Creates a light field image (lfi) reconstruction query.
     %   Detailed explanation goes here
     
-    properties
+    properties (SetAccess=immutable)
         
         adjust      = '';           % reconstruction type: 'focus', 'perspective', 'both'
+        
+    end%properties
+    
+    properties
         
         %
         %  Focus-adjust parameters (defaults set during construction)
@@ -46,7 +50,7 @@ classdef lfiQuery
         background  = [1 1 1];      % background color of the figure if the title is enabled, e.g. [.8 .8 .8] or [1 1 1]
         title       = false;        % title flag: FALSE for no caption, 'caption' for caption string only, 'annotation' for alpha/uv value only, 'both' for caption string + alpha/uv value
         caption     = '';           % caption string is the string used in the title for title flag of 'caption' or 'both'
-        grouping    = 'image';      % directory flag: 'image' to save refocused images on a per-image basis or 'alpha' to save on a per-alpha basis
+        grouping    = 'image';      % directory grouping: 'image' to save on a per-image basis or 'alpha' to save on a per-alpha basis
         
     end%properties
     
@@ -134,7 +138,9 @@ classdef lfiQuery
         end
         
         function obj = set.fAlpha( obj, val )
-            if isnumeric(val) && isvector(val) && all(val>0)
+            if isempty(val)
+                obj.fAlpha = [];
+            elseif isnumeric(val) && isvector(val) && all(val>0)
                 obj.fAlpha = val(:)';       % Primary variable, indexed by row
             else
                 error('FALPHA must be a vector of positive numbers.');
@@ -142,7 +148,9 @@ classdef lfiQuery
         end
         
         function obj = set.fFilter( obj, val )
-            if isnumeric(val) && isvector(val) && numel(val)==2
+            if isempty(val)
+                obj.fFilter = [];
+            elseif isnumeric(val) && isvector(val) && numel(val)==2
                 obj.fFilter = val(:);
             else
                 error('FFILTER must be vector of length 2.');
@@ -150,7 +158,9 @@ classdef lfiQuery
         end
         
         function obj = set.fGridX( obj, val )
-            if isnumeric(val) && isvector(val)
+            if isempty(val)
+                obj.fGridX = [];
+            elseif isnumeric(val) && isvector(val)
                 obj.fGridX = val(:);
             else
                 error('FGRIDX must be a vector.');
@@ -158,7 +168,9 @@ classdef lfiQuery
         end
         
         function obj = set.fGridY( obj, val )
-            if isnumeric(val) && isvector(val)
+            if isempty(val)
+                obj.fGridY = [];
+            elseif isnumeric(val) && isvector(val)
                 obj.fGridY = val(:);
             else
                 error('FGRIDY must be a vector.');
@@ -167,7 +179,9 @@ classdef lfiQuery
         
         function obj = set.fMethod( obj, val )
             opts = {'add','mult','filt'};
-            if ischar(val) && any(strcmpi(val,opts))
+            if isempty(val)
+                obj.fMethod = '';
+            elseif ischar(val) && any(strcmpi(val,opts))
                 obj.fMethod = lower(val);
             else
                 error(listOpts('FMETHOD',opts));
@@ -175,7 +189,9 @@ classdef lfiQuery
         end
         
         function obj = set.fLength( obj, val )
-            if isnumeric(val) && numel(val)==1
+            if isempty(val)
+                obj.fLength = [];
+            elseif isnumeric(val) && numel(val)==1
                 obj.fLength = val;
             else
                 error('FLENGTH must be a number.');
@@ -183,7 +199,9 @@ classdef lfiQuery
         end
         
         function obj = set.fMag( obj, val )
-            if isnumeric(val) && numel(val)==1
+            if isempty(val)
+                obj.fMag = [];
+            elseif isnumeric(val) && numel(val)==1
                 obj.fMag = val;
             else
                 error('FMAG must be a number.');
@@ -191,7 +209,9 @@ classdef lfiQuery
         end
         
         function obj = set.fPlane( obj, val )
-            if isnumeric(val) && isvector(val)
+            if isempty(val)
+                obj.fPlane = [];
+            elseif isnumeric(val) && isvector(val)
                 obj.fPlane = val(:)';       % Primary variable, indexed by row
             else
                 error('FPLANE must be a vector.');
@@ -200,7 +220,9 @@ classdef lfiQuery
         
         function obj = set.fZoom( obj, val )
             opts = {'legacy','telecentric'};
-            if ischar(val) && any(strcmpi(val,opts))
+            if isempty(val)
+                obj.fZoom = '';
+            elseif ischar(val) && any(strcmpi(val,opts))
                 obj.fZoom = lower(val);
             else
                 error(listOpts('FZOOM',opts));

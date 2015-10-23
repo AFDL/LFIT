@@ -1,5 +1,5 @@
-function varargout = checkInputs( obj )
-%CHECKINPUTS Verify that all query parameters are sane.
+function varargout = verify( obj )
+%VERIFY Verify that all query parameters are sane.
 
 
 w = 0;

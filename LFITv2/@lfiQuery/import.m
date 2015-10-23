@@ -1,5 +1,5 @@
-function obj = importVector( obj, vec, type )
-%IMPORTVECTOR Import a requestVector.
+function obj = import( obj, vec, type )
+%IMPORT Import a requestVector.
 
 
 %% GUESS THE IMPORT TYPE IF UNSPECIFIED
@@ -90,7 +90,9 @@ switch lower(type)
             if vec{1,1}(1,1),   obj.fAlpha = logspace( log10(vec{1,1}(2,1)), log10(vec{1,1}(2,2)), vec{1,1}(1,2) );
             else                obj.fAlpha = linspace( vec{1,1}(2,1), vec{1,1}(2,2), vec{1,1}(1,2) );
             end
-            if vec{1,1}(3,1),   obj.fAlpha = [ obj.fAlpha(2:end-1) fliplr(obj.fAlpha) ]; end
+            if strcmpi(type,'animaterefocus') && vec{1,1}(3,1)
+                obj.fAlpha = [ obj.fAlpha(2:end-1) fliplr(obj.fAlpha) ];
+            end
         else
             obj.fZoom   = 'telecentric';
             obj.fGridX  = linspace( vec{1,14}(2), vec{1,14}(3), vec{1,14}(8) );
