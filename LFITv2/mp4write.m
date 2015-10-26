@@ -30,5 +30,3 @@ else
 end%if
 
 end%function
-
-

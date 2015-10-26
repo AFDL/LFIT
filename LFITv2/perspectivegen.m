@@ -45,7 +45,6 @@ for pIdx = 1:nPerspectives
             case 'caption',     caption = q.caption{pIdx};
             case 'annotation',  caption = sprintf( '(%g,%g)', qi.pUV(1), qi.pUV(2) );
             case 'both',        caption = sprintf( '%s --- (%g,%g)', q.caption(pIdx), qi.pUV(1), qi.pUV(2) );
-            otherwise,          error('Incorrect setting of the caption flag in the requestVector input variable to the perspectivegen function.');
         end
         displayimage(perspectiveImage,caption,q.colormap,q.background);
         
@@ -66,9 +65,10 @@ for pIdx = 1:nPerspectives
         dout = fullfile(outputPath,'Perspectives');
         if ~exist(dout,'dir'), mkdir(dout); end
         
+        fname = sprintf( '%s_persp_stSS%g_uPos%g_vPos%g', imageSpecificName, SS_ST, qi.pUV(1), qi.pUV(2) );
+        
         if q.title
             
-            fname = sprintf( '%s_persp_stSS%g_uPos%g_vPos%g', imageSpecificName, SS_ST, qi.pUV(1), qi.pUV(2) );
             switch q.saveas
                 case 'bmp'
                     fout = fullfile(dout,[fname '.bmp']);
@@ -99,7 +99,6 @@ for pIdx = 1:nPerspectives
         
             % If no title is enabled, export colormap
             
-            fname = sprintf( '%s_persp_stSS%g_uPos%g_vPos%g', imageSpecificName, SS_ST, u0, v0 );
             switch q.saveas
                 case 'bmp'
                     fout = fullfile(dout,[fname '.bmp']);
@@ -152,7 +151,6 @@ for pIdx = 1:nPerspectives
         switch q.display
             case 'slow',    pause;
             case 'fast',    drawnow;
-            otherwise,      error('Incorrect setting of the display flag in the requestVector input variable to the perspectivegen function.'); 
         end
         
     else

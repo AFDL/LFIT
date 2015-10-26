@@ -36,7 +36,7 @@ for fIdx = 1:nPlanes % for each refocused
         
     % Timer logic
     time=toc(time);
-    timerVar=time/60*((size(requestVector,1)-fIdx ));
+    timerVar=time/60*(nPlanes-fIdx);
     if timerVar>=1
         timerVar=round(timerVar);
         for count=1:num+2
@@ -45,7 +45,7 @@ for fIdx = 1:nPlanes % for each refocused
         num=numel(num2str(timerVar));    
         fprintf('%g m',timerVar)
     else
-        timerVar=round(time*((size(requestVector,1)-fIdx )));
+        timerVar=round( time*(nPlanes-fIdx) );
         for count=1:num+2
             fprintf('\b')
         end

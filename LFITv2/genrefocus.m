@@ -72,7 +72,6 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                     case 'caption',     caption = q.caption;
                     case 'annotation',  caption = sprintf( 'alpha = %g', q.caption, q.fAlpha(fIdx) );
                     case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, q.fAlpha(fIdx) );
-                    otherwise,          error('Incorrect setting of the caption flag in the requestVector input variable to the genfocalstack function.');
                 end
                 displayimage(refocusedImage,caption,q.colormap,q.background);
                 
@@ -159,7 +158,6 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                 switch q.display % How fast?
                     case 'slow',   pause;
                     case 'fast',   drawnow;
-                    otherwise,     error('Incorrect setting of the display flag in the requestVector input variable to the genrefocus function.');
                 end
                 
             else

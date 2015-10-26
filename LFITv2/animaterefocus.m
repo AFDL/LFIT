@@ -99,9 +99,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
     set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
     set(cF,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray,3)])
     
-    frameLit = 0;
     for frameInd = 1:nFrames % for each frame of an animation
-        frameLit = frameLit + 1;
         
         refocusedImage = refocusStack(:,:,frameInd);
         switch q.contrast
@@ -147,15 +145,15 @@ fprintf('\nBeginning refocusing animation generation.\n');
             switch q.saveas
                 case 'gif'
                     fout = fullfile(dout,[fname '.gif']);
-                    gifwrite(frame,q.colormap,q.dither,fout,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),frameLit); %filename, delay, loop count, frame index
+                    gifwrite(frame,q.colormap,fout,1/q.framerate,frameInd); % filename, delay, frame index
 
                 case 'avi'
                     fout = fullfile(dout,[fname '.avi']);
-                    vidobj = aviwrite(frame,q.colormap,requestVector{pInd,4}(2,3),vidobj,fout,frameLit,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(frameVector,2));
+                    vidobj = aviwrite(frame,q.colormap,1,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
 
                 case 'mp4'
                     fout = fullfile(dout,[fname '.mp4']);
-                    vidobj=mp4write(frame,q.colormap,vidobj,fout,frameLit,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),size(frameVector,2));
+                    vidobj=mp4write(frame,q.colormap,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
 
             end%switch
             

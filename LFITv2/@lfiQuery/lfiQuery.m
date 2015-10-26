@@ -45,6 +45,8 @@ classdef lfiQuery
         %  Output configuration
         %
         saveas      = false;        % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16', 'gif', 'avi', 'mp4'
+        quality     = [];           % output quality, only applies to JPG and MP4
+        framerate   = [];           % output framerate, only applies to GIF, AVI, and MP4
         display     = false;        % image display speed: false, 'slow', 'fast'
         colormap    = 'gray';       % the colormap used in displaying the image, e.g. 'jet' or 'gray'
         background  = [1 1 1];      % background color of the figure if the title is enabled, e.g. [.8 .8 .8] or [1 1 1]
@@ -218,6 +220,14 @@ classdef lfiQuery
             end
         end
         
+        function obj = set.framerate( obj, val )
+            if isnumeric(val) && numel(val)==1
+                obj.framerate = val;
+            else
+                error('FRAMERATE must be a number.');
+            end
+        end
+        
         function obj = set.fZoom( obj, val )
             opts = {'legacy','telecentric'};
             if isempty(val)
@@ -287,6 +297,14 @@ classdef lfiQuery
                 obj.pUV = val;              % Primary variable, indexed by row
             else
                 error('PUV must be an M by 2 matrix.');
+            end
+        end
+        
+        function obj = set.quality( obj, val )
+            if isnumeric(val) && numel(val)==1 && val>=0 && val<=100
+                obj.quality = val;
+            else
+                error('QUALITY must be a number between 0 and 100.')
             end
         end
         

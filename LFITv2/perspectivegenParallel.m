@@ -1,5 +1,5 @@
 function [perspectiveImage] = perspectivegenParallel(q,radArray,sRange,tRange,outputPath,imageSpecificName)
-% perspectivegen | Generates a series of perspective images as defined by the request vector
+%PERSPECTIVEGENPARALLEL Generates a series of perspective images as defined by the request vector
 %
 % Input Arguments:
 %   radArray = matrix of intensity values for a given u,v,s, and t index
@@ -18,85 +18,114 @@ function [perspectiveImage] = perspectivegenParallel(q,radArray,sRange,tRange,ou
 
 
 fprintf('\nGenerating perspective views...');
-for pInd = 1:size(requestVector,1)
-    
-    perspectiveImage = perspective(radArray,requestVector{pInd,1},requestVector{pInd,2},requestVector{pInd,3},sRange,tRange);
-    if requestVector{pInd,6} == 1
-        perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/( max(perspectiveImage(:)) - min(perspectiveImage(:)) );
-        perspectiveImage = imadjust(perspectiveImage);      % This makes the above line pointless --cjc
-    end
 
-    SS_ST = requestVector{pInd,3};
-    u0 = requestVector{pInd,1};
-    v0 = requestVector{pInd,2};
+SS_ST = q.stFactor;
+
+nPerspectives = size( q.pUV, 1 );
+for pIdx = 1:nPerspectives
+    
+    qi      = q;
+    qi.pUV  = q.pUV(pIdx,:);
+    
+    perspectiveImage = perspective(q,radArray,sRange,tRange);
+    
+    switch q.contrast
+        case 'simple',      % THIS FUNCTIONALITY WAS NOT PREVIOUSLY HERE, SHOULD IT HAVE BEEN? --cjc    %perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/( max(perspectiveImage(:)) - min(perspectiveImage(:)) );
+        case 'imadjust',    perspectiveImage = imadjust(perspectiveImage);
+    end
     
     try     close(cF);
     catch  % figure not yet opened
     end
     
-    if requestVector{pInd,9} == 0
-        
-        if requestVector{pInd,4} == 4 || requestVector{pInd,4} == 5
-            expImage16 = gray2ind(perspectiveImage,65536); % for 16bit output
-        end
-        expImage = gray2ind(perspectiveImage,256); %allows for colormap being used in output
-        
-    else
+    if q.title
         
         cF = figure;
-        switch requestVector{pInd,9}
-            case 1 % caption string only
-                displayimage(perspectiveImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-                
-            case 2 % caption string with position appended
-                caption = sprintf( '%s --- (%g,%g)', requestVector{pInd,10}, requestVector{pInd,1}, requestVector{pInd,2} );
-                displayimage(perspectiveImage,requestVector{pInd,9},caption,requestVector{pInd,7},requestVector{pInd,8});
-
-            otherwise
-                error('Incorrect setting of the caption flag in the requestVector input variable to the perspectivegen function.');
-                
-        end%switch
+        switch q.title
+            case 'caption',     caption = q.caption{pIdx};
+            case 'annotation',  caption = sprintf( '(%g,%g)', qi.pUV(1), qi.pUV(2) );
+            case 'both',        caption = sprintf( '%s --- (%g,%g)', q.caption(pIdx), qi.pUV(1), qi.pUV(2) );
+        end
+        displayimage(perspectiveImage,caption,q.colormap,q.background);
         
         frame = getframe(1);
         expImage = frame2im(frame);
+        
+    else
+        
+        if any(strcmpi( q.saveas, {'png16','tif16'} ))
+            expImage16 = gray2ind(perspectiveImage,65536); % for 16-bit output
+        end
+        expImage = gray2ind(perspectiveImage,256); % allows for colormap being used in output
 
     end%if
     
-    if requestVector{pInd,4} > 0
+    if q.saveas % Save image?
         
         dout = fullfile(outputPath,'Perspectives');
         if ~exist(dout,'dir'), mkdir(dout); end
         
-        if requestVector{pInd,9} == 0 % write colormap with file if no caption; otherwise, it is implied
+        fname = sprintf( '%s_persp_stSS%g_uPos%g_vPos%g', imageSpecificName, SS_ST, qi.pUV(1), qi.pUV(2) );
+        
+        if q.title
             
-            fname = sprintf( '%s_persp_stSS%g_uPos%g_vPos%g', imageSpecificName, SS_ST, u0, v0 );
-            switch requestVector{pInd,4}
-                case 1 % save bmp
+            switch q.saveas
+                case 'bmp'
                     fout = fullfile(dout,[fname '.bmp']);
-                    imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),fout);
-                   
-                case 2 % save png
+                    imwrite(expImage,fout);
+
+                case 'png'
                     fout = fullfile(dout,[fname '.png']);
-                    imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),fout);
-                    
-                case 3 % save jpg
+                    imwrite(expImage,fout);
+
+                case 'jpg'
                     fout = fullfile(dout,[fname '.jpg']);
-                    imwrite(expImage,colormap([requestVector{pInd,7} '(256)']),fout,'jpg','Quality',90);
+                    imwrite(expImage,fout,'jpg','Quality',90);
+
+                case 'png16'
+                    fprintf('\n');
+                    warning('16-bit PNG export is not supported when captions are enabled. Image not exported.');
+
+                case 'tif16'
+                    fprintf('\n');
+                    warning('16-bit TIFF export is not supported when captions are enabled. Image not exported.');
+
+                otherwise
+                    error('Incorrect setting of the save flag in the requestVector input variable to the perspectivegen function.');
                     
-                case 4 % save 16-bit png
-                    if strcmp(requestVector{pInd,7},'gray') == 1
+            end%switch
+            
+        else
+            
+            % If no title is enabled, export colormap
+            
+            switch q.saveas
+                case 'bmp'
+                    fout = fullfile(dout,[fname '.bmp']);
+                    imwrite(expImage,colormap([q.colormap '(256)']),fout);
+                   
+                case 'png'
+                    fout = fullfile(dout,[fname '.png']);
+                    imwrite(expImage,colormap([q.colormap '(256)']),fout);
+                    
+                case 'jpg'
+                    fout = fullfile(dout,[fname '.jpg']);
+                    imwrite(expImage,colormap([q.colormap '(256)']),fout,'jpg','Quality',90);
+                    
+                case 'png16'
+                    if strcmp(q.colormap,'gray')
                         imExp = perspectiveImage; % no conversion needed to apply a colormap; just use the existing intensity image
                     else
-                        imExp = ind2rgb(expImage16,colormap([requestVector{pInd,7} '(65536)']));
+                        imExp = ind2rgb(expImage16,colormap([q.colormap '(65536)']));
                     end
                     fout = fullfile(dout,[fname '_16bit.png']);
                     imwrite(imExp,fout,'png','BitDepth',16);
                    
-                case 5 % save 16-bit TIFF
-                    if strcmp(requestVector{pInd,7},'gray') == 1
+                case 'tif16'
+                    if strcmp(q.colormap,'gray')
                         imExp = uint16(perspectiveImage*65536); % no conversion needed to apply a colormap; just use the existing intensity image
                     else
-                        imExp = ind2rgb(expImage16,colormap([requestVector{pInd,7} '(65536)']));
+                        imExp = ind2rgb(expImage16,colormap([q.colormap '(65536)']));
                     end
                     fout = fullfile(dout,[fname '_16bit.tif']);
                     imwrite(imExp,fout,'tif');
@@ -106,64 +135,29 @@ for pInd = 1:size(requestVector,1)
                     
             end
             
-        else
-            
-            switch requestVector{pInd,4}
-                case 1 % save bmp
-                    fout = fullfile(dout,[fname '.bmp']);
-                    imwrite(expImage,fout);
-
-                case 2 % save png
-                    fout = fullfile(dout,[fname '.png']);
-                    imwrite(expImage,fout);
-
-                case 3 % save jpg
-                    fout = fullfile(dout,[fname '.jpg']);
-                    imwrite(expImage,fout,'jpg','Quality',90);
-
-                case 4 % save 16-bit png
-                    fprintf('\n');
-                    warning('16-bit PNG export is not supported when captions are enabled. Image not exported.');
-
-                case 5 % save 16-bit TIFF
-                    fprintf('\n');
-                    warning('16-bit TIFF export is not supported when captions are enabled. Image not exported.');
-
-                otherwise
-                    error('Incorrect setting of the save flag in the requestVector input variable to the perspectivegen function.');
-                    
-            end%switch
-            
         end%if
         
     end%if
     
-    if requestVector{pInd,5} == 0 % no display
-        
-        try     close(cF);
-        catch   % figure not yet opened
+    if q.display % Display Image?
+  
+        if q.title
+            % Image already displayed, nothing to do
+        else
+            cF = figure;
+            displayimage(perspectiveImage,'',q.colormap,q.background);
+        end
+
+        switch q.display
+            case 'slow',    pause;
+            case 'fast',    drawnow;
         end
         
     else
         
-        if requestVector{pInd,9} == 0
-            
-            cF = figure;
-            displayimage(perspectiveImage,requestVector{pInd,9},requestVector{pInd,10},requestVector{pInd,7},requestVector{pInd,8});
-            
+        try     close(cF);
+        catch   % figure not yet opened
         end
-
-        switch requestVector{pInd,5}
-            case 1 % display with pauses
-                pause;
-
-            case 2 % display without pauses
-                drawnow;
-
-            otherwise
-                error('Incorrect setting of the display flag in the requestVector input variable to the perspectivegen function.');
-
-        end%switch
         
     end%if
     

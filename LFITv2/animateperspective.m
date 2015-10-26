@@ -23,11 +23,11 @@ fastTime = false;
 
 %     fprintf('\nGenerating perspective animation (%i of %i)...',pInd,size(requestVector,1));
     timerVar=0; timeInd=0; 
-    timeFlag = false; timeVector=[0]; timeAvg = .5; timeRate = ceil(requestVector{pInd,2}*1.5); % timing logic
-    if requestVector{pInd,2} == 1
+    timeFlag = false; timeVector=[0]; timeAvg = .5; timeRate = ceil(q.uvFactor*1.5); % timing logic
+    if q.uvFactor == 1
         fastTime = true;
     end
-    travelVector = gentravelvector(requestVector{pInd,1},floor(size(radArray,1)/2),floor(size(radArray,1)/2),requestVector{pInd,2},requestVector{pInd,11});
+%     travelVector = gentravelvector(requestVector{pInd,1},floor(size(radArray,1)/2),floor(size(radArray,1)/2),requestVector{pInd,2},requestVector{pInd,11});
     clear vidobj; vidobj = 0;
     
     try     close(cF);
@@ -36,17 +36,17 @@ fastTime = false;
     
     cF = figure;
     set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+    set(cF,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray,3)]);
     
     fprintf('\n   Time remaining:       ');
     
-    nFrames = length(q.pUV);
+    nFrames = size(q.pUV,1);
     for frameInd = 1:nFrames
         
         % Timer logic
         timeInd = timeInd + 1; %timing logic
         if fastTime, tic; end
-        if round(travelVector(frameInd,2)) ~= travelVector(frameInd,2) || round(travelVector(frameInd,1)) ~= travelVector(frameInd,1) %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
+        if round(q.pUV(frameInd,2)) ~= q.pUV(frameInd,2) || round(q.pUV(frameInd,1)) ~= q.pUV(frameInd,1) %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
             % non integer value of u,v
             timeFlag = true;
             tic;
@@ -68,7 +68,7 @@ fastTime = false;
         catch
             cF = figure;
             set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-            set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+            set(cF,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray,3)]);
             set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
         end
         
@@ -97,19 +97,19 @@ fastTime = false;
             dout = fullfile(outputPath,'Animations');
             if ~exist(dout,'dir'), mkdir(dout); end
 
-            fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, SS_ST, requestVector{pInd,2}, requestVector{pInd,9} );
+            fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, SS_ST, qi.pUV(1), qi.pUV(2) );
             switch q.saveas
                 case 'gif'
                     fout = fullfile(dout,[fname '.gif']);
-                    gifwrite(frame,q.colormap,requestVector{pInd,4}(2,3),fout,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),frameInd); % filename, delay, loop count, frame index
+                    gifwrite(frame,q.colormap,fout,1/q.framerate,frameInd); % filename, delay, frame index
 
                 case 'avi'
                     fout = fullfile(dout,[fname '.avi']);
-                    vidobj = aviwrite(frame,q.colormap,requestVector{pInd,4}(2,3),vidobj,fout,frameInd,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),nFrames);
+                    vidobj = aviwrite(frame,q.colormap,1,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
  
                 case 'mp4'
                     fout = fullfile(dout,[fname '.mp4']);
-                    vidobj = mp4write(frame,q.colormap,vidobj,fout,frameInd,requestVector{pInd,4}(2,1),requestVector{pInd,4}(2,2),nFrames);
+                    vidobj = mp4write(frame,q.colormap,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
  
             end%switch
             
@@ -125,7 +125,7 @@ fastTime = false;
                 catch
                     cF = figure;
                     set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
-                    set(cF,'position', [0 0 requestVector{pInd,3}*size(radArray,4) requestVector{pInd,3}*size(radArray,3)]);
+                    set(cF,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray,3)]);
                     set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
                 end
                 displayimage(perspectiveImage,'',q.colormap,q.background);
@@ -155,7 +155,7 @@ fastTime = false;
             time=toc;
             timeVector(timeInd)=time;
         end
-        timerVar=((timeAvg)/60)*(((size(travelVector,1))-frameInd));
+        timerVar=(timeAvg/60)*(nFrames-frameInd);
         if timerVar >= 1
             timerVar=round(timerVar);
             for count=1:num+2
@@ -163,7 +163,7 @@ fastTime = false;
             end
             fprintf('%g m',timerVar)
         else
-            timerVar=round((timeAvg)*(((size(travelVector,1))-frameInd)));
+            timerVar=round( timeAvg*(nFrames-frameInd) );
             for count=1:num+2
                 fprintf('\b')
             end
