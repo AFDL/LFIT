@@ -8,10 +8,10 @@ function [vidobj] = aviwrite(frame,cMap,codec,vidobj,filename,frameInd,quality,f
 if verLessThan('matlab', '7.11') % lower MATLAB versions don't support VideoWriter, but do support avifile
     
     switch codec
-        case 0,     comp='None';
-        case 1,     comp='MSVC';
-        case 2,     comp='RLE';
-        case 3,     comp='Cinepak';
+        case 'uncompressed',        comp='None';
+        case 'jpeg',                comp='MSVC';
+        case 'jpeg2000',            comp='Cinepak';
+        case 'jpeg2000-lossless',	comp='RLE';
         otherwise,  error('Invalid codec/compression selection in requestVector input to movie generating function.');
     end
     
@@ -40,18 +40,18 @@ if verLessThan('matlab', '7.11') % lower MATLAB versions don't support VideoWrit
 else
     
     switch codec
-        case 0
+        case 'uncompressed'
             comp='Uncompressed AVI';
-        case 1
+        case 'jpeg'
             comp='Motion JPEG AVI';
-        case 2
-            comp='Archival';
-            filename = filename(1:end-4); % removes the .avi from the extension so MATLAB can append a .mp2
-            frame = frame2im(frame); % mp2 files need the input data structured not from 0 to 1
-        case 3
+        case 'jpeg2000'
             comp='Motion JPEG 2000';
             filename = filename(1:end-4); % removes the .avi from the extension so MATLAB can append a .mp2
             frame = frame2im(frame);
+        case 'jpeg2000-lossless'
+            comp='Archival';
+            filename = filename(1:end-4); % removes the .avi from the extension so MATLAB can append a .mp2
+            frame = frame2im(frame); % mp2 files need the input data structured not from 0 to 1
         otherwise
             error('Invalid codec/compression selection in requestVector input to movie generating function.');
     end

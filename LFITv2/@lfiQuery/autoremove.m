@@ -40,6 +40,19 @@ switch obj.adjust
                 
 end%switch
 
+switch obj.saveas
+    case {'bmp','png','png16','tif16'}
+        obj.quality = [];
+        obj.codec = '';
+        
+    case {'jpg','mp4'}
+        obj.codec = '';
+        
+    case 'gif'
+        obj.quality = [];
+        
+end%switch
+
 if ~obj.title
     obj.caption = '';
 end

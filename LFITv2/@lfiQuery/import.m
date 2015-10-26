@@ -35,20 +35,30 @@ obj.contrast = flags{ vec{1,6}+1 };
 obj.colormap        = vec{1,7};
 obj.background      = vec{1,8};
 
-obj.caption         = vec(:,10);
+obj.caption         = vec{:,10};
 
 
 %% FILE TYPE AND FORMAT
 
-if vec{1,4} == 0
+if vec{1,4}(1) == 0
     obj.saveas = false;
 else
     switch lower(type)
         case {'animateperspective','animaterefocus'}
             flags = {'gif','avi','mp4'};
-            obj.saveas = flags{ vec{1,4}(1) };
+            obj.saveas = flags{ vec{1,4}(1,1) };
             
-            % Animation/movie settings go here
+            if vec{1,4}(1,1)==1
+                obj.framerate   = 1/vec{1,4}(2,1);
+            else
+                obj.framerate   = vec{1,4}(2,2);
+                obj.quality     = vec{1,4}(2,1);
+                
+                if vec{1,4}(1,1)==2
+                    flags = {'uncompressed','jpeg','jpeg2000-lossless','jpeg2000'};
+                    obj.codec = flags{ vec{1,4}(2,3) };
+                end
+            end
 
         otherwise
             flags = {'bmp','png','jpg','png16','tif16'};
@@ -62,16 +72,16 @@ end%if
 
 switch lower(type)
     case 'perspectivegen'
-        obj.adjust      = 'perspective';
+%         obj.adjust      = 'perspective';
         obj.pUV         = cell2mat( vec(:,1:2) );
         
     case 'animateperspective'
-        obj.adjust      = 'perspective';
+%         obj.adjust      = 'perspective';
         obj.pUV         = gentravelvector(vec{1,1},000,000,vec{1,2},vec{1,11});
         obj.uvFactor    = vec{1,2};
         
     case {'animaterefocus','genfocalstack'}
-        obj.adjust      = 'focus';
+%         obj.adjust      = 'focus';
         obj.uvFactor    = vec{1,2};
         
         if vec{1,11} == 0
@@ -103,7 +113,7 @@ switch lower(type)
         end
         
     case 'genrefocus'
-        obj.adjust      = 'focus';
+%         obj.adjust      = 'focus';
         obj.uvFactor    = vec{1,2};
         
         if vec{1,11} == 0

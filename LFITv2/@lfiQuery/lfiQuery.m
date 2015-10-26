@@ -45,7 +45,8 @@ classdef lfiQuery
         %  Output configuration
         %
         saveas      = false;        % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16', 'gif', 'avi', 'mp4'
-        quality     = [];           % output quality, only applies to JPG and MP4
+        quality     = [];           % output quality, only applies to JPG, AVI, and MP4
+        codec       = '';           % output codec, only applies to AVI
         framerate   = [];           % output framerate, only applies to GIF, AVI, and MP4
         display     = false;        % image display speed: false, 'slow', 'fast'
         colormap    = 'gray';       % the colormap used in displaying the image, e.g. 'jet' or 'gray'
@@ -94,7 +95,7 @@ classdef lfiQuery
         %
         function obj = set.background( obj, val )
             if isnumeric(val) && isvector(val) && numel(val)==3
-                obj.background = val(:);
+                obj.background = reshape(val,1,[]);     % Enforce row vector
             else
                 error('BACKGROUND must a vector of length 3.');
             end
@@ -108,9 +109,20 @@ classdef lfiQuery
             end
         end
         
+        function obj = set.codec( obj, val )
+            opts = {'uncompressed','jpeg','jpeg2000','jpeg2000-lossless'};
+            if isempty(val)
+                obj.codec = '';
+            elseif ischar(val) && any(strcmpi(val,opts))
+                obj.codec = lower(val);
+            else
+                error(listOpts('CODEC',opts));
+            end
+        end
+        
         function obj = set.colormap( obj, val )
             if ischar(val)
-                try     feval(val);
+                try     feval(val,256);
                 catch,  error('COLORMAP must be a valid colormap.');
                 end
                 obj.colormap = lower(val);
@@ -131,7 +143,7 @@ classdef lfiQuery
         function obj = set.display( obj, val )
             opts = {'slow','fast'};
             if ~val
-                obj.display = false;        % Enforce FALSE over 0
+                obj.display = false;                % Enforce FALSE over 0
             elseif ischar(val) && any(strcmpi(val,opts))
                 obj.display = lower(val);
             else
@@ -143,7 +155,7 @@ classdef lfiQuery
             if isempty(val)
                 obj.fAlpha = [];
             elseif isnumeric(val) && isvector(val) && all(val>0)
-                obj.fAlpha = val(:)';       % Primary variable, indexed by row
+                obj.fAlpha = reshape(val,[],1);     % Primary variable, enforce column vector
             else
                 error('FALPHA must be a vector of positive numbers.');
             end
@@ -153,7 +165,7 @@ classdef lfiQuery
             if isempty(val)
                 obj.fFilter = [];
             elseif isnumeric(val) && isvector(val) && numel(val)==2
-                obj.fFilter = val(:);
+                obj.fFilter = reshape(val,1,[]);    % Enforce row vector
             else
                 error('FFILTER must be vector of length 2.');
             end
@@ -163,7 +175,7 @@ classdef lfiQuery
             if isempty(val)
                 obj.fGridX = [];
             elseif isnumeric(val) && isvector(val)
-                obj.fGridX = val(:);
+                obj.fGridX = reshape(val,1,[]);     % Enforce row vector
             else
                 error('FGRIDX must be a vector.');
             end
@@ -173,7 +185,7 @@ classdef lfiQuery
             if isempty(val)
                 obj.fGridY = [];
             elseif isnumeric(val) && isvector(val)
-                obj.fGridY = val(:);
+                obj.fGridY = reshape(val,1,[]);     % Enforce row vector
             else
                 error('FGRIDY must be a vector.');
             end
@@ -214,7 +226,7 @@ classdef lfiQuery
             if isempty(val)
                 obj.fPlane = [];
             elseif isnumeric(val) && isvector(val)
-                obj.fPlane = val(:)';       % Primary variable, indexed by row
+                obj.fPlane = reshape(val,[],1);     % Primary variable, enforce column vector
             else
                 error('FPLANE must be a vector.');
             end
@@ -251,7 +263,7 @@ classdef lfiQuery
         function obj = set.mask( obj, val )
             opts = {'circ'};
             if ~val
-                obj.mask = false;           % Enforce FALSE over 0
+                obj.mask = false;                   % Enforce FALSE over 0
             elseif ischar(val) && any(strcmpi(val,opts))
                 obj.mask = lower(val);
             else
@@ -261,11 +273,11 @@ classdef lfiQuery
 
         function obj = set.saveas( obj, val )
             opts = { ...
-                'bmp','png','jpg','png16','tif16', ...  % Still images
-                'gif','avi','mp4' ...                   % Animation/movie
+                'bmp','png','jpg','png16','tif16', ...      % Still images
+                'gif','avi','mp4' ...                       % Animation/movie
                 };
             if ~val
-                obj.saveas = false;         % Enforce FALSE over 0
+                obj.saveas = false;                 % Enforce FALSE over 0
             elseif ischar(val) && any(strcmpi(val,opts))
                 obj.saveas = lower(val);
             else
@@ -284,7 +296,7 @@ classdef lfiQuery
         function obj = set.title( obj, val )
             opts = {'caption','annotation','both'};
             if ~val
-                obj.title = false;          % Enforce FALSE over 0
+                obj.title = false;                  % Enforce FALSE over 0
             elseif ischar(val) && any(strcmpi(val,opts))
                 obj.title = lower(val);
             else
@@ -294,7 +306,7 @@ classdef lfiQuery
         
         function obj = set.pUV( obj, val )
             if isnumeric(val) && ismatrix(val) && size(val,2)==2
-                obj.pUV = val;              % Primary variable, indexed by row
+                obj.pUV = val;                      % Primary variable, two column vectors
             else
                 error('PUV must be an M by 2 matrix.');
             end
@@ -302,9 +314,9 @@ classdef lfiQuery
         
         function obj = set.quality( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=0 && val<=100
-                obj.quality = val;
+                obj.quality = uint8(val);
             else
-                error('QUALITY must be a number between 0 and 100.')
+                error('QUALITY must be an integer between 0 and 100.')
             end
         end
         

@@ -1,10 +1,12 @@
-function [travelVector] = gentravelvector(edgeBuffer,subXRad,subYRad,SS_UV,travelVectorIndex)
+function [travelVector] = gentravelvector(edgeBuffer,sizeRad,SS_UV,travelVectorIndex)
 %GENTRAVELVECTOR Creates vector of points in (u,v) space through which the perspective function can sweep
 %
 %   Set edgeBuffer to keep the path off the very edges of the image.
 %   Set SS_UV to gain finer, non-integer steps along the path.
 %   travelVectorIndex: 1 = square, 2 = circle, 3 = cross, 4 = load from file...
 
+subXRad = floor( sizeRad(2)/2 );
+subYRad = floor( sizeRad(1)/2 );
 
 subXRadT    = subXRad - edgeBuffer;
 subYRadT    = subYRad - edgeBuffer;

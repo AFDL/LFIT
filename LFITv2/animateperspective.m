@@ -61,8 +61,6 @@ fastTime = false;
             perspectiveImage = imadjust(perspectiveImage);
         end
         
-        SS_ST = q.stFactor;
-        
         try
             set(0, 'currentfigure', cF);  % make refocusing figure current figure (in case user clicked on another)
         catch
@@ -97,7 +95,7 @@ fastTime = false;
             dout = fullfile(outputPath,'Animations');
             if ~exist(dout,'dir'), mkdir(dout); end
 
-            fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, SS_ST, qi.pUV(1), qi.pUV(2) );
+            fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, q.stFactor, qi.pUV(1), qi.pUV(2) );
             switch q.saveas
                 case 'gif'
                     fout = fullfile(dout,[fname '.gif']);
@@ -105,7 +103,7 @@ fastTime = false;
 
                 case 'avi'
                     fout = fullfile(dout,[fname '.avi']);
-                    vidobj = aviwrite(frame,q.colormap,1,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
+                    vidobj = aviwrite(frame,q.colormap,q.codec,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
  
                 case 'mp4'
                     fout = fullfile(dout,[fname '.mp4']);

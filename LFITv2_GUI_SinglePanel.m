@@ -299,6 +299,7 @@ disp('Calculating perspective view...');
 q           = lfiQuery('perspective');
 q.pUV       = [handles.uVal handles.vVal];
 q.stFactor  = handles.SSSTP;
+q.saveas    = false;
 q.display   = 'fast';
 q.colormap  = handles.colormapP;
 if handles.enhanceContrastP, q.contrast = 'imadjust'; end
@@ -317,6 +318,7 @@ q.stFactor  = handles.SSSTP;
 q.saveas    = handles.imFileType;
 q.display   = 'fast';
 q.colormap  = handles.colormapP;
+if handles.enhanceContrastP, q.contrast = 'imadjust'; end
 perspectivegen(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 updatePerspPlot(hObject)
 
@@ -330,13 +332,12 @@ function tagColormapMenuP_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from tagColormapMenuP
 % items = get(hObject,'String');
 index_selected = get(hObject,'Value');
-% item_selected = items{index_selected};
-handles.colormapP = handles.colormapList{index_selected};
+handles.colormapP   = handles.colormapList{index_selected};
 handles.colormapGIF = handles.colormapList{index_selected};
-handles.colormapRM = handles.colormapList{index_selected};
-handles.colormapPM = handles.colormapList{index_selected};
-handles.colormapFS = handles.colormapList{index_selected};
-handles.colormapR = handles.colormapList{index_selected};
+handles.colormapRM  = handles.colormapList{index_selected};
+handles.colormapPM  = handles.colormapList{index_selected};
+handles.colormapFS  = handles.colormapList{index_selected};
+handles.colormapR   = handles.colormapList{index_selected};
 
 % Update handles structure
 guidata(hObject, handles);
@@ -474,12 +475,30 @@ function tagGenDispR_Callback(hObject, eventdata, handles)
 % hObject    handle to tagGenDispR (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-refocusedImageStack = 0;
-%[telecentricFlag,Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,VoxX,VoxY,VoxZ,focLenMain,magnification,zLocation]
-telecentricInfo = [handles.telecentric,handles.Xmin,handles.Xmax,handles.Ymin,handles.Ymax,handles.Zmin,handles.Zmax,handles.VoxX,handles.VoxY,handles.VoxZ,handles.focLenMain,handles.magnification,handles.Zlocation];
-%[alpha,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,directoryFlag,Refocus Type,Filter Info, Telecentric Info];
-requestVectorR = {handles.alphaR,handles.SSUVR,handles.SSSTR,0,2,handles.enhanceContrastR,handles.colormapR,'white',0,'No caption',handles.aperMask,0,handles.refocusType,[handles.noiseThreshold handles.filterThreshold],telecentricInfo;};
-%(x,y,alphaIndex,imageIndex)
+
+q               = lfiQuery('focus');
+q.fMethod       = handles.refocusType;
+q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
+if handles.telecentric
+    q.fZoom     = 'telecentric';
+    q.fPlane    = handles.Zlocation;
+    q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
+    q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
+    q.fLength   = handles.focLenMain;
+    q.fMag      = handles.magnification;
+else
+    q.fZoom     = 'legacy';
+    q.fAlpha    = handles.alphaR;
+end
+q.uvFactor      = handles.SSUVR;
+q.stFactor      = handles.SSSTR;
+if handles.enhanceContrastR, q.contrast = 'imadjust'; end
+q.mask          = handles.aperMask;
+q.saveas        = false;
+q.display       = 'fast';
+q.colormap      = handles.colormapR;
+q.background    = [1 1 1];
+
 refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages,refocusedImageStack);
 toc
 updatePerspPlot(hObject)
@@ -489,12 +508,30 @@ function tagGenSaveR_Callback(hObject, eventdata, handles)
 % hObject    handle to tagGenSaveR (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-refocusedImageStack = 0;
-%[telecentricFlag,Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,VoxX,VoxY,VoxZ,focLenMain,magnification,zLocation]
-telecentricInfo = [handles.telecentric,handles.Xmin,handles.Xmax,handles.Ymin,handles.Ymax,handles.Zmin,handles.Zmax,handles.VoxX,handles.VoxY,handles.VoxZ,handles.focLenMain,handles.magnification,handles.Zlocation];
-%[alpha,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,directoryFlag,Refocus Type,Filter Info, Telecentric Info];
-requestVectorR = {handles.alphaR,handles.SSUVR,handles.SSSTR,handles.imFileType,2,handles.enhanceContrastR,handles.colormapR,'white',0,'No caption',handles.aperMask,0,handles.refocusType,[handles.noiseThreshold handles.filterThreshold],telecentricInfo;};
-%(x,y,alphaIndex,imageIndex)
+
+q               = lfiQuery('focus');
+q.fMethod       = handles.refocusType;
+q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
+if handles.telecentric
+    q.fZoom     = 'telecentric';
+    q.fPlane    = handles.Zlocation;
+    q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
+    q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
+    q.fLength   = handles.focLenMain;
+    q.fMag      = handles.magnification;
+else
+    q.fZoom     = 'legacy';
+    q.fAlpha    = handles.alphaR;
+end
+q.uvFactor      = handles.SSUVR;
+q.stFactor      = handles.SSSTR;
+if handles.enhanceContrastR, q.contrast = 'imadjust'; end
+q.mask          = handles.aperMask;
+q.saveas        = handles.imFileType;
+q.display       = 'fast';
+q.colormap      = handles.colormapR;
+q.background    = [1 1 1];
+
 refocusedImageStack = genrefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorR,handles.sRange,handles.tRange,handles.imageIndex,handles.numImages,refocusedImageStack);
 updatePerspPlot(hObject)  
 
@@ -699,9 +736,9 @@ function tagCodecRM_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns tagCodecRM contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagCodecRM
-index_selected = get(hObject,'Value');
-handles.vidCodecRM = index_selected;
-handles.vidCodecPM = index_selected;
+types = {'uncompressed','jpeg','jpeg2000-lossless','jpeg2000','h264'};
+handles.vidCodecRM = types{ get(hObject,'Value') };
+handles.vidCodecPM = types{ get(hObject,'Value') };
 
 % Update handles structure
 guidata(hObject, handles);
@@ -783,14 +820,26 @@ function tagExportPerspectiveVid_Callback(hObject, eventdata, handles)
 % hObject    handle to tagExportPerspectiveVid (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-indexSelected = handles.vidCodecPM - 1;
-if indexSelected == 4
-    fileType = 3; %MP4
+if strcmpi( handles.vidCodecPM, 'h264' )
+    fileType = 'mp4';
 else
-    fileType = 2; %AVI
+    fileType = 'avi';
 end
-%[edgeBuffer,SS_UV, SS_ST, saveFlag, displayFlag, imadjustFlag, captionFlag, caption string]
-requestVectorPM = {handles.edgeBuffer,handles.SSUVPM,handles.SSSTPM,[fileType 0 0; handles.qualityPM handles.frameRatePM indexSelected;],2,handles.enhanceContrastM,handles.colormapPM,[0 0 0],0,'No caption',handles.travelVector;};
+
+q               = lfiQuery('perspective');
+q.pUV           = gentravelvector( handles.edgeBuffer, size(handles.radArray), handles.SSUVPM, handles.travelVector );
+q.uvFactor      = handles.SSUVPM;
+q.stFactor      = handles.SSSTPM;
+q.mask          = handles.aperMask;
+q.saveas        = fileType;
+q.quality       = handles.qualityPM;
+q.codec         = handles.vidCodecPM;
+q.framerate     = handles.frameRatePM;
+q.display       = 'fast';
+if handles.enhanceContrastM, q.contrast = 'imadjust'; end
+q.colormap      = handles.colormapPM;
+q.background    = [0 0 0];
+
 animateperspective(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorPM,handles.sRange,handles.tRange);
 
 % --- Executes on button press in tagExportRefocusVid.
@@ -798,21 +847,45 @@ function tagExportRefocusVid_Callback(hObject, eventdata, handles)
 % hObject    handle to tagExportRefocusVid (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-indexSelected = handles.vidCodecPM - 1;
-if indexSelected == 4
-    fileType = 3; %MP4
+if strcmpi( handles.vidCodecPM, 'h264' )
+    fileType = 'mp4';
 else
-    fileType = 2; %AVI
+    fileType = 'avi';
 end
-if handles.dynamicContrastM == 0
-    contrastFlag = 2;
+
+q               = lfiQuery('focus');
+q.fMethod       = handles.refocusType;
+q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
+if handles.telecentric
+    q.fZoom     = 'telecentric';
+    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
+    q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
+    q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
+    q.fLength   = handles.focLenMain;
+    q.fMag      = handles.magnification;
 else
-    contrastFlag = handles.enhanceContrastM;
+    q.fZoom     = 'legacy';
+    if handles.stepSpaceRM,     alpha = logspace( log10(handles.alphaStartRM), log10(handles.alphaEndRM), handles.stepsRM );
+    else                        alpha = linspace( handles.alphaStartRM, handles.alphaEndRM, handles.stepsRM );
+    end
+    if handles.mirrorLoopRM,    alpha = [ alpha(2:end) fliplr(alpha) ];
+    end
+    q.fAlpha    = alpha;
 end
-%[telecentricFlag,Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,VoxX,VoxY,VoxZ,focLenMain,magnification,zLocation]
-telecentricInfo = [handles.telecentric,handles.Xmin,handles.Xmax,handles.Ymin,handles.Ymax,handles.Zmin,handles.Zmax,handles.VoxX,handles.VoxY,handles.VoxZ,handles.focLenMain,handles.magnification,handles.Zlocation];
-%[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,background color,caption flag,caption string,apertureFlag,Refocus Type,Filter Info, Telecentric Info]
-requestVectorRM = {[handles.stepSpaceRM handles.stepsRM; handles.alphaStartRM handles.alphaEndRM; handles.mirrorLoopRM 0;],handles.SSUVRM,handles.SSSTRM,[fileType 0 0; handles.qualityRM handles.frameRateRM indexSelected;],2,contrastFlag,handles.colormapRM,[0 0 0],0,'No caption',1,handles.refocusType,[handles.noiseThreshold handles.filterThreshold],telecentricInfo;}; %hardcoded circular mask
+q.uvFactor      = handles.SSUVRM;
+q.stFactor      = handles.SSSTRM;
+if handles.dynamicContrastGIF,  q.contrast = 'imadjust';
+else                            q.contrast = 'stack';
+end
+q.mask          = handles.aperMask;
+q.saveas        = fileType;
+q.quality       = handles.qualityRM;
+q.codec         = handles.vidCodecRM;
+q.framerate     = handles.frameRateRM;
+q.display       = 'fast';
+q.colormap      = handles.colormapRM;
+q.background    = [0 0 0];
+
 animaterefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorRM,handles.sRange,handles.tRange);
 
 
@@ -896,15 +969,19 @@ function tagPerspectiveGIF_Callback(hObject, eventdata, handles)
 % hObject    handle to tagPerspectiveGIF (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-fileType = 1; %GIF
-if handles.limitLoopsGIF == false
-    loops = INF; %literally inf, NOT a string 'inf'
-else
-    loops = handles.loopLimitGIF;
-end
-%[edgeBuffer,SS_UV, SS_ST, saveFlag, displayFlag, imadjustFlag, captionFlag, caption string]
-requestVectorPM = {handles.edgeBuffer,handles.SSUVPM,handles.SSSTPM,[fileType 0 0; handles.frameDelayGIF loops handles.ditheringGIF;],2,handles.enhanceContrastGIF,handles.colormapGIF,[0 0 0],0,'No caption',handles.travelVector;};
-animateperspective(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorPM,handles.sRange,handles.tRange);
+
+q               = lfiQuery('perspective');
+q.pUV           = gentravelvector( handles.edgeBuffer, size(handles.radArray), handles.SSUVPM, handles.travelVector );
+q.uvFactor      = handles.SSUVPM;
+q.stFactor      = handles.SSSTPM;
+q.saveas        = fileType;
+q.framerate     = 1/handles.frameDelayGIF;
+q.display       = 'fast';
+if handles.enhanceContrastPM, q.contrast = 'imadjust'; end
+q.colormap      = handles.colormapGIF;
+q.background    = [0 0 0];
+
+animateperspective(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 
 
 % --- Executes on button press in tagRefocusGIF.
@@ -912,33 +989,75 @@ function tagRefocusGIF_Callback(hObject, eventdata, handles)
 % hObject    handle to tagRefocusGIF (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-fileType = 1; %GIF
-if handles.limitLoopsGIF == false
-    loops = INF; %literally inf, NOT a string 'inf'
+
+q               = lfiQuery('focus');
+q.fMethod       = handles.refocusType;
+q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
+if handles.telecentric
+    q.fZoom     = 'telecentric';
+    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
+    q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
+    q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
+    q.fLength   = handles.focLenMain;
+    q.fMag      = handles.magnification;
 else
-    loops = handles.loopLimitGIF;
+    q.fZoom     = 'legacy';
+    if handles.stepSpaceRM,     alpha = logspace( log10(handles.alphaStartRM), log10(handles.alphaEndRM), handles.stepsRM );
+    else                        alpha = linspace( handles.alphaStartRM, handles.alphaEndRM, handles.stepsRM );
+    end
+    if handles.mirrorLoopRM,    alpha = [ alpha(2:end) fliplr(alpha) ];
+    end
+    q.fAlpha    = alpha;
 end
-if handles.dynamicContrastGIF == 0
-    contrastFlag = 2;
-else
-    contrastFlag = handles.enhanceContrastGIF;
+q.uvFactor      = handles.SSUVRM;
+q.stFactor      = handles.SSSTRM;
+if handles.dynamicContrastGIF,  q.contrast = 'imadjust';
+else                            q.contrast = 'stack';
 end
-%[telecentricFlag,Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,VoxX,VoxY,VoxZ,focLenMain,magnification,zLocation]
-telecentricInfo = [handles.telecentric,handles.Xmin,handles.Xmax,handles.Ymin,handles.Ymax,handles.Zmin,handles.Zmax,handles.VoxX,handles.VoxY,handles.VoxZ,handles.focLenMain,handles.magnification,handles.Zlocation];
-%[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,background color,caption flag,caption string,apertureFlag,Refocus Type,Filter Info, Telecentric Info]
-requestVectorRM = {[handles.stepSpaceRM handles.stepsRM; handles.alphaStartRM handles.alphaEndRM; handles.mirrorLoopRM 0;],handles.SSUVRM,handles.SSSTRM,[fileType 0 0; handles.frameDelayGIF loops handles.ditheringGIF;],2,contrastFlag,handles.colormapGIF,[0 0 0],0,'No caption',1,handles.refocusType,[handles.noiseThreshold handles.filterThreshold],telecentricInfo;}; %hardcoded circular mask
-animaterefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorRM,handles.sRange,handles.tRange);
+q.mask          = handles.aperMask;
+q.saveas        = 'gif';
+q.framerate     = 1/handles.frameDelayGIF;
+q.display       = 'fast';
+q.colormap      = handles.colormapGIF;
+q.background    = [0 0 0];
+
+animaterefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 
 % --- Executes on button press in pushbutton13.
 function pushbutton13_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton13 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-%[telecentricFlag,Xmin,Xmax,Ymin,Ymax,Zmin,Zmax,VoxX,VoxY,VoxZ,focLenMain,magnification,zLocation]
-telecentricInfo = [handles.telecentric,handles.Xmin,handles.Xmax,handles.Ymin,handles.Ymax,handles.Zmin,handles.Zmax,handles.VoxX,handles.VoxY,handles.VoxZ,handles.focLenMain,handles.magnification,handles.Zlocation];
-%[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,Refocus Type,Filter Info, Telecentric Info];
-requestVectorFS = {[handles.stepSpaceFS handles.numStepsFS; handles.alphaStartFS handles.alphaEndFS;],handles.SSUVFS,handles.SSSTFS,handles.imFileType,2,0,handles.colormapFS,'white',0,'No caption',1,handles.refocusType,[handles.noiseThreshold handles.filterThreshold],telecentricInfo;};
-tempstack = genfocalstack(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorFS,handles.sRange,handles.tRange);
+
+q               = lfiQuery('focus');
+q.fMethod       = handles.refocusType;
+q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
+if handles.telecentric
+    q.fZoom     = 'telecentric';
+    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
+    q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
+    q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
+    q.fLength   = handles.focLenMain;
+    q.fMag      = handles.magnification;
+else
+    q.fZoom     = 'legacy';
+    if handles.stepSpaceFS,     alpha = logspace( log10(handles.alphaStartFS), log10(handles.alphaEndFS), handles.stepsFS );
+    else                        alpha = linspace( handles.alphaStartFS, handles.alphaEndFS, handles.stepsFS );
+    end
+    q.fAlpha    = alpha;
+end
+q.uvFactor      = handles.SSUVFS;
+q.stFactor      = handles.SSSTFS;
+if handles.dynamicContrastGIF,  q.contrast = 'imadjust';
+else                            q.contrast = 'stack';
+end
+q.mask          = handles.aperMask;
+q.saveas        = handles.imFileType;
+q.display       = 'fast';
+q.colormap      = handles.colormapFS;
+q.background    = [1 1 1];
+
+tempstack = genfocalstack(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 
 % --- Executes on button press in tagViewDocumentation.
 function tagViewDocumentation_Callback(hObject, eventdata, handles)
@@ -952,11 +1071,11 @@ function tagImageType_Callback(hObject, eventdata, handles)
 % hObject    handle to tagImageType (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-fileTypes = {'bmp','png','jpg','png16','tif16'};        % MUST BE IN SAME ORDER AS DROPDOWN
+
 % Hints: contents = cellstr(get(hObject,'String')) returns tagImageType contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagImageType
-index_selected = get(hObject,'Value');
-handles.imFileType = fileTypes{index_selected};
+types = {'bmp','png','jpg','png16','tif16'};
+handles.imFileType = types{ get(hObject,'Value') };
 
 % Update handles structure
 guidata(hObject, handles);
@@ -1410,8 +1529,8 @@ function tagRefocusType_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns tagRefocusType contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagRefocusType
-index_selected = get(hObject,'Value');
-handles.refocusType = index_selected;
+types = {'add','mult','filt'};
+handles.refocusType = types{ get(hObject,'Value') };
 
 % Update handles structure
 guidata(hObject, handles);
@@ -1909,7 +2028,6 @@ function refreshTelecentric(hObject,handles)
 if handles.telecentric == 1 
     set(handles.tagAlphaR,'Enable','off');
     
-
     set(handles.tagSSSTR,'Enable','off');
     
     set(handles.tagSSUVR,'Enable','off');

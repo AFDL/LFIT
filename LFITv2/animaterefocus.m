@@ -149,7 +149,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
 
                 case 'avi'
                     fout = fullfile(dout,[fname '.avi']);
-                    vidobj = aviwrite(frame,q.colormap,1,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
+                    vidobj = aviwrite(frame,q.colormap,q.codec,vidobj,fout,frameInd,q.quality,q.framerate,nFrames);
 
                 case 'mp4'
                     fout = fullfile(dout,[fname '.mp4']);

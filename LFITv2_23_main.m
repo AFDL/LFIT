@@ -156,6 +156,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q.saveas        = 'jpg';
             q.display       = 'fast';
             q.contrast      = 'imadjust';
+            q.verify;       % Verify that all query parameters are good
             perspectivegen(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
@@ -173,29 +174,34 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q.display       = 'fast';
             q.contrast      = 'simple';
             q.mask          = 'circ';
+            q.verify;       % Verify that all query parameters are good
             refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName,imageIndex,numImages);
             
             %%%%---FOCAL STACK GENERATION---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,refocusType,filterInfo,TelecentricInfo];
             requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]};
-            q = lfiQuery('focus'); importVector(q,requestVectorFS);         % Request vectors may be converted to queries for legacy support
+            q = lfiQuery('focus'); q = q.import(requestVectorFS); % Request vectors may be converted to queries for legacy support
+            q.verify;       % Verify that all settings are good
             [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageSpecificName); % has output argument (optional). [focalStack] = genfocalstack(...)
             
             %%%%---ANIMATION - PERSPECTIVES---%%%%
             q               = lfiQuery( 'perspective' );
-            q.pUV           = gentravelvector( 3, 000, 000, 1, 2 );
+            q.pUV           = gentravelvector( 3, size(radArray), 1, 2 );
             q.stFactor      = 2;
             q.saveas        = 'gif';
+            q.framerate     = 10;
             q.display       = 'fast';
             q.contrast      = 'imadjust';
+            q.verify;       % Verify that all query parameters are good
             animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             q.saveas        = 'mp4';
+            q.quality       = 90;
+            q.verify;       % Verify that all query parameters are good
             animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);      % Same animation, different format
             
             %%%%---ANIMATION - REFOCUSING---%%%%
-            requestVectorRM = {[1 5; .8 1.2; 1 0;],1,1,[1 0 0; 0 inf 1;],2,1,'gray',[.8 .8 .8],0,'No caption',1,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]}; %GIF example
             q               = lfiQuery( 'focus' );
             q.fMethod       = 'filt';
             q.fFilter       = [0 0.9];
@@ -206,8 +212,10 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q.fLength       = 50;
             q.fMag          = -1;
             q.saveas        = 'gif';
+            q.framerate     = INF; % Play as fast as possible (delay=0)
             q.display       = 'fast';
             q.contrast      = 'imadjust';
+            q.verify;       % Verify that all query parameters are good
             animaterefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             

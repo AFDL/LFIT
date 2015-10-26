@@ -168,7 +168,7 @@ calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax
 %% Verify calibration
 
 % Rescale calibration for maximum contrast 
-calImage = ( calImage - min(calImage(:)) )/( max(calImage(:) - min(calImage(:)) );
+calImage = ( calImage - min(calImage(:)) )/( max(calImage(:)) - min(calImage(:)) );
 
 % Display calibration for inspection
 cF = figure;

@@ -28,12 +28,24 @@ if strcmpi(obj.adjust,'perspective') && isempty(obj.pUV)
     w=w+1; warning('Query type is perspective-adjust, but no (u,v) coordinates are specified.');
 end
 
-if isequal( obj.saveas, obj.display )
+if any(strcmpi(obj.saveas,{'jpg','mp4'})) && isempty(obj.quality)
+    w=w+1; warning('File type is %s, but no quality is specified.',obj.saveas);
+end
+
+if strcmpi(obj.saveas,'avi') && isempty(obj.codec)
+    w=w+1; warning('File type is avi, but no codec is specified.');
+end
+
+if any(strcmpi(obj.saveas,{'gif','avi','mp4'})) && isempty(obj.framerate)
+    w=w+1; warning('File type is %s, but no framerate is specified.',obj.saveas);
+end
+
+if isequal(obj.saveas,obj.display)
     w=w+1; warning('Image save and display are both disabled, nothing will be output.');
 end
 
-if strcmpi(obj.title,{'caption','both'}) && isempty(obj.caption)
-    w=w+1; warning('Title flag is %s, but no caption string is specified',obj.title);
+if any(strcmpi(obj.title,{'caption','both'})) && isempty(obj.caption)
+    w=w+1; warning('Title flag is %s, but no caption string is specified.',obj.title);
 end
 
 if nargout>0, varargout{1} = w; end
