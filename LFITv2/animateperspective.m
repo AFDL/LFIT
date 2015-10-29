@@ -43,20 +43,18 @@ fastTime = false;
     nFrames = size(q.pUV,1);
     for frameInd = 1:nFrames
         
-        % Sub-query for single (u,v) pair
-        qi      = q;
-        qi.pUV  = q.pUV(frameInd,:);
-        
         % Timer logic
         timeInd = timeInd + 1; %timing logic
         if fastTime, tic; end
-        if mod(qi.pUV(1),1) || mod(qi.pUV(2),1) %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
+        if round(q.pUV(frameInd,2)) ~= q.pUV(frameInd,2) || round(q.pUV(frameInd,1)) ~= q.pUV(frameInd,1) %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
             % non integer value of u,v
             timeFlag = true;
             tic;
         end
         
         % Generate perspective image frame
+        qi      = q;
+        qi.pUV  = q.pUV(frameInd);
         perspectiveImage = perspective(qi,radArray,sRange,tRange);
         
         if strcmpi( q.contrast, 'imadjust' )
@@ -75,9 +73,9 @@ fastTime = false;
         if q.title % Title image?
             
             switch q.title
-                case 'caption',     caption = q.caption;
+                case 'caption',     caption = qi.caption;
                 case 'annotation',  caption = sprintf( '(%g,%g)', qi.pUV(1), qi.pUV(2) );
-                case 'both',        caption = sprintf( '%s --- (%g,%g)', q.caption, qi.pUV(1), qi.pUV(2) );
+                case 'both',        caption = sprintf( '%s --- (%g,%g)', qi.caption, qi.pUV(1), qi.pUV(2) );
                     
             end%switch
             displayimage( perspectiveImage, caption, q.colormap, q.background );
@@ -97,7 +95,7 @@ fastTime = false;
             dout = fullfile(outputPath,'Animations');
             if ~exist(dout,'dir'), mkdir(dout); end
 
-            fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, q.stFactor, strcmpi(q.mask,'circ') );
+            fname = sprintf( '%s_perspAnim_stSS%g_uvSS%g_cap%g', imageSpecificName, q.stFactor, qi.pUV(1), qi.pUV(2) );
             switch q.saveas
                 case 'gif'
                     fout = fullfile(dout,[fname '.gif']);

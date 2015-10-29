@@ -29,14 +29,14 @@ fprintf('\nBeginning refocusing animation generation.\n');
 % for pInd = 1:size(requestVector,1) % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
     
 %     fprintf('\nGenerating refocusing animation (%i of %i)...',pInd,size(requestVector,1));
-    timerVar=0;
+%     timerVar=0;
     
     switch q.fZoom
         case 'legacy'
             alphaRange = q.fAlpha;
             
             % Preallocate focal stack
-            refocusStack = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,length(alphaRange),'single');
+            refocusStack = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,length(alphaRange));
 
         case 'telecentric'
             si      = ( 1 - q.fMag )*q.fLength;
@@ -47,7 +47,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
             alphaRange = siPrime/si;
 
             % Preallocate focal stack
-            refocusStack = zeros(length(q.fGridY),length(q.fGridX),length(alphaRange),'single');
+            refocusStack = zeros(length(q.fGridY),length(q.fGridX),length(alphaRange));
 
     end%switch
     
@@ -57,17 +57,15 @@ fprintf('\nBeginning refocusing animation generation.\n');
     for frameInd = 1:nFrames
         time=tic;
         
-        % Sub-query at single alpha value
         qi          = q;
         qi.fAlpha   = alphaRange(frameInd);
-        if strcmpi(q.fZoom,'telecentric'), qi.fPlane = q.fPlane(frameInd); end
         
         refocusStack(:,:,frameInd) = refocus(qi,radArray,sRange,tRange);
         
         % Timer logic
         num=numel(num2str(timerVar));
         time=toc(time);
-        timerVar=(time/60)*(nFrames-frameInd);
+        timerVar=time/60*(size(alphaRange,2)-frameInd );
         if timerVar>=1
             timerVar=round(timerVar);
             for count=1:num+2
@@ -76,7 +74,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
             
             fprintf('%g m',timerVar)
         else
-            timerVar=round( time*(nFrames-frameInd) );
+            timerVar=round(time*(size(alphaRange,2)-frameInd ));
             for count=1:num+2
                 fprintf('\b')
             end
@@ -85,8 +83,10 @@ fprintf('\nBeginning refocusing animation generation.\n');
     end
     fprintf('\n   Complete.\n');
     
-    % Normalize raw intensities by the MAX intensity of the entire focal stack (regardless of contrast choice)
-    refocusStack = ( refocusStack  - min(refocusStack(:)) )/( max(refocusStack(:)) - min(refocusStack(:)) );
+    if strcmpi( q.contrast, 'stack' )
+        % Normalize raw intensities by the MAX intensity of the entire focal stack
+        refocusStack = ( refocusStack  - min(refocusStack(:)) )/( max(refocusStack(:)) - min(refocusStack(:)) );
+    end
     
     fprintf('Saving video to file...');
     clear vidobj; vidobj = 0;
@@ -104,7 +104,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
         refocusedImage = refocusStack(:,:,frameInd);
         switch q.contrast
             case 'image',       refocusedImage = ( refocusedImage - min(refocusedImage(:)) )/( max(refocusedImage(:)) - min(refocusedImage(:)) );
-            case 'imadjust',    refocusedImage = imadjust( refocusedImage );
+            case 'imadjust',    refocusedImage = imadjust( refocusStack(:,:,frameInd) );
             case 'stack',       % Nothing to do
         end
         
@@ -120,9 +120,9 @@ fprintf('\nBeginning refocusing animation generation.\n');
         if q.title % Title image?
             
             switch q.title
-                case 'caption',     caption = q.caption;
+                case 'caption',     caption = qi.caption;
                 case 'annotation',  caption = sprintf( '[alpha = %g]', qi.fALpha );
-                case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, qi.fAlpha );
+                case 'both',        caption = sprintf( '%s --- [alpha = %g]', qi.caption, qi.fAlpha );
             end%switch
             displayimage( refocusedImage, caption, q.colormap, q.background );
             
@@ -141,7 +141,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
             dout = fullfile(outputPath,'Animations');
             if ~exist(dout,'dir'), mkdir(dout); end
             
-            fname = sprintf( '%s_refocusAnim_stSS%g_uvSS%g_ap%g', imageSetName, q.stFactor, q.uvFactor, strcmpi(q.mask,'circ') );
+            fname = sprintf( '%s_refocusAnim_stSS%g_uvSS%g_ap%g', imageSetName, q.stFactor, q.uvFactor, q.mask );
             switch q.saveas
                 case 'gif'
                     fout = fullfile(dout,[fname '.gif']);

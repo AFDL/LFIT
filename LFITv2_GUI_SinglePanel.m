@@ -113,7 +113,7 @@ function varargout = LFITv2_GUI_SinglePanel_OutputFcn(hObject, eventdata, handle
 varargout{1} = handles.output;
 
 % Save last run
-% saveState(cd,'lastGUI.gcfg',handles)
+saveState(cd,'lastGUI.gcfg',handles)
 
 closereq
 
@@ -481,9 +481,9 @@ q.fMethod       = handles.refocusType;
 q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
 if handles.telecentric
     q.fZoom     = 'telecentric';
+    q.fPlane    = handles.Zlocation;
     q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
     q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
-    q.fPlane    = handles.Zlocation;
     q.fLength   = handles.focLenMain;
     q.fMag      = handles.magnification;
 else
@@ -499,8 +499,7 @@ q.display       = 'fast';
 q.colormap      = handles.colormapR;
 q.background    = [1 1 1];
 
-tic
-refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages);
+refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages,refocusedImageStack);
 toc
 updatePerspPlot(hObject)
 
@@ -515,9 +514,9 @@ q.fMethod       = handles.refocusType;
 q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
 if handles.telecentric
     q.fZoom     = 'telecentric';
+    q.fPlane    = handles.Zlocation;
     q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
     q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
-    q.fPlane    = handles.Zlocation;
     q.fLength   = handles.focLenMain;
     q.fMag      = handles.magnification;
 else
@@ -533,7 +532,7 @@ q.display       = 'fast';
 q.colormap      = handles.colormapR;
 q.background    = [1 1 1];
 
-refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages);
+refocusedImageStack = genrefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorR,handles.sRange,handles.tRange,handles.imageIndex,handles.numImages,refocusedImageStack);
 updatePerspPlot(hObject)  
 
 % --- Executes on button press in tagApertureNone.
@@ -684,7 +683,7 @@ function tagStepsRM_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of tagStepsRM as text
 %        str2double(get(hObject,'String')) returns contents of tagStepsRM as a double
 handles.stepsRM = str2double(get(hObject,'String'));
-handles.stepsFS = str2double(get(hObject,'String'));
+handles.numStepsFS = str2double(get(hObject,'String'));
 
 % Update handles structure
 guidata(hObject, handles);
@@ -841,7 +840,7 @@ if handles.enhanceContrastM, q.contrast = 'imadjust'; end
 q.colormap      = handles.colormapPM;
 q.background    = [0 0 0];
 
-animateperspective(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
+animateperspective(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorPM,handles.sRange,handles.tRange);
 
 % --- Executes on button press in tagExportRefocusVid.
 function tagExportRefocusVid_Callback(hObject, eventdata, handles)
@@ -859,9 +858,9 @@ q.fMethod       = handles.refocusType;
 q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
 if handles.telecentric
     q.fZoom     = 'telecentric';
+    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
     q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
     q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
-    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
     q.fLength   = handles.focLenMain;
     q.fMag      = handles.magnification;
 else
@@ -875,7 +874,7 @@ else
 end
 q.uvFactor      = handles.SSUVRM;
 q.stFactor      = handles.SSSTRM;
-if handles.dynamicContrastM,    q.contrast = 'imadjust';
+if handles.dynamicContrastGIF,  q.contrast = 'imadjust';
 else                            q.contrast = 'stack';
 end
 q.mask          = handles.aperMask;
@@ -887,7 +886,7 @@ q.display       = 'fast';
 q.colormap      = handles.colormapRM;
 q.background    = [0 0 0];
 
-animaterefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
+animaterefocus(handles.radArray,handles.outputPath,handles.imageSpecificName,requestVectorRM,handles.sRange,handles.tRange);
 
 
 function tagFrameDelayGIF_Callback(hObject, eventdata, handles)
@@ -975,10 +974,10 @@ q               = lfiQuery('perspective');
 q.pUV           = gentravelvector( handles.edgeBuffer, size(handles.radArray), handles.SSUVPM, handles.travelVector );
 q.uvFactor      = handles.SSUVPM;
 q.stFactor      = handles.SSSTPM;
-q.saveas        = 'gif';
+q.saveas        = fileType;
 q.framerate     = 1/handles.frameDelayGIF;
 q.display       = 'fast';
-if handles.enhanceContrastGIF, q.contrast = 'imadjust'; end
+if handles.enhanceContrastPM, q.contrast = 'imadjust'; end
 q.colormap      = handles.colormapGIF;
 q.background    = [0 0 0];
 
@@ -996,9 +995,9 @@ q.fMethod       = handles.refocusType;
 q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
 if handles.telecentric
     q.fZoom     = 'telecentric';
+    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
     q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
     q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
-    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
     q.fLength   = handles.focLenMain;
     q.fMag      = handles.magnification;
 else
@@ -1035,9 +1034,9 @@ q.fMethod       = handles.refocusType;
 q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
 if handles.telecentric
     q.fZoom     = 'telecentric';
+    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
     q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
     q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
-    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
     q.fLength   = handles.focLenMain;
     q.fMag      = handles.magnification;
 else
@@ -1049,7 +1048,7 @@ else
 end
 q.uvFactor      = handles.SSUVFS;
 q.stFactor      = handles.SSSTFS;
-if handles.dynamicContrastM,    q.contrast = 'imadjust';
+if handles.dynamicContrastGIF,  q.contrast = 'imadjust';
 else                            q.contrast = 'stack';
 end
 q.mask          = handles.aperMask;
@@ -1158,7 +1157,7 @@ handles.SSUVR = 1;
 handles.colormapR = 'gray';
 handles.enhanceContrastR = 0;
 handles.dispAlphaTitleR = 0;
-handles.aperMask = 'circ';
+handles.aperMask = 1;
 
 set(handles.tagAlphaR, 'String', handles.alphaR);
 set(handles.tagSSSTR, 'String', handles.SSSTR);
@@ -1168,10 +1167,10 @@ set(handles.tagContrastP, 'Value', handles.enhanceContrastR);
 
 
 set(handles.tagCaptionAlphaR, 'Value', handles.dispAlphaTitleR);
-if strcmpi( handles.aperMask, 'circ' )
-    set(handles.tagCircAper, 'Value', 1);
-else
+if handles.aperMask == 0
     set(handles.tagApertureNone, 'Value', 1);
+else
+    set(handles.tagCircAper, 'Value', 1);
 end
 
 handles.edgeBuffer = 2;
@@ -1182,8 +1181,9 @@ set(handles.tagEdgeBuffer, 'String', handles.edgeBuffer);
 set(handles.tagSSUVPM, 'String', handles.SSUVPM);
 set(handles.tagSSSTP, 'String', handles.SSSTPM);
 
-handles.imFileType = 'png16';
-set(handles.tagImageType, 'Value', 4);
+handles.imFileType = 4;
+
+set(handles.tagImageType, 'Value', handles.imFileType);
 
 handles.alphaStartRM = 0.90;
 handles.stepsRM = 20;
@@ -1206,20 +1206,20 @@ else
 end
 set(handles.tagMirrorLoopRM, 'Value', handles.mirrorLoopRM);
 
-handles.vidCodecRM = 'jpeg';
+handles.vidCodecRM = 2;
 handles.frameRateRM = 15;
 handles.qualityRM = 90;
 handles.colormapRM = 'gray';
 
 % In reality, these are duplicates of the above RM settings block (but is split out in case we ever differentiated between the two)
 handles.colormapPM = 'gray';
-handles.vidCodecPM = 'jpeg';
+handles.vidCodecPM = 2;
 handles.frameRatePM = 15;
 handles.qualityPM = 90;
 
 set(handles.tagFrameRateRM, 'String', handles.frameRateRM);
 set(handles.tagQualityRM, 'String', handles.qualityRM);
-set(handles.tagCodecRM, 'Value', 2);
+set(handles.tagCodecRM, 'Value', handles.vidCodecRM);
 set(handles.tagColormapMenuP,'Value',find(strcmp(handles.colormapRM, handles.colormapList)));
 
 handles.frameDelayGIF = 0;
@@ -1235,7 +1235,7 @@ set(handles.tagLoopLimit, 'String', handles.loopLimitGIF);
 set(handles.tagColormapMenuP,'Value',find(strcmp(handles.colormapGIF, handles.colormapList)));
 
 handles.alphaStartFS = 0.90;
-handles.stepsFS = 20;
+handles.numStepsFS = 20;
 handles.alphaEndFS = 1.10;
 handles.SSSTFS = 1;
 handles.SSUVFS = 1;
@@ -1243,7 +1243,7 @@ handles.stepSpaceFS = 0;
 handles.colormapFS = 'gray';
 
 set(handles.tagAlphaStartRM, 'String', handles.alphaStartFS);
-set(handles.tagStepsRM, 'String', handles.stepsFS);
+set(handles.tagStepsRM, 'String', handles.numStepsFS);
 set(handles.tagAlphaEndRM, 'String', handles.alphaEndFS);
 set(handles.tagSSSTR, 'String', handles.SSSTFS);
 set(handles.tagSSUVR, 'String', handles.SSUVFS);
@@ -1276,8 +1276,8 @@ set(handles.tagProgramVersion, 'String', ['v' num2str(handles.progVersion,'%2.2f
 handles.travelVector = 1;
 set(handles.tagTravelVector,'Value',handles.travelVector);
 
-handles.refocusType = 'add'; %additive = 1
-set(handles.tagRefocusType,'Value',1);
+handles.refocusType = 1; %additive = 1
+set(handles.tagRefocusType,'Value',handles.refocusType);
 
 handles.noiseThreshold = 0;
 set(handles.tagNoiseThreshold,'String',handles.noiseThreshold);
@@ -1373,17 +1373,17 @@ set(handles.tagAlphaR, 'String', handles.alphaR);
 set(handles.tagSSSTR, 'String', handles.SSSTR);
 set(handles.tagSSUVR, 'String', handles.SSUVR);
 set(handles.tagCaptionAlphaR, 'Value', handles.dispAlphaTitleR);
-if strcmpi( handles.aperMask, 'circ' )
-    set(handles.tagCircAper, 'Value', 1);
-else
+if handles.aperMask == 0
     set(handles.tagApertureNone, 'Value', 1);
+else
+    set(handles.tagCircAper, 'Value', 1);
 end
 
 
 set(handles.tagEdgeBuffer, 'String', handles.edgeBuffer);
 set(handles.tagSSUVPM, 'String', handles.SSUVPM);
 
-set(handles.tagImageType, 'Value', 4);
+set(handles.tagImageType, 'Value', handles.imFileType);
 
 set(handles.tagAlphaStartRM, 'String', handles.alphaStartRM);
 set(handles.tagStepsRM, 'String', handles.stepsRM);
@@ -1399,7 +1399,7 @@ set(handles.tagMirrorLoopRM, 'Value', handles.mirrorLoopRM);
 
 set(handles.tagFrameRateRM, 'String', handles.frameRateRM);
 set(handles.tagQualityRM, 'String', handles.qualityRM);
-set(handles.tagCodecRM, 'Value', 2);
+set(handles.tagCodecRM, 'Value', handles.vidCodecRM);
 
 set(handles.tagFrameDelayGIF, 'String', handles.frameDelayGIF);
 set(handles.tagDitheringGIF, 'Value', handles.ditheringGIF);
@@ -1414,7 +1414,7 @@ set(handles.tagProgramVersion, 'String', ['v' num2str(handles.progVersion,'%2.2f
 
 set(handles.tagTravelVector,'Value',handles.travelVector);
 
-set(handles.tagRefocusType,'Value',1);
+set(handles.tagRefocusType,'Value',handles.refocusType);
 
 set(handles.tagNoiseThreshold,'String',handles.noiseThreshold);
 set(handles.tagFilterThreshold,'String',handles.filterThreshold);

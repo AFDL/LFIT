@@ -17,21 +17,21 @@ else
     SS_ST = q.stFactor;
 end
 
-radArray        = single(radArray);
-sRange          = single(sRange);
-tRange          = single(tRange); %double for consistency/program won't run otherwise
-interpPadding   = single(1); %HARDCODED; if the padding in interpimage2.m changes, change this accordingly.
-microRadius     = single( floor(size(radArray,1)/2) - interpPadding ); %since we've padded the extracted data by a pixel in interpimage2, subtract 1
+radArray = single(radArray);
+sRange = single(sRange);
+tRange = single(tRange); %double for consistency/program won't run otherwise
+interpPadding = 1; %HARDCODED; if the padding in interpimage2.m changes, change this accordingly.
+microRadius = single(floor(size(radArray,1)/2)) - interpPadding; %since we've padded the extracted data by a pixel in interpimage2, subtract 1
 
 % Define aperture mask
 if strcmpi( q.mask, 'circ' )
     % Circular mask
-    mask = zeros( 1 + 2*SS_UV*(microRadius+interpPadding) );
-    mask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes mask same size as u,v dimensions of radArray
-    mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
+    circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
+    circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
+    circMask = ( circMask - min(circMask(:)) )/( max(circMask(:)) - min(circMask(:)) );
 else
     % No mask
-    mask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
+    circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
 end
 
 uRange = linspace(microRadius,-microRadius,1+(microRadius*2));
@@ -40,7 +40,7 @@ vRange(:,1) = linspace(microRadius,-microRadius,1+(microRadius*2));
 tempSizeS = numel(sRange)*SS_ST;
 tempSizeT = numel(tRange)*SS_ST;
 
-if strcmpi( q.fMethod, 'mult' )
+if strmpci( q.fMethod, 'mult' )
     syntheticImage = ones(tempSizeT,tempSizeS,'single');
 else
     syntheticImage = zeros(tempSizeT,tempSizeS,'single');    
@@ -72,8 +72,8 @@ end
 if strcmpi( q.fZoom, 'telecentric' )
     filterMatrix = zeros( length(q.fGridY), length(q.fGridX) );
 
-    if strcmpi( q.fMethod, 'mult' )
-        syntheticImage = ones( length(q.fGridY), length(q.fGridX), 'single' );
+    if strmpci( q.fMethod, 'mult' )
+        syntheticImage = ones( length(q.fGridY), length(q.fGridX), 'single' );        
     else
         syntheticImage = zeros( length(q.fGridY), length(q.fGridX), 'single' );
     end
@@ -94,7 +94,7 @@ switch superSampling
                 uIdx = -(u) + microRadius+1 + interpPadding; % u is negative here since the uVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
                 vIdx = -(v) + microRadius+1 + interpPadding; % v is negative here since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
                 
-%               if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
+%               if ~q.mask || circMask(vIdx,uIdx) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
                     activePixelCount = activePixelCount + 1;
                     uAct = u.*sizePixelAperture; % u and v converted to millimeters here
                     vAct = v.*sizePixelAperture; % u and v converted to millimeters here
@@ -125,19 +125,19 @@ switch superSampling
                     
                     switch q.fMethod
                         case 'add'
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            syntheticImage = syntheticImage + extractedImageTemp*circMask(vIdx,uIdx);
                        
                         case 'mult'
                             extractedImageTemp = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp = double(extractedImageTemp) + .0001;
-                            extractedImageTemp = extractedImageTemp.^(1/(length(uRange)*length(vRange))*mask(uIdx-1,vIdx-1));
+                            extractedImageTemp = extractedImageTemp.^(1/(length(uRange)*length(vRange))*circMask(uIdx-1,vIdx-1));
                             syntheticImage = syntheticImage.*extractedImageTemp;
 
                         case 'filt'
                             extractedImageTemp = gray2ind(extractedImageTemp,65536); %%%new
                             extractedImageTemp = double(extractedImageTemp);%%%new
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            syntheticImage = syntheticImage + extractedImageTemp*circMask(vIdx,uIdx);
 
                     end%switch
                  
@@ -198,7 +198,7 @@ switch superSampling
         for uInd=1:numel(uSSRange)
             for vInd=1:numel(vSSRange)
                 
-                if mask(vInd,uInd) ~= 0 % if mask pixel is not zero, calculate.
+                if ~q.mask || circMask(vInd,uInd) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
                     activePixelCount = activePixelCount + 1;
                     uPrime = uSSRange(uInd).*sizePixelAperture; %u and v converted to millimeters here
                     vPrime = vSSRange(vInd).*sizePixelAperture; %u and v converted to millimeters here
@@ -220,7 +220,7 @@ switch superSampling
 
                     switch q.fMethod
                         case 'add'
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
+                            syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
                        
                         case 'mult'
                             max_int = max(max(syntheticImage)); % normalize
@@ -229,7 +229,7 @@ switch superSampling
                             extractedImageTemp = extractedImageTemp/max_int;
                             extractedImageTemp(isnan(extractedImageTemp)) = 0; 
                 
-                            new_uv = extractedImageTemp*mask(vInd,uInd);
+                            new_uv = extractedImageTemp*circMask(vInd,uInd);
                             new_uv( new_uv==0 ) = 1;  % Modified by chris
                 
                             new_uv = new_uv + 1;
@@ -238,7 +238,7 @@ switch superSampling
 
                         case 'filt'
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
+                            syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
 
                     end%switch
 
@@ -251,7 +251,7 @@ switch superSampling
         for uInd=1:numel(uSSRange)
             for vInd=1:numel(vSSRange)
                 
-                if ~q.mask || mask(vInd,uInd) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
+                if ~q.mask || circMask(vInd,uInd) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
                     activePixelCount = activePixelCount + 1;
                     uPrime = uSSRange(uInd).*sizePixelAperture; %u and v converted to millimeters here
                     vPrime = vSSRange(vInd).*sizePixelAperture; %u and v converted to millimeters here
@@ -265,7 +265,7 @@ switch superSampling
                     extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sEff,tEff.','*linear',0); %row,col,Z,row,col
                     switch q.fMethod
                         case 'add'
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
+                            syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
                        
                         case 'mult'
                             max_int = max(max(syntheticImage)); % normalize
@@ -274,7 +274,7 @@ switch superSampling
                             extractedImageTemp = extractedImageTemp/max_int;
                             extractedImageTemp(isnan(extractedImageTemp)) = 0; 
                 
-                            new_uv = extractedImageTemp*mask(vInd,uInd);
+                            new_uv = extractedImageTemp*circMask(vInd,uInd);
                             new_uv( new_uv==0 ) = 1;  % Modified by chris
                 
                             new_uv = new_uv + 1;
@@ -283,7 +283,7 @@ switch superSampling
 
                         case 'filt'
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
+                            syntheticImage = syntheticImage + extractedImageTemp*circMask(vInd,uInd);
 
                     end%switch
 

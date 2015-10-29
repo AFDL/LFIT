@@ -14,8 +14,8 @@ else
     SS = 'st';
 end
 
-if mod(q.pUV(1),1) || mod(q.pUV(2),1) %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
-    SS = 'both';
+if round(u0) ~= u0 || round(v0) ~= v0 %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
+    SS = 'both'; 
 end
 
 tRange = single(tRange);
@@ -43,7 +43,7 @@ switch SS
         % If you supersampled u,v in the traditional sense, it wouldn't make any sense since you're pulling a single u,v value from every s,t. It doesn't
         % matter how many u's and v's there are if you just use one, as is the case in perspective shifts.
         [tActual,sActual,vActual,uActual] = ndgrid(tRange,sRange,vRange.*single(sizePixelAperture),uRange.*single(sizePixelAperture)); %u,v to mm to match s,t which are in mm
-        [tQuery, sQuery, vQuery, uQuery] = ndgrid(tSSRange,sSSRange,q.pUV(2)*single(sizePixelAperture),q.pUV(1)*single(sizePixelAperture));
+        [tQuery, sQuery, vQuery, uQuery] = ndgrid(tSSRange,sSSRange,v0.*single(sizePixelAperture),u0.*single(sizePixelAperture));
         perspectiveImage = interpn(tActual,sActual,vActual,uActual,permute(radArray,[4,3,2,1]),tQuery,sQuery,vQuery,uQuery,'linear',0);
         
     otherwise

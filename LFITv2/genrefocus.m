@@ -53,8 +53,10 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                 lims=[min(min(min(refocusedImageStack(:,:,fIdx,:)))) max(max(max(refocusedImageStack(:,:,fIdx,:))))]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
             end
             
-            refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
-            if strcmpi(q.contrast,'imadjust'), refocusedImage = imadjust(refocusedImage); end
+            switch q.contrast
+                case 'simple',      refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
+                case 'imadjust',    refocusedImage = imadjust(refocusedImage);
+            end
             
             SS_UV = q.uvFactor;
             SS_ST = q.stFactor;
@@ -91,9 +93,9 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                 if ~exist(dout,'dir'), mkdir(dout); end
                 
                 if strcmpi( q.fZoom, 'telecentric' ) %telecentric flag
-                    fname = sprintf( '_z%4.5f', q.fPlane(fIdx) );
+                    fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', q.fAlpha(fIdx), SS_ST, SS_UV );
                 else
-                    fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', q.fAlpha(fIdx), SS_ST, SS_UV ); 
+                    fname = sprintf( '_z%4.5f', q.fPlane(fIdx) );
                 end
                 
                 switch q.saveas
