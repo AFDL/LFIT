@@ -29,7 +29,7 @@ fprintf('\nBeginning focal stack generation.\n');
 % nFormats = 0;
 % for fIdx = 1:nFormats % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
     
-    fprintf('\nGenerating refocused slices set (%i of %i)...',fIdx,nFormats);
+%     fprintf('\nGenerating refocused slices set (%i of %i)...',fIdx,nFormats);
 %     switch requestVector{fIdx,1}(1,1)
 %         case 0 % linear
 %             alphaRange = requestVector{fIdx,1}(2,1):((requestVector{fIdx,1}(2,2)-requestVector{fIdx,1}(2,1))/(requestVector{fIdx,1}(1,2)-1)):requestVector{fIdx,1}(2,2);
@@ -53,18 +53,18 @@ fprintf('\nBeginning focal stack generation.\n');
     switch q.fZoom
         case 'legacy'
             alphaRange = q.fAlpha;
-            rawImageArray = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,length(alphaRange));
+            rawImageArray = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,length(alphaRange),'single');
             
         case 'telecentric'
             si      = ( 1 - q.fMag )*q.fLength;
             so      = -si/q.fMag;
             soPrime = so + q.fPlane;
-            siPrime = (1/f - 1./soPrime).^(-1);
+            siPrime = (1/q.fLength - 1./soPrime).^(-1);
             
             alphaRange = siPrime/si;
 
             % Preallocate focal stack
-            rawImageArray = zeros([ size(q.fGridX) length(alphaRange) ]);
+            rawImageArray = zeros(length(q.fGridY),length(q.fGridX),length(alphaRange),'single');
             
     end%switch
     %%%
@@ -74,15 +74,17 @@ fprintf('\nBeginning focal stack generation.\n');
         
         time=tic;
         
+        % Sub-query at single alpha value
         qi          = q;
         qi.fAlpha   = alphaRange(frameIdx);
+        if strcmpi(q.fZoom,'telecentric'), qi.fPlane = q.fPlane(frameIdx); end
         
-        rawImageArray(:,:,frameIdx) = refocus(q,radArray,sRange,tRange);
+        rawImageArray(:,:,frameIdx) = refocus(qi,radArray,sRange,tRange);
         
         % Timer logic
         num=numel(num2str(timerVar));
         time=toc(time);
-        timerVar=time/60*(size(alphaRange,2)-frameIdx );
+        timerVar=(time/60)*(nFrames-frameIdx);
         if timerVar>=1
             timerVar=round(timerVar);
             for count=1:num+2
@@ -90,7 +92,7 @@ fprintf('\nBeginning focal stack generation.\n');
             end
             fprintf('%g m',timerVar)
         else
-            timerVar=round(time*(size(alphaRange,2)-frameIdx ));
+            timerVar=round( time*(nFrames-frameIdx) );
             for count=1:num+2
                 fprintf('\b')
             end
@@ -118,13 +120,12 @@ fprintf('\nBeginning focal stack generation.\n');
             SS_UV = q.uvFactor;
             SS_ST = q.stFactor;
             
-               
             if q.title % Image title?
             
                 switch q.title
-                    case 'caption',     caption = q.caption{fIdx};
+                    case 'caption',     caption = q.caption;
                     case 'annotation',  caption = sprintf( '[alpha = %g]', alphaVal );
-                    case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption{fIdx}, alphaVal );
+                    case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, alphaVal );
                 end
                 displayimage(expImage,caption,q.colormap,q.background);  
                 
