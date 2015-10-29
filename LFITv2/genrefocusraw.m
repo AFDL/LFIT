@@ -6,8 +6,14 @@ fprintf('\nGenerating refocused views...');
 fprintf('\n   Time remaining:       ');
 
 switch q.fZoom
-    case 'legacy',          nPlanes = length(q.fAlpha);
-    case 'telecentric',     nPlanes = length(q.fPlane);
+    case 'legacy'
+        nPlanes = length(q.fAlpha);
+        rawImageArray = zeros( length(tRange)*q.stFactor, length(sRange)*q.stFactor, nPlanes, 'single' );
+        
+    case 'telecentric'
+        nPlanes = length(q.fPlane);
+        rawImageArray = zeros( length(q.fGridY), length(q.fGridX), nPlanes, 'single' );
+        
 end
 
 for fIdx = 1:nPlanes % for each refocused
@@ -22,13 +28,14 @@ for fIdx = 1:nPlanes % for each refocused
             rawImageArray(:,:,fIdx) = refocus(qi,radArray,sRange,tRange);
 
         case 'telecentric'            
-            si      = ( 1 - q.fMag )*q.fLength;
-            so      = -si/q.fMag;
-            siPrime = (1/q.fLength - 1/soPrime)^(-1);
-            soPrime = so + q.fPlane(fIdx);
+            si          = ( 1 - q.fMag )*q.fLength;
+            so          = -si/q.fMag;
+            soPrime     = so + q.fPlane(fIdx);
+            siPrime     = (1/q.fLength - 1/soPrime)^(-1);
             
             qi          = q;
             qi.fAlpha   = siPrime/si;
+            qi.fPlane   = q.fPlane(fIdx);
             
             rawImageArray(:,:,fIdx) = refocus(qi,radArray,sRange,tRange);
 
@@ -36,7 +43,7 @@ for fIdx = 1:nPlanes % for each refocused
         
     % Timer logic
     time=toc(time);
-    timerVar=time/60*(nPlanes-fIdx);
+    timerVar=(time/60)*(nPlanes-fIdx);
     if timerVar>=1
         timerVar=round(timerVar);
         for count=1:num+2
