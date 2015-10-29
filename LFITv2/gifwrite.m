@@ -20,7 +20,7 @@ end
 
 % On the first loop, create the file. In subsequent loops, append.
 if ind==1
-    imwrite(imind,cm,filename,'gif','DelayTime',delayTime,'LoopCount',INF);
+    imwrite(imind,cm,filename,'gif','DelayTime',delayTime,'LoopCount',Inf);
 else
     imwrite(imind,cm,filename,'gif','DelayTime',delayTime,'WriteMode','append');
 end

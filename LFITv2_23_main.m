@@ -154,6 +154,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q               = lfiQuery( 'perspective' );
             q.pUV           = [0 0; -6 0; 6 0];         % List of (u,v) coordinates
             q.saveas        = 'jpg';
+            q.quality       = 90;
             q.display       = 'fast';
             q.contrast      = 'imadjust';
             q.verify;       % Verify that all query parameters are good
@@ -171,6 +172,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q.fLength       = 50;
             q.fMag          = -1;
             q.saveas        = 'jpg';
+            q.quality       = 90;
             q.display       = 'fast';
             q.contrast      = 'simple';
             q.mask          = 'circ';

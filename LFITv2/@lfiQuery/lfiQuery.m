@@ -46,7 +46,7 @@ classdef lfiQuery
         %
         saveas      = false;        % output image format: false, 'bmp', 'png', 'jpg', 'png16', 'tif16', 'gif', 'avi', 'mp4'
         quality     = [];           % output quality, only applies to JPG, AVI, and MP4
-        codec       = '';           % output codec, only applies to AVI
+        codec       = '';           % output codec, only applies to AVI and MP4
         framerate   = [];           % output framerate, only applies to GIF, AVI, and MP4
         display     = false;        % image display speed: false, 'slow', 'fast'
         colormap    = 'gray';       % the colormap used in displaying the image, e.g. 'jet' or 'gray'
@@ -110,7 +110,7 @@ classdef lfiQuery
         end
         
         function obj = set.codec( obj, val )
-            opts = {'uncompressed','jpeg','jpeg2000','jpeg2000-lossless'};
+            opts = {'uncompressed','jpeg','jpeg2000','jpeg2000-lossless','h264'};
             if isempty(val)
                 obj.codec = '';
             elseif ischar(val) && any(strcmpi(val,opts))
@@ -132,7 +132,7 @@ classdef lfiQuery
         end
         
         function obj = set.contrast( obj, val )
-            opts = {'simple','imadjust'};
+            opts = {'simple','imadjust','stack'};
             if ischar(val) && any(strcmpi(val,opts))
                 obj.contrast = lower(val);
             else
@@ -287,7 +287,7 @@ classdef lfiQuery
         
         function obj = set.stFactor( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=1
-                obj.stFactor = uint8(val);
+                obj.stFactor = round(val);
             else
                 error('STFACTOR must be a positive integer.');
             end
@@ -314,7 +314,7 @@ classdef lfiQuery
         
         function obj = set.quality( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=0 && val<=100
-                obj.quality = uint8(val);
+                obj.quality = round(val);
             else
                 error('QUALITY must be an integer between 0 and 100.')
             end
@@ -322,7 +322,7 @@ classdef lfiQuery
         
         function obj = set.uvFactor( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=1
-                obj.uvFactor = uint8(val);
+                obj.uvFactor = round(val);
             else
                 error('UVFACTOR must be a positive integer.');
             end

@@ -30,7 +30,7 @@ for pIdx = 1:nPerspectives
     perspectiveImage = perspective(qi,radArray,sRange,tRange);
     
     switch q.contrast
-        case 'simple',      % THIS FUNCTIONALITY WAS NOT PREVIOUSLY HERE, SHOULD IT HAVE BEEN? --cjc    %perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/( max(perspectiveImage(:)) - min(perspectiveImage(:)) );
+        case 'simple',      % THIS FUNCTIONALITY WAS NOT PREVIOUSLY HERE, SHOULD IT HAVE BEEN? --cjc    %
         case 'imadjust',    perspectiveImage = imadjust(perspectiveImage);
     end
     
