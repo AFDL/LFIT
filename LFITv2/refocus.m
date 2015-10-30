@@ -34,12 +34,11 @@ end
 
 if strcmpi( q.mask, 'circ' )
     % Circular mask
-    mask = zeros( 1 + 2*SS_UV*(microRadius+interpPadding) );
-    mask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes mask same size as u,v dimensions of radArray
+    mask = fspecial( 'disk', double(microRadius)*SS_UV );
     mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
 else
     % No mask
-    mask = ones( 1 + 2*SS_UV*(microRadius+interpPadding) );
+    mask = ones( 1 + 2*SS_UV*microRadius );
 end
 
 
@@ -144,19 +143,19 @@ switch superSampling
                     
                     switch q.fMethod
                         case 'add'
-                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx+interpPadding,uIdx+interpPadding);
+                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
                        
                         case 'mult'
                             extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp  = double(extractedImageTemp) + .0001;
-                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(vIdx+interpPadding-1,uIdx+interpPadding-1)); % why are u,v switched here? what is the -1 for? --cjc
+                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(vIdx,uIdx)); % why are u,v switched here? what is the -1 for? --cjc
                             syntheticImage      = syntheticImage.*extractedImageTemp;
 
                         case 'filt'
                             extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp  = double(extractedImageTemp);
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx+interpPadding,uIdx+interpPadding);
+                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
 
                     end%switch
                  
@@ -287,8 +286,8 @@ switch superSampling
                 tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
 
                 Z = permute(radArray(uIdx+interpPadding,vIdx+interpPadding,:,:),[4 3 1 2]);
-
                 extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sEff,tEff.','*linear',0); %row,col,Z,row,col
+                
                 switch q.fMethod
                     case 'add'
                         syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
