@@ -111,7 +111,7 @@ fprintf('\nBeginning focal stack generation.\n');
             
             refocusedImage = focalStack(:,:,frameIdx);
             switch q.contrast
-                case 'image',       refocusedImage = ( refocusedImage - min(refocusedImage(:)) )/( max(refocusedImage(:)) - min(refocusedImage(:)) );
+                case 'simple',      refocusedImage = ( refocusedImage - min(refocusedImage(:)) )/( max(refocusedImage(:)) - min(refocusedImage(:)) );
                 case 'imadjust',    refocusedImage = imadjust( refocusedImage );
                 case 'stack',       % Nothing to do
             end
