@@ -139,24 +139,24 @@ switch superSampling
 
                     end                  
                   
-                    Z = permute(radArray(uIdx,vIdx,:,:),[4 3 1 2]);
+                    Z = permute(radArray(uIdx+interpPadding,vIdx+interpPadding,:,:),[4 3 1 2]);
                     extractedImageTemp = interp2( sRange, tRange, Z, sQuery, tQuery, '*linear', 0 ); %row,col,Z,row,col
                     
                     switch q.fMethod
                         case 'add'
-                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx+interpPadding,uIdx+interpPadding);
                        
                         case 'mult'
                             extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp  = double(extractedImageTemp) + .0001;
-                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uIdx-1,vIdx-1)); % why are u,v switched here? --cjc
+                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(vIdx+interpPadding-1,uIdx+interpPadding-1)); % why are u,v switched here? what is the -1 for? --cjc
                             syntheticImage      = syntheticImage.*extractedImageTemp;
 
                         case 'filt'
                             extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp  = double(extractedImageTemp);
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx+interpPadding,uIdx+interpPadding);
 
                     end%switch
                  
