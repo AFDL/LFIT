@@ -1,13 +1,25 @@
 function [syntheticImage] = refocus(q,radArray,sRange,tRange)
 %REFOCUS Refocuses a plenoptic image to a given value of alpha.
 %
-%	Requires global variable sizePixelAperture, which is the conversion
+%   Requires global variable sizePixelAperture, which is the conversion
 %   factor for u and v to millimeters (mm).
 
 % profile on
 % tic
 
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
+
+
+%% Typecast variables as single to conserve memory
+
+radArray        = single(radArray);
+sRange          = single(sRange);
+tRange          = single(tRange); % double for consistency/program won't run otherwise
+interpPadding   = single(1); % HARDCODED; if the padding in interpimage2.m changes, change this accordingly.
+microRadius     = single( floor(size(radArray,1)/2) - interpPadding ); % since we've padded the extracted data by a pixel in interpimage2, subtract 1
+
+
+%% Determine supersampling factor
 
 if strcmpi( q.fZoom, 'telecentric' );
     SS_UV = 1;
@@ -17,13 +29,9 @@ else
     SS_ST = q.stFactor;
 end
 
-radArray        = single(radArray);
-sRange          = single(sRange);
-tRange          = single(tRange); %double for consistency/program won't run otherwise
-interpPadding   = single(1); %HARDCODED; if the padding in interpimage2.m changes, change this accordingly.
-microRadius     = single( floor(size(radArray,1)/2) - interpPadding ); %since we've padded the extracted data by a pixel in interpimage2, subtract 1
 
-% Define aperture mask
+%% Define aperture mask (if any)
+
 if strcmpi( q.mask, 'circ' )
     % Circular mask
     mask = zeros( 1 + 2*SS_UV*(microRadius+interpPadding) );
@@ -31,27 +39,59 @@ if strcmpi( q.mask, 'circ' )
     mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
 else
     % No mask
-    mask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
+    mask = ones( 1 + 2*SS_UV*(microRadius+interpPadding) );
 end
 
-uRange = linspace(microRadius,-microRadius,1+(microRadius*2));
-vRange(:,1) = linspace(microRadius,-microRadius,1+(microRadius*2));
 
-tempSizeS = numel(sRange)*SS_ST;
-tempSizeT = numel(tRange)*SS_ST;
+%% Create (u,v) and (s,t) arrays
 
-if strcmpi( q.fMethod, 'mult' )
-    syntheticImage = ones(tempSizeT,tempSizeS,'single');
-else
-    syntheticImage = zeros(tempSizeT,tempSizeS,'single');    
-end
+sizeS       = length(sRange)*SS_ST;
+sizeT       = length(tRange)*SS_ST;
 
-extractedImageTemp = zeros(tempSizeT,tempSizeS,'single');
+uRange      = linspace( microRadius, -microRadius, 1+2*microRadius );
+vRange      = linspace( microRadius, -microRadius, 1+2*microRadius );
 
-uSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
-vSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
-sSSRange = linspace(sRange(1),sRange(end),tempSizeS);
-tSSRange = linspace(tRange(1),tRange(end),tempSizeT);
+uSSRange    = linspace( microRadius, -microRadius, 1+2*SS_UV*microRadius );
+vSSRange    = linspace( microRadius, -microRadius, 1+2*SS_UV*microRadius );
+sSSRange    = linspace( sRange(1), sRange(end), sizeS );
+tSSRange    = linspace( tRange(1), tRange(end), sizeT );
+
+
+%% Memory preallocation
+
+extractedImageTemp = zeros( sizeT, sizeS, 'single' );
+
+switch q.fZoom
+    case 'legacy'
+        switch q.fMethod
+            case 'add'
+                syntheticImage  = zeros( sizeT, sizeS, 'single' );
+            case 'mult'
+                syntheticImage  = ones( sizeT, sizeS, 'single' );
+            case 'filter'
+                syntheticImage  = zeros( sizeT, sizeS, 'single' );
+                filterMatrix    = zeros( sizeT, sizeS, 'single' );
+                noiseThreshold  = q.fFilter(1);
+                filterThreshold = q.fFilter(2);
+        end
+
+    case 'telecentric'
+        switch q.fMethod
+            case 'add'
+                syntheticImage  = zeros( length(q.fGridY), length(q.fGridX), 'single' );
+            case 'mult'
+                syntheticImage  = ones( length(q.fGridY), length(q.fGridX), 'single' );
+            case 'filter'
+                syntheticImage  = zeros( length(q.fGridY), length(q.fGridX), 'single' );
+                filterMatrix    = zeros( length(q.fGridY), length(q.fGridX), 'single' );
+                noiseThreshold  = q.fFilter(1);
+                filterThreshold = q.fFilter(2);
+        end
+
+end%switch
+
+
+%% Determine which algorithm to use
 
 if SS_ST == 1
     if SS_UV == 1,  superSampling = 'none';
@@ -63,46 +103,28 @@ else
     end
 end
 
-if strcmpi( q.fMethod, 'filt' )
-    filterMatrix    = zeros(tempSizeT,tempSizeS);
-    noiseThreshold  = q.fFilter(1);
-    filterThreshold = q.fFilter(2);
-end
 
-if strcmpi( q.fZoom, 'telecentric' )
-    filterMatrix = zeros( length(q.fGridY), length(q.fGridX) );
-
-    if strcmpi( q.fMethod, 'mult' )
-        syntheticImage = ones( length(q.fGridY), length(q.fGridX), 'single' );
-    else
-        syntheticImage = zeros( length(q.fGridY), length(q.fGridX), 'single' );
-    end
-end
-
-activePixelCount = 0;
+%%
  
 switch superSampling
     case 'none'
 
-        [tActual,sActual] = ndgrid(tRange,sRange);
+        [sActual,tActual] = meshgrid( sRange, tRange );
+        [uActual,vActual] = meshgrid( uRange*sizePixelAperture, vRange*sizePixelAperture );
 
-%       [u,v,tActual,sActual]=ndgrid(uRange,vRange,tRange,sRange);
-        for u=uRange
-            for v=vRange.'
-                
-                % The plus 1 is to make the index start at 0 not 1. The interpPadding accounts for any pixel padding in interpimage2.m
-                uIdx = -(u) + microRadius+1 + interpPadding; % u is negative here since the uVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
-                vIdx = -(v) + microRadius+1 + interpPadding; % v is negative here since the vVector decreases from top to bottom (ie +7 to -7) while MATLAB image indexing increases from top to bottom
-                
+        sizeUV = size(uActual);
+        numelUV = numel(uActual);
+
+        for uvIdx = 1:numelUV
+
+                [uIdx,vIdx] = ind2sub( sizeUV, uvIdx );
+           
 %               if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
-                    activePixelCount = activePixelCount + 1;
-                    uAct = u.*sizePixelAperture; % u and v converted to millimeters here
-                    vAct = v.*sizePixelAperture; % u and v converted to millimeters here
 
                     switch q.fZoom
                         case 'legacy'
-                            sQuery  = uAct*(q.fAlpha - 1) + sActual;
-                            tQuery  = vAct*(q.fAlpha - 1) + tActual;
+                            sQuery  = uActual(vIdx,uIdx)*(q.fAlpha - 1) + sActual;
+                            tQuery  = vActual(vIdx,uIdx)*(q.fAlpha - 1) + tActual;
 
                         case 'telecentric'
                             si      = ( 1 - q.fMag )*q.fLength;
@@ -111,46 +133,42 @@ switch superSampling
                             soPrime = so + q.fPlane;
                             MPrime  = siPrime/soPrime;
 
-                            sQuery = q.fGridX*MPrime/q.fAlpha + uAct*(1 - 1/q.fAlpha);
-                            tQuery = q.fGridY*MPrime/q.fAlpha + vAct*(1 - 1/q.fAlpha);
-                            [sQuery,tQuery] = meshgrid(sQuery,tQuery);
+                            sQuery  = q.fGridX*MPrime/q.fAlpha + uActual(vIdx,uIdx)*(1 - 1/q.fAlpha);
+                            tQuery  = q.fGridY*MPrime/q.fAlpha + vActual(vIdx,uIdx)*(1 - 1/q.fAlpha);
+                            [sQuery,tQuery] = meshgrid( sQuery, tQuery );
 
                     end                  
                   
                     Z = permute(radArray(uIdx,vIdx,:,:),[4 3 1 2]);
-                    extractedImageTemp = interp2(sRange,tRange.',Z,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
-%                   syntheticImage = interpn(uRange,vRange',sRange,tRange,radArray,uAct,vAct,sQuery,tQuery,'*linear',0); %row,col,Z,row,col                   
-%                   syntheticImage = nansum(nansum(syntheticImage,1),2);
-%                   syntheticImage = reshape(syntheticImage,length(tRange),length(sRange));
+                    extractedImageTemp = interp2( sRange, tRange, Z, sQuery, tQuery, '*linear', 0 ); %row,col,Z,row,col
                     
                     switch q.fMethod
                         case 'add'
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
                        
                         case 'mult'
-                            extractedImageTemp = gray2ind(extractedImageTemp,65536);
-                            extractedImageTemp = double(extractedImageTemp) + .0001;
-                            extractedImageTemp = extractedImageTemp.^(1/(length(uRange)*length(vRange))*mask(uIdx-1,vIdx-1));
-                            syntheticImage = syntheticImage.*extractedImageTemp;
+                            extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                            extractedImageTemp  = double(extractedImageTemp) + .0001;
+                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uIdx-1,vIdx-1)); % why are u,v switched here? --cjc
+                            syntheticImage      = syntheticImage.*extractedImageTemp;
 
                         case 'filt'
-                            extractedImageTemp = gray2ind(extractedImageTemp,65536); %%%new
-                            extractedImageTemp = double(extractedImageTemp);%%%new
+                            extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                            extractedImageTemp  = double(extractedImageTemp);
                             filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
 
                     end%switch
                  
-%               end
+%               end%if
 
-            end%for
         end%for
 
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
                 
-    case {'uv', 'both'}
+    case {'uv','both'}
         
-        [tActual,sActual,vActual,uActual] = ndgrid(tRange,sRange,vRange.*sizePixelAperture,uRange.*sizePixelAperture);
+        [tActual,sActual,vActual,uActual] = ndgrid( tRange, sRange, vRange*sizePixelAperture, uRange*sizePixelAperture );
         
         if verLessThan('matlab', '7.13') % lower MATLAB versions don't support gridded interpolant, but do support *linear
             oldMethod = true;
@@ -195,109 +213,116 @@ switch superSampling
             end
         end%if
         
-        for uInd=1:numel(uSSRange)
-            for vInd=1:numel(vSSRange)
-                
-                if mask(vInd,uInd) ~= 0 % if mask pixel is not zero, calculate.
-                    activePixelCount = activePixelCount + 1;
-                    uPrime = uSSRange(uInd).*sizePixelAperture; %u and v converted to millimeters here
-                    vPrime = vSSRange(vInd).*sizePixelAperture; %u and v converted to millimeters here
-                    
-                    % Shift-Invariant (Paul)
-                    sEff = uPrime.*(q.fAlpha - 1) + sSSRange;
-                    tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
-                    
-                    [tQuery, sQuery, vQuery, uQuery] = ndgrid(tEff,sEff,vPrime,uPrime);
-                    
-                    if oldMethod
-                        extractedImageTemp = interpn(tActual,sActual,vActual,uActual,I,tQuery,sQuery,vQuery,uQuery,'*linear',0);
-                    else
-                        extractedImageTemp = Fimg(tQuery,sQuery,vQuery,uQuery);
-                    end
+        sizeUV = [length(vSSRange) length(uSSRange)];
+        numelUV = prod(sizeUV);
+        
+        for uvIdx = 1:numelUV
+            
+            [uIdx,vIdx] = ind2sub( sizeUV, uvIdx );
+            
+            if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
 
-                    extractedImageTemp(extractedImageTemp<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
-                    extractedImageTemp(isnan(extractedImageTemp)) = 0;
+                uPrime = uSSRange(uIdx)*sizePixelAperture; %u and v converted to millimeters here
+                vPrime = vSSRange(vIdx)*sizePixelAperture; %u and v converted to millimeters here
 
-                    switch q.fMethod
-                        case 'add'
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
-                       
-                        case 'mult'
-                            max_int = max(max(syntheticImage)); % normalize
-                            syntheticImage = syntheticImage/max_int; 
-                            max_int = max(max(extractedImageTemp)); % normalize
-                            extractedImageTemp = extractedImageTemp/max_int;
-                            extractedImageTemp(isnan(extractedImageTemp)) = 0; 
-                
-                            new_uv = extractedImageTemp*mask(vInd,uInd);
-                            new_uv( new_uv==0 ) = 1;  % Modified by chris
-                
-                            new_uv = new_uv + 1;
+                % Shift-Invariant (Paul)
+                sEff = uPrime.*(q.fAlpha - 1) + sSSRange;
+                tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
 
-                            syntheticImage = syntheticImage.*new_uv;
+                [tQuery, sQuery, vQuery, uQuery] = ndgrid(tEff,sEff,vPrime,uPrime);
 
-                        case 'filt'
-                            filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
+                if oldMethod
+                    extractedImageTemp = interpn(tActual,sActual,vActual,uActual,I,tQuery,sQuery,vQuery,uQuery,'*linear',0);
+                else
+                    extractedImageTemp = Fimg(tQuery,sQuery,vQuery,uQuery);
+                end
 
-                    end%switch
+                extractedImageTemp(extractedImageTemp<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
+                extractedImageTemp(isnan(extractedImageTemp)) = 0;
 
-                end%if
+                switch q.fMethod
+                    case 'add'
+                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
 
-            end%for
+                    case 'mult'
+                        max_int = max(max(syntheticImage)); % normalize
+                        syntheticImage = syntheticImage/max_int; 
+                        max_int = max(max(extractedImageTemp)); % normalize
+                        extractedImageTemp = extractedImageTemp/max_int;
+                        extractedImageTemp(isnan(extractedImageTemp)) = 0; 
+
+                        new_uv = extractedImageTemp*mask(vIdx,uIdx);
+                        new_uv( new_uv==0 ) = 1;  % Modified by chris
+
+                        new_uv = new_uv + 1;
+
+                        syntheticImage = syntheticImage.*new_uv;
+
+                    case 'filt'
+                        filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
+                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+
+                end%switch
+
+            end%if
+            
         end%for
         
     case 'st' % Separate case here because it's about 2x faster than just using the uv/both case above
-        for uInd=1:numel(uSSRange)
-            for vInd=1:numel(vSSRange)
-                
-                if ~q.mask || mask(vInd,uInd) ~= 0 %optimization; if full aperture used or if circular mask pixel is not zero, calculate.
-                    activePixelCount = activePixelCount + 1;
-                    uPrime = uSSRange(uInd).*sizePixelAperture; %u and v converted to millimeters here
-                    vPrime = vSSRange(vInd).*sizePixelAperture; %u and v converted to millimeters here
-                    
-                    % Shift-Invariant (Paul)
-                    sEff = uPrime.*(q.fAlpha - 1) + sSSRange;
-                    tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
-                    
-                    Z = permute(radArray(uInd+interpPadding,vInd+interpPadding,:,:),[4 3 1 2]);
-                    
-                    extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sEff,tEff.','*linear',0); %row,col,Z,row,col
-                    switch q.fMethod
-                        case 'add'
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
-                       
-                        case 'mult'
-                            max_int = max(max(syntheticImage)); % normalize
-                            syntheticImage = syntheticImage/max_int; 
-                            max_int = max(max(extractedImageTemp)); % normalize
-                            extractedImageTemp = extractedImageTemp/max_int;
-                            extractedImageTemp(isnan(extractedImageTemp)) = 0; 
-                
-                            new_uv = extractedImageTemp*mask(vInd,uInd);
-                            new_uv( new_uv==0 ) = 1;  % Modified by chris
-                
-                            new_uv = new_uv + 1;
 
-                            syntheticImage = syntheticImage.*new_uv;
+        sizeUV = [length(vSSRange) length(uSSRange)];
+        numelUV = prod(sizeUV);
+        
+        for uvIdx = 1:numelUV
 
-                        case 'filt'
-                            filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage = syntheticImage + extractedImageTemp*mask(vInd,uInd);
+            [uIdx vIdx] = ind2sub( sizeUV, uvIdx );
 
-                    end%switch
+            if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
 
-                end%if
+                uPrime = uSSRange(uIdx)*sizePixelAperture; %u and v converted to millimeters here
+                vPrime = vSSRange(vIdx)*sizePixelAperture; %u and v converted to millimeters here
 
-            end%for
+                % Shift-Invariant (Paul)
+                sEff = uPrime.*(q.fAlpha - 1) + sSSRange;
+                tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
+
+                Z = permute(radArray(uIdx+interpPadding,vIdx+interpPadding,:,:),[4 3 1 2]);
+
+                extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sEff,tEff.','*linear',0); %row,col,Z,row,col
+                switch q.fMethod
+                    case 'add'
+                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+
+                    case 'mult'
+                        max_int = max(max(syntheticImage)); % normalize
+                        syntheticImage = syntheticImage/max_int; 
+                        max_int = max(max(extractedImageTemp)); % normalize
+                        extractedImageTemp = extractedImageTemp/max_int;
+                        extractedImageTemp(isnan(extractedImageTemp)) = 0; 
+
+                        new_uv = extractedImageTemp*mask(vIdx,uIdx);
+                        new_uv( new_uv==0 ) = 1;  % Modified by chris
+
+                        new_uv = new_uv + 1;
+
+                        syntheticImage = syntheticImage.*new_uv;
+
+                    case 'filt'
+                        filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
+                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+
+                end%switch
+
+            end%if
+
         end%for
 
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
 
-    otherwise
-        error('Incorrect supersampling logic determination. Debug refocus.m and/or check requestVector input.');
-
 end%switch
+
+
+%% Output conditioning
 
 switch q.fMethod
     case 'add'
@@ -307,7 +332,7 @@ switch q.fMethod
         syntheticImage( syntheticImage==2 ) = 0;  % Modified by chris
 
     case 'filt'
-        filterMatrix = filterMatrix./activePixelCount;
+        filterMatrix = filterMatrix/sum( mask~=0 );
         syntheticImage(filterMatrix<filterThreshold) = 0;
 
 end%switch

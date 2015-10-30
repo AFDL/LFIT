@@ -34,7 +34,8 @@ end
 num=0; %timer logic
 fprintf('   Time remaining:           ');
 
-for imInd = 1:size(imageArray,3)
+nImages = size(imageArray,3);
+for imInd = 1:nImages
     
     if ~exist(imSavePath,'dir'), mkdir(imSavePath); end
     
@@ -63,7 +64,7 @@ for imInd = 1:size(imageArray,3)
     
     % Timer logic
     time=toc(time);
-    timerVar=time/60*((size(imageArray,3)-imInd));
+    timerVar=(time/60)*(nImages-imInd);
     if timerVar>=1
         timerVar=round(timerVar);
         for count=1:num+2
@@ -72,7 +73,7 @@ for imInd = 1:size(imageArray,3)
         num=numel(num2str(timerVar));
         fprintf('%g m',timerVar)
     else
-        timerVar=round(time*((size(imageArray,3)-imInd)));
+        timerVar=round( time*(nImages-imInd) );
         for count=1:num+2
             fprintf('\b')
         end

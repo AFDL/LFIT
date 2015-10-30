@@ -109,10 +109,11 @@ fprintf('\nBeginning focal stack generation.\n');
         
         for frameIdx = 1:nFrames % for each frame of an animation
             
-            refocusedImage = rawImageArray(:,:,frameIdx);
+            refocusedImage = focalStack(:,:,frameIdx);
             switch q.contrast
-                case 'simple',      refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
-                case 'imadjust',    refocusedImage = imadjust(refocusedImage);
+                case 'image',       refocusedImage = ( refocusedImage - min(refocusedImage(:)) )/( max(refocusedImage(:)) - min(refocusedImage(:)) );
+                case 'imadjust',    refocusedImage = imadjust( refocusedImage );
+                case 'stack',       % Nothing to do
             end
             
             alphaVal = alphaRange(frameIdx);

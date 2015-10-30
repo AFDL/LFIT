@@ -37,7 +37,9 @@ end
 
 % if the last image in the folder is processed or if processing on a per image basis (typical)
 if imageIndex == numImages || strcmpi( q.grouping, 'image' )
-    for depthInd = 1:size(refocusedImageStack,4) % for each different raw plenoptic particle image at different depths
+
+    nPlanes = size(refocusedImageStack,4);
+    for depthInd = 1:nPlanes % for each different raw plenoptic particle image at different depths
         
         if strcmpi( q.grouping, 'image' ) % as in typical plenoptic processing
             subdir = imageSpecificName;
@@ -66,7 +68,7 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                 end
                 
                 cF = figure;
-                switch q.title % caption flag
+                switch q.title
                     case 'caption',     caption = q.caption;
                     case 'annotation',  caption = sprintf( 'alpha = %g', q.caption, q.fAlpha(fIdx) );
                     case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, q.fAlpha(fIdx) );
