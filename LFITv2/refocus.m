@@ -111,19 +111,21 @@ switch superSampling
         [sActual,tActual] = meshgrid( sRange, tRange );
         [uActual,vActual] = meshgrid( uRange*sizePixelAperture, vRange*sizePixelAperture );
 
-        sizeUV = size(uActual);
         numelUV = numel(uActual);
+        
+        % Crop and reshape to optimize parfor performance
+        radArray = radArray( 1+interpPadding:end-interpPadding, 1+interpPadding:end-interpPadding, :, : );
+        radArray = permute( radArray, [2 1 4 3] );
+        radArray = reshape( radArray, numelUV, sizeT, sizeS );
 
         for uvIdx = 1:numelUV
-
-                [uIdx,vIdx] = ind2sub( sizeUV, uvIdx );
            
 %               if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
 
                     switch q.fZoom
                         case 'legacy'
-                            sQuery  = uActual(vIdx,uIdx)*(q.fAlpha - 1) + sActual;
-                            tQuery  = vActual(vIdx,uIdx)*(q.fAlpha - 1) + tActual;
+                            sQuery  = uActual(uvIdx)*(q.fAlpha - 1) + sActual;
+                            tQuery  = vActual(uvIdx)*(q.fAlpha - 1) + tActual;
 
                         case 'telecentric'
                             si      = ( 1 - q.fMag )*q.fLength;
@@ -132,30 +134,31 @@ switch superSampling
                             soPrime = so + q.fPlane;
                             MPrime  = siPrime/soPrime;
 
-                            sQuery  = q.fGridX*MPrime/q.fAlpha + uActual(vIdx,uIdx)*(1 - 1/q.fAlpha);
-                            tQuery  = q.fGridY*MPrime/q.fAlpha + vActual(vIdx,uIdx)*(1 - 1/q.fAlpha);
+                            sQuery  = q.fGridX*MPrime/q.fAlpha + uActual(uvIdx)*(1 - 1/q.fAlpha);
+                            tQuery  = q.fGridY*MPrime/q.fAlpha + vActual(uvIdx)*(1 - 1/q.fAlpha);
                             [sQuery,tQuery] = meshgrid( sQuery, tQuery );
 
                     end                  
-                  
-                    Z = permute(radArray(uIdx+interpPadding,vIdx+interpPadding,:,:),[4 3 1 2]);
-                    extractedImageTemp = interp2( sRange, tRange, Z, sQuery, tQuery, '*linear', 0 ); %row,col,Z,row,col
+                    
+                    extractedImageTemp = interp2( sRange, tRange, squeeze(radArray(uvIdx,:,:)), sQuery, tQuery, '*linear', 0 ); %row,col,Z,row,col
                     
                     switch q.fMethod
                         case 'add'
-                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                            syntheticImage      = syntheticImage + extractedImageTemp;
                        
                         case 'mult'
                             extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp  = double(extractedImageTemp) + .0001;
-                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(vIdx,uIdx)); % why are u,v switched here? what is the -1 for? --cjc
-                            syntheticImage      = syntheticImage.*extractedImageTemp;
+                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
+                            syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
 
                         case 'filt'
                             extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                             extractedImageTemp  = double(extractedImageTemp);
-                            filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                            syntheticImage      = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                            extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                            filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1; %! parfor: invalid indexing
+                            syntheticImage      = syntheticImage + extractedImageTemp;
 
                     end%switch
                  
