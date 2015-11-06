@@ -103,71 +103,119 @@ else
 end
 
 
-%%
+%% Primary loop
  
 switch superSampling
     case 'none'
+
+        % Crop and reshape 4D-array to optimize parfor performance
+        radArray = radArray( 1+interpPadding:end-interpPadding, 1+interpPadding:end-interpPadding, :, : );
+        radArray = permute( radArray, [2 1 4 3] );
+        radArray = reshape( radArray, size(radArray,1)*size(radArray,2), size(radArray,3), size(radArray,4) );
 
         [sActual,tActual] = meshgrid( sRange, tRange );
         [uActual,vActual] = meshgrid( uRange*sizePixelAperture, vRange*sizePixelAperture );
 
         numelUV = numel(uActual);
-        
-        % Crop and reshape to optimize parfor performance
-        radArray = radArray( 1+interpPadding:end-interpPadding, 1+interpPadding:end-interpPadding, :, : );
-        radArray = permute( radArray, [2 1 4 3] );
-        radArray = reshape( radArray, numelUV, sizeT, sizeS );
 
         for uvIdx = 1:numelUV
            
-%               if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
+            if mask(uvIdx) > 0 % if mask pixel is not zero, calculate.
 
-                    switch q.fZoom
-                        case 'legacy'
-                            sQuery  = uActual(uvIdx)*(q.fAlpha - 1) + sActual;
-                            tQuery  = vActual(uvIdx)*(q.fAlpha - 1) + tActual;
+                switch q.fZoom
+                    case 'legacy'
+                        sQuery  = uActual(uvIdx)*(q.fAlpha - 1) + sActual;
+                        tQuery  = vActual(uvIdx)*(q.fAlpha - 1) + tActual;
 
-                        case 'telecentric'
-                            si      = ( 1 - q.fMag )*q.fLength;
-                            so      = -si/q.fMag;
-                            siPrime = q.fAlpha*si;
-                            soPrime = so + q.fPlane;
-                            MPrime  = siPrime/soPrime;
+                    case 'telecentric'
+                        si      = ( 1 - q.fMag )*q.fLength;
+                        so      = -si/q.fMag;
+                        siPrime = q.fAlpha*si;
+                        soPrime = so + q.fPlane;
+                        MPrime  = siPrime/soPrime;
 
-                            sQuery  = q.fGridX*MPrime/q.fAlpha + uActual(uvIdx)*(1 - 1/q.fAlpha);
-                            tQuery  = q.fGridY*MPrime/q.fAlpha + vActual(uvIdx)*(1 - 1/q.fAlpha);
-                            [sQuery,tQuery] = meshgrid( sQuery, tQuery );
+                        sQuery  = q.fGridX*MPrime/q.fAlpha + uActual(uvIdx)*(1 - 1/q.fAlpha);
+                        tQuery  = q.fGridY*MPrime/q.fAlpha + vActual(uvIdx)*(1 - 1/q.fAlpha);
+                        [sQuery,tQuery] = meshgrid( sQuery, tQuery );
 
-                    end                  
-                    
-                    extractedImageTemp = interp2( sRange, tRange, squeeze(radArray(uvIdx,:,:)), sQuery, tQuery, '*linear', 0 ); %row,col,Z,row,col
-                    
-                    switch q.fMethod
-                        case 'add'
-                            extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                            syntheticImage      = syntheticImage + extractedImageTemp;
-                       
-                        case 'mult'
-                            extractedImageTemp  = gray2ind(extractedImageTemp,65536);
-                            extractedImageTemp  = double(extractedImageTemp) + .0001;
-                            extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
-                            syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
+                end                  
 
-                        case 'filt'
-                            extractedImageTemp  = gray2ind(extractedImageTemp,65536);
-                            extractedImageTemp  = double(extractedImageTemp);
-                            extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                            filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1; %! parfor: invalid indexing
-                            syntheticImage      = syntheticImage + extractedImageTemp;
+                extractedImageTemp = interp2( sRange,tRange, squeeze(radArray(uvIdx,:,:)), sQuery,tQuery, '*linear',0 );
 
-                    end%switch
-                 
-%               end%if
+                switch q.fMethod
+                    case 'add'
+                        extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                        syntheticImage      = syntheticImage + extractedImageTemp;
+
+                    case 'mult'
+                        extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                        extractedImageTemp  = double(extractedImageTemp) + .0001;
+                        extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
+                        syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
+
+                    case 'filt'
+                        extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                        extractedImageTemp  = double(extractedImageTemp);
+                        extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                        filterMatrix        = filterMatrix + (extractedImageTemp>noiseThreshold);
+                        syntheticImage      = syntheticImage + extractedImageTemp;
+
+                end%switch
+
+            end%if
 
         end%for
 
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
+        
+    case 'st'
+        
+        % Crop and reshape 4D-array to optimize parfor performance
+        radArray = radArray( 1+interpPadding:end-interpPadding, 1+interpPadding:end-interpPadding, :, : );
+        radArray = permute( radArray, [2 1 4 3] );
+        radArray = reshape( radArray, size(radArray,1)*size(radArray,2), size(radArray,3), size(radArray,4) );
+        
+        [sPrime,tPrime]     = meshgrid( sSSRange, tSSRange );
+        [uActual,vActual]   = meshgrid( uRange*sizePixelAperture, vRange*sizePixelAperture );
+
+        numelUV = numel(uActual);
+        
+        for uvIdx = 1:numelUV
+
+            if mask(uvIdx) > 0 % if mask pixel is not zero, calculate.
+
+                % Shift-Invariant (Paul)
+                sQuery = uActual(uvIdx)*(q.fAlpha - 1) + sPrime;
+                tQuery = vActual(uvIdx)*(q.fAlpha - 1) + tPrime;
+
+                extractedImageTemp(:,:) = interp2( sRange,tRange, squeeze(radArray(uvIdx,:,:)), sQuery,tQuery, '*linear',0 );
                 
+                switch q.fMethod
+                    case 'add'
+                        extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                        syntheticImage      = syntheticImage + extractedImageTemp;
+
+                    case 'mult'
+                        extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                        extractedImageTemp  = double(extractedImageTemp) + .0001;
+                        extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
+                        syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
+
+                    case 'filt'
+                        extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                        extractedImageTemp  = double(extractedImageTemp);
+                        extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                        filterMatrix        = filterMatrix + (extractedImageTemp>noiseThreshold);
+                        syntheticImage      = syntheticImage + extractedImageTemp;
+
+                end%switch
+
+            end%if
+
+        end%for
+
+        syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
+        
     case {'uv','both'}
         
         [tActual,sActual,vActual,uActual] = ndgrid( tRange, sRange, vRange*sizePixelAperture, uRange*sizePixelAperture );
@@ -178,9 +226,8 @@ switch superSampling
             I = I(:,:,1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding);
         else
             oldMethod = false;
-            
             V = permute(radArray,[4,3,2,1]);
-            V = V(:,:,1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding); % doesn't use padded data set
+            V = V(:,:,1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding);
             
             % From MATLAB's built-in 'makemonotonic' (see inside interpn)
             idim = 4;
@@ -209,9 +256,9 @@ switch superSampling
             end
 
             if verLessThan('matlab', '8.0') % if MATLAB version is 7.13? (2011b) and definitely 7.14 (2012a), griddedInterpolant doesn't support 'none' flag
-                Fimg = griddedInterpolant(tActual,sActual,vActualM,uActualM,VM,'linear');
+                Fimg = griddedInterpolant( tActual,sActual, vActualM,uActualM, VM, 'linear' );
             else
-                Fimg = griddedInterpolant(tActual,sActual,vActualM,uActualM,VM,'linear','none');
+                Fimg = griddedInterpolant( tActual,sActual, vActualM,uActualM, VM, 'linear','none' );
             end
         end%if
         
@@ -222,21 +269,21 @@ switch superSampling
             
             [uIdx,vIdx] = ind2sub( sizeUV, uvIdx );
             
-            if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
+            if mask(uvIdx) > 0 % if mask pixel is not zero, calculate.
 
-                uPrime = uSSRange(uIdx)*sizePixelAperture; %u and v converted to millimeters here
-                vPrime = vSSRange(vIdx)*sizePixelAperture; %u and v converted to millimeters here
+                uPrime = uSSRange(uIdx)*sizePixelAperture; % u and v converted to millimeters here
+                vPrime = vSSRange(vIdx)*sizePixelAperture; % u and v converted to millimeters here
 
                 % Shift-Invariant (Paul)
-                sEff = uPrime.*(q.fAlpha - 1) + sSSRange;
-                tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
+                sQuery = uPrime*(q.fAlpha - 1) + sSSRange;
+                tQuery = vPrime*(q.fAlpha - 1) + tSSRange;
 
-                [tQuery, sQuery, vQuery, uQuery] = ndgrid(tEff,sEff,vPrime,uPrime);
+                [tQuery,sQuery,vQuery,uQuery] = ndgrid( tQuery,sQuery, vPrime,uPrime );
 
                 if oldMethod
-                    extractedImageTemp = interpn(tActual,sActual,vActual,uActual,I,tQuery,sQuery,vQuery,uQuery,'*linear',0);
+                    extractedImageTemp = interpn( tActual,sActual, vActual,uActual, I, tQuery,sQuery, vQuery,uQuery, '*linear',0 );
                 else
-                    extractedImageTemp = Fimg(tQuery,sQuery,vQuery,uQuery);
+                    extractedImageTemp = Fimg( tQuery,sQuery, vQuery,uQuery );
                 end
 
                 extractedImageTemp(extractedImageTemp<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
@@ -244,82 +291,27 @@ switch superSampling
 
                 switch q.fMethod
                     case 'add'
-                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                        extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                        syntheticImage      = syntheticImage + extractedImageTemp;
 
                     case 'mult'
-                        max_int = max(max(syntheticImage)); % normalize
-                        syntheticImage = syntheticImage/max_int; 
-                        max_int = max(max(extractedImageTemp)); % normalize
-                        extractedImageTemp = extractedImageTemp/max_int;
-                        extractedImageTemp(isnan(extractedImageTemp)) = 0; 
-
-                        new_uv = extractedImageTemp*mask(vIdx,uIdx);
-                        new_uv( new_uv==0 ) = 1;  % Modified by chris
-
-                        new_uv = new_uv + 1;
-
-                        syntheticImage = syntheticImage.*new_uv;
+                        extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                        extractedImageTemp  = double(extractedImageTemp) + .0001;
+                        extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
+                        syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
 
                     case 'filt'
-                        filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
+                        extractedImageTemp  = gray2ind(extractedImageTemp,65536);
+                        extractedImageTemp  = double(extractedImageTemp);
+                        extractedImageTemp  = extractedImageTemp*mask(uvIdx);
+                        filterMatrix        = filterMatrix + (extractedImageTemp>noiseThreshold);
+                        syntheticImage      = syntheticImage + extractedImageTemp;
 
                 end%switch
 
             end%if
             
         end%for
-        
-    case 'st' % Separate case here because it's about 2x faster than just using the uv/both case above
-
-        sizeUV = [length(vSSRange) length(uSSRange)];
-        numelUV = prod(sizeUV);
-        
-        for uvIdx = 1:numelUV
-
-            [uIdx vIdx] = ind2sub( sizeUV, uvIdx );
-
-            if mask(vIdx,uIdx) ~= 0 % if mask pixel is not zero, calculate.
-
-                uPrime = uSSRange(uIdx)*sizePixelAperture; %u and v converted to millimeters here
-                vPrime = vSSRange(vIdx)*sizePixelAperture; %u and v converted to millimeters here
-
-                % Shift-Invariant (Paul)
-                sEff = uPrime.*(q.fAlpha - 1) + sSSRange;
-                tEff = vPrime.*(q.fAlpha - 1) + tSSRange;
-
-                Z = permute(radArray(uIdx+interpPadding,vIdx+interpPadding,:,:),[4 3 1 2]);
-                extractedImageTemp(:,:) = interp2(sRange,tRange.',Z,sEff,tEff.','*linear',0); %row,col,Z,row,col
-                
-                switch q.fMethod
-                    case 'add'
-                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
-
-                    case 'mult'
-                        max_int = max(max(syntheticImage)); % normalize
-                        syntheticImage = syntheticImage/max_int; 
-                        max_int = max(max(extractedImageTemp)); % normalize
-                        extractedImageTemp = extractedImageTemp/max_int;
-                        extractedImageTemp(isnan(extractedImageTemp)) = 0; 
-
-                        new_uv = extractedImageTemp*mask(vIdx,uIdx);
-                        new_uv( new_uv==0 ) = 1;  % Modified by chris
-
-                        new_uv = new_uv + 1;
-
-                        syntheticImage = syntheticImage.*new_uv;
-
-                    case 'filt'
-                        filterMatrix(extractedImageTemp>noiseThreshold) = filterMatrix(extractedImageTemp>noiseThreshold) + 1;
-                        syntheticImage = syntheticImage + extractedImageTemp*mask(vIdx,uIdx);
-
-                end%switch
-
-            end%if
-
-        end%for
-
-        syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
 
 end%switch
 
@@ -334,7 +326,7 @@ switch q.fMethod
         syntheticImage( syntheticImage==2 ) = 0;  % Modified by chris
 
     case 'filt'
-        filterMatrix = filterMatrix/sum( mask~=0 );
+        filterMatrix = filterMatrix/sum( mask>0 );
         syntheticImage(filterMatrix<filterThreshold) = 0;
 
 end%switch
