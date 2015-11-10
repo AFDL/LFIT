@@ -67,7 +67,7 @@ switch q.fZoom
                 syntheticImage  = zeros( sizeT, sizeS, 'single' );
             case 'mult'
                 syntheticImage  = ones( sizeT, sizeS, 'single' );
-            case 'filter'
+            case 'filt'
                 syntheticImage  = zeros( sizeT, sizeS, 'single' );
                 filterMatrix    = zeros( sizeT, sizeS, 'single' );
                 noiseThreshold  = q.fFilter(1);
@@ -80,7 +80,7 @@ switch q.fZoom
                 syntheticImage  = zeros( length(q.fGridY), length(q.fGridX), 'single' );
             case 'mult'
                 syntheticImage  = ones( length(q.fGridY), length(q.fGridX), 'single' );
-            case 'filter'
+            case 'filt'
                 syntheticImage  = zeros( length(q.fGridY), length(q.fGridX), 'single' );
                 filterMatrix    = zeros( length(q.fGridY), length(q.fGridX), 'single' );
                 noiseThreshold  = q.fFilter(1);
