@@ -326,7 +326,7 @@ switch q.fMethod
         syntheticImage( syntheticImage==2 ) = 0;  % Modified by chris
 
     case 'filt'
-        filterMatrix = filterMatrix/sum( mask>0 );
+        filterMatrix = filterMatrix/sum( mask(:)>0 );
         syntheticImage(filterMatrix<filterThreshold) = 0;
 
 end%switch
