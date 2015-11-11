@@ -58,6 +58,11 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
             refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
             if strcmpi(q.contrast,'imadjust'), refocusedImage = imadjust(refocusedImage); end
             
+            switch q.fMethod
+                case 'legacy',      key = 'alpha';  val = q.fAlpha(frameIdx);
+                case 'telecentric', key = 'plane';  val = q.fPlane(frameIdx);
+            end
+            
             SS_UV = q.uvFactor;
             SS_ST = q.stFactor;
                 
@@ -70,8 +75,8 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                 cF = figure;
                 switch q.title
                     case 'caption',     caption = q.caption;
-                    case 'annotation',  caption = sprintf( 'alpha = %g', q.caption, q.fAlpha(fIdx) );
-                    case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, q.fAlpha(fIdx) );
+                    case 'annotation',  caption = sprintf( '%s = %g', q.caption, key,val );
+                    case 'both',        caption = sprintf( '%s --- [%s = %g]', q.caption, key,val );
                 end
                 displayimage(refocusedImage,caption,q.colormap,q.background);
                 
@@ -93,9 +98,9 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
                 if ~exist(dout,'dir'), mkdir(dout); end
                 
                 if strcmpi( q.fZoom, 'telecentric' ) %telecentric flag
-                    fname = sprintf( '_z%4.5f', q.fPlane(fIdx) );
+                    fname = sprintf( '_z%4.5f', val );
                 else
-                    fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', q.fAlpha(fIdx), SS_ST, SS_UV ); 
+                    fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', val, SS_ST, SS_UV ); 
                 end
                 
                 switch q.saveas

@@ -49,36 +49,28 @@ fprintf('\nBeginning focal stack generation.\n');
     set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
     set(focFig,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray,3)]);
     
-    %%%new
+    % Preallocate focal stack
     switch q.fZoom
         case 'legacy'
-            alphaRange = q.fAlpha;
-            rawImageArray = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,length(alphaRange),'single');
+            nFrames = length(q.fAlpha);
+            rawImageArray = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,nFrames,'single');
             
         case 'telecentric'
-            si      = ( 1 - q.fMag )*q.fLength;
-            so      = -si/q.fMag;
-            soPrime = so + q.fPlane;
-            siPrime = (1/q.fLength - 1./soPrime).^(-1);
-            
-            alphaRange = siPrime/si;
-
-            % Preallocate focal stack
-            rawImageArray = zeros(length(q.fGridY),length(q.fGridX),length(alphaRange),'single');
+            nFrames = length(q.fPlane);
+            rawImageArray = zeros(length(q.fGridY),length(q.fGridX),nFrames,'single');
             
     end%switch
-    %%%
     
-    nFrames = length(alphaRange);
     for frameIdx = 1:nFrames % for each frame of an animation
         
         time=tic;
         
         % Sub-query at single alpha value
-        qi          = q;
-        qi.fAlpha   = alphaRange(frameIdx);
-        if strcmpi(q.fZoom,'telecentric'), qi.fPlane = q.fPlane(frameIdx); end
-        
+        qi = q;
+        switch q.fZoom
+            case 'legacy',      qi.fAlpha = q.fAlpha(frameInd);
+            case 'telecentric', qi.fPlane = q.fPlane(frameInd);
+        end
         rawImageArray(:,:,frameIdx) = refocus(qi,radArray,sRange,tRange);
         
         % Timer logic
@@ -116,7 +108,10 @@ fprintf('\nBeginning focal stack generation.\n');
                 case 'stack',       % Nothing to do
             end
             
-            alphaVal = alphaRange(frameIdx);
+            switch q.fMethod
+                case 'legacy',      key = 'alpha';  val = q.fAlpha(frameIdx);
+                case 'telecentric', key = 'plane';  val = q.fPlane(frameIdx);
+            end
             
             SS_UV = q.uvFactor;
             SS_ST = q.stFactor;
@@ -125,8 +120,8 @@ fprintf('\nBeginning focal stack generation.\n');
             
                 switch q.title
                     case 'caption',     caption = q.caption;
-                    case 'annotation',  caption = sprintf( '[alpha = %g]', alphaVal );
-                    case 'both',        caption = sprintf( '%s --- [alpha = %g]', q.caption, alphaVal );
+                    case 'annotation',  caption = sprintf( '[%s = %g]', key,val );
+                    case 'both',        caption = sprintf( '%s --- [%s = %g]', q.caption, key,val );
                 end
                 displayimage(expImage,caption,q.colormap,q.background);  
                 
@@ -154,7 +149,7 @@ fprintf('\nBeginning focal stack generation.\n');
             dout = fullfile(outputPath,'Focal Stack',imageSpecificName);
             if ~exist(dout,'dir'), mkdir(dout); end
 
-            fname = sprintf( '_FS_alp%4.5f_stSS%g_uvSS%g', alphaVal, SS_ST, SS_UV );
+            fname = sprintf( '_FS_alp%4.5f_stSS%g_uvSS%g', val, SS_ST, SS_UV );
             switch q.saveas
                 case 'bmp'
                     fout = fullfile(dout,[fname '.bmp']);

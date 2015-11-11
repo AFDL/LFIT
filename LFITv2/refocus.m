@@ -124,18 +124,20 @@ switch superSampling
 
                 switch q.fZoom
                     case 'legacy'
-                        sQuery  = uActual(uvIdx)*(q.fAlpha - 1) + sActual;
-                        tQuery  = vActual(uvIdx)*(q.fAlpha - 1) + tActual;
+                        sQuery  = sActual + uActual(uvIdx)*(q.fAlpha - 1);
+                        tQuery  = tActual + vActual(uvIdx)*(q.fAlpha - 1);
 
                     case 'telecentric'
                         si      = ( 1 - q.fMag )*q.fLength;
                         so      = -si/q.fMag;
-                        siPrime = q.fAlpha*si;
                         soPrime = so + q.fPlane;
+                        siPrime = (1/q.fLength - 1/soPrime)^(-1);
                         MPrime  = siPrime/soPrime;
+                        
+                        alpha   = siPrime/si;
 
-                        sQuery  = q.fGridX*MPrime/q.fAlpha + uActual(uvIdx)*(1 - 1/q.fAlpha);
-                        tQuery  = q.fGridY*MPrime/q.fAlpha + vActual(uvIdx)*(1 - 1/q.fAlpha);
+                        sQuery  = q.fGridX*MPrime/alpha + uActual(uvIdx)*(1 - 1/alpha);
+                        tQuery  = q.fGridY*MPrime/alpha + vActual(uvIdx)*(1 - 1/alpha);
                         [sQuery,tQuery] = meshgrid( sQuery, tQuery );
 
                 end                  

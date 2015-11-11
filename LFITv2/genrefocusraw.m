@@ -27,14 +27,8 @@ for fIdx = 1:nPlanes % for each refocused
             
             rawImageArray(:,:,fIdx) = refocus(qi,radArray,sRange,tRange);
 
-        case 'telecentric'            
-            si          = ( 1 - q.fMag )*q.fLength;
-            so          = -si/q.fMag;
-            soPrime     = so + q.fPlane(fIdx);
-            siPrime     = (1/q.fLength - 1/soPrime)^(-1);
-            
+        case 'telecentric'
             qi          = q;
-            qi.fAlpha   = siPrime/si;
             qi.fPlane   = q.fPlane(fIdx);
             
             rawImageArray(:,:,fIdx) = refocus(qi,radArray,sRange,tRange);

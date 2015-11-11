@@ -31,37 +31,29 @@ fprintf('\nBeginning refocusing animation generation.\n');
 %     fprintf('\nGenerating refocusing animation (%i of %i)...',pInd,size(requestVector,1));
     timerVar=0;
     
+    % Preallocate focal stack
     switch q.fZoom
         case 'legacy'
-            alphaRange = q.fAlpha;
-            
-            % Preallocate focal stack
-            refocusStack = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,length(alphaRange),'single');
+            nFrames = length(q.fAlpha);
+            refocusStack = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,nFrames,'single');
 
         case 'telecentric'
-            si      = ( 1 - q.fMag )*q.fLength;
-            so      = -si/q.fMag;
-            soPrime = so + q.fPlane;
-            siPrime = (1/q.fLength - 1./soPrime).^(-1);
-            
-            alphaRange = siPrime/si;
-
-            % Preallocate focal stack
-            refocusStack = zeros(length(q.fGridY),length(q.fGridX),length(alphaRange),'single');
+            nFrames = length(q.fPlane);
+            refocusStack = zeros(length(q.fGridY),length(q.fGridX),nFrames,'single');
 
     end%switch
     
     fprintf('\n   Time remaining:       ');
     
-    nFrames = length(alphaRange);
     for frameInd = 1:nFrames
         time=tic;
         
         % Sub-query at single alpha value
-        qi          = q;
-        qi.fAlpha   = alphaRange(frameInd);
-        if strcmpi(q.fZoom,'telecentric'), qi.fPlane = q.fPlane(frameInd); end
-        
+        qi = q;
+        switch q.fZoom
+            case 'legacy',      qi.fAlpha = q.fAlpha(frameInd);
+            case 'telecentric', qi.fPlane = q.fPlane(frameInd);
+        end
         refocusStack(:,:,frameInd) = refocus(qi,radArray,sRange,tRange);
         
         % Timer logic
