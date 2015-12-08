@@ -58,34 +58,16 @@ tSSRange    = linspace( tRange(1), tRange(end), sizeT );
 
 %% Memory preallocation
 
-extractedImageTemp = zeros( sizeT, sizeS, 'single' );
-
 switch q.fZoom
     case 'legacy'
-        switch q.fMethod
-            case 'add'
-                syntheticImage  = zeros( sizeT, sizeS, 'single' );
-            case 'mult'
-                syntheticImage  = ones( sizeT, sizeS, 'single' );
-            case 'filt'
-                syntheticImage  = zeros( sizeT, sizeS, 'single' );
-                filterMatrix    = zeros( sizeT, sizeS, 'single' );
-                noiseThreshold  = q.fFilter(1);
-                filterThreshold = q.fFilter(2);
-        end
+        imageProduct    = ones( sizeT, sizeS, 'single' );
+        imageIntegral   = zeros( sizeT, sizeS, 'single' );
+        filterMatrix    = zeros( sizeT, sizeS, 'single' );
 
     case 'telecentric'
-        switch q.fMethod
-            case 'add'
-                syntheticImage  = zeros( length(q.fGridY), length(q.fGridX), 'single' );
-            case 'mult'
-                syntheticImage  = ones( length(q.fGridY), length(q.fGridX), 'single' );
-            case 'filt'
-                syntheticImage  = zeros( length(q.fGridY), length(q.fGridX), 'single' );
-                filterMatrix    = zeros( length(q.fGridY), length(q.fGridX), 'single' );
-                noiseThreshold  = q.fFilter(1);
-                filterThreshold = q.fFilter(2);
-        end
+        imageProduct    = ones( length(q.fGridY), length(q.fGridX), 'single' );
+        imageIntegral   = zeros( length(q.fGridY), length(q.fGridX), 'single' );
+        filterMatrix    = zeros( length(q.fGridY), length(q.fGridX), 'single' );
 
 end%switch
 
@@ -118,7 +100,7 @@ switch superSampling
 
         numelUV = numel(uActual);
 
-        for uvIdx = 1:numelUV
+        parfor ( uvIdx = 1:numelUV, Inf )
            
             if mask(uvIdx) > 0 % if mask pixel is not zero, calculate.
 
@@ -147,20 +129,20 @@ switch superSampling
                 switch q.fMethod
                     case 'add'
                         extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                        syntheticImage      = syntheticImage + extractedImageTemp;
+                        imageIntegral       = imageIntegral + extractedImageTemp;
 
                     case 'mult'
                         extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                         extractedImageTemp  = double(extractedImageTemp) + .0001;
                         extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
-                        syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
+                        imageProduct        = imageProduct .* extractedImageTemp;
 
                     case 'filt'
                         extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                         extractedImageTemp  = double(extractedImageTemp);
                         extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                        filterMatrix        = filterMatrix + (extractedImageTemp>noiseThreshold);
-                        syntheticImage      = syntheticImage + extractedImageTemp;
+                        filterMatrix        = filterMatrix + ( extractedImageTemp>q.fFilter(1) );
+                        imageIntegral       = imageIntegral + extractedImageTemp;
 
                 end%switch
 
@@ -168,6 +150,10 @@ switch superSampling
 
         end%for
 
+        switch q.fMethod    % PARFOR requires two reduction variables, here we choose which to keep
+            case 'mult',    syntheticImage  = imageProduct;
+            otherwise,      syntheticImage  = imageIntegral;
+        end
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
         
     case 'st'
@@ -182,7 +168,7 @@ switch superSampling
 
         numelUV = numel(uActual);
         
-        for uvIdx = 1:numelUV
+        parfor ( uvIdx = 1:numelUV, Inf )
 
             if mask(uvIdx) > 0 % if mask pixel is not zero, calculate.
 
@@ -190,25 +176,25 @@ switch superSampling
                 sQuery = uActual(uvIdx)*(q.fAlpha - 1) + sPrime;
                 tQuery = vActual(uvIdx)*(q.fAlpha - 1) + tPrime;
 
-                extractedImageTemp(:,:) = interp2( sRange,tRange, squeeze(radArray(uvIdx,:,:)), sQuery,tQuery, '*linear',0 );
+                extractedImageTemp = interp2( sRange,tRange, squeeze(radArray(uvIdx,:,:)), sQuery,tQuery, '*linear',0 );
                 
                 switch q.fMethod
                     case 'add'
                         extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                        syntheticImage      = syntheticImage + extractedImageTemp;
+                        imageIntegral       = imageIntegral + extractedImageTemp;
 
                     case 'mult'
                         extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                         extractedImageTemp  = double(extractedImageTemp) + .0001;
                         extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
-                        syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
+                        imageProduct        = imageProduct .* extractedImageTemp;
 
                     case 'filt'
                         extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                         extractedImageTemp  = double(extractedImageTemp);
                         extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                        filterMatrix        = filterMatrix + (extractedImageTemp>noiseThreshold);
-                        syntheticImage      = syntheticImage + extractedImageTemp;
+                        filterMatrix        = filterMatrix + ( extractedImageTemp>q.fFilter(1) );
+                        imageIntegral       = imageIntegral + extractedImageTemp;
 
                 end%switch
 
@@ -216,6 +202,10 @@ switch superSampling
 
         end%for
 
+        switch q.fMethod    % PARFOR requires two reduction variables, here we choose which to keep
+            case 'mult',    syntheticImage  = imageProduct;
+            otherwise,      syntheticImage  = imageIntegral;
+        end
         syntheticImage(syntheticImage<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
         
     case {'uv','both'}
@@ -294,26 +284,31 @@ switch superSampling
                 switch q.fMethod
                     case 'add'
                         extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                        syntheticImage      = syntheticImage + extractedImageTemp;
+                        imageIntegral       = imageIntegral + extractedImageTemp;
 
                     case 'mult'
                         extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                         extractedImageTemp  = double(extractedImageTemp) + .0001;
                         extractedImageTemp  = extractedImageTemp.^(1/numelUV*mask(uvIdx));
-                        syntheticImage      = syntheticImage.*extractedImageTemp; %! parfor: non-conforming reduction variable
+                        imageProduct        = imageProduct .* extractedImageTemp;
 
                     case 'filt'
                         extractedImageTemp  = gray2ind(extractedImageTemp,65536);
                         extractedImageTemp  = double(extractedImageTemp);
                         extractedImageTemp  = extractedImageTemp*mask(uvIdx);
-                        filterMatrix        = filterMatrix + (extractedImageTemp>noiseThreshold);
-                        syntheticImage      = syntheticImage + extractedImageTemp;
+                        filterMatrix        = filterMatrix + ( extractedImageTemp>q.fFilter(1) );
+                        imageIntegral       = imageIntegral + extractedImageTemp;
 
                 end%switch
 
             end%if
             
         end%for
+
+        switch q.fMethod    % PARFOR requires two reduction variables, here we choose which to keep
+            case 'mult',    syntheticImage  = imageProduct;
+            otherwise,      syntheticImage  = imageIntegral;
+        end
 
 end%switch
 
@@ -329,7 +324,7 @@ switch q.fMethod
 
     case 'filt'
         filterMatrix = filterMatrix/sum( mask(:)>0 );
-        syntheticImage(filterMatrix<filterThreshold) = 0;
+        syntheticImage( filterMatrix<q.fFilter(2) ) = 0;
 
 end%switch
 
