@@ -68,8 +68,8 @@ fprintf('\nBeginning focal stack generation.\n');
         % Sub-query at single alpha value
         qi = q;
         switch q.fZoom
-            case 'legacy',      qi.fAlpha = q.fAlpha(frameInd);
-            case 'telecentric', qi.fPlane = q.fPlane(frameInd);
+            case 'legacy',      qi.fAlpha = q.fAlpha(frameIdx);
+            case 'telecentric', qi.fPlane = q.fPlane(frameIdx);
         end
         rawImageArray(:,:,frameIdx) = refocus(qi,radArray,sRange,tRange);
         
@@ -108,7 +108,7 @@ fprintf('\nBeginning focal stack generation.\n');
                 case 'stack',       % Nothing to do
             end
             
-            switch q.fMethod
+            switch q.fZoom
                 case 'legacy',      key = 'alpha';  val = q.fAlpha(frameIdx);
                 case 'telecentric', key = 'plane';  val = q.fPlane(frameIdx);
             end
