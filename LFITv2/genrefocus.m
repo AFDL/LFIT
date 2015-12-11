@@ -58,9 +58,9 @@ if imageIndex == numImages || strcmpi( q.grouping, 'image' )
             refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
             if strcmpi(q.contrast,'imadjust'), refocusedImage = imadjust(refocusedImage); end
             
-            switch q.fMethod
-                case 'legacy',      key = 'alpha';  val = q.fAlpha(frameIdx);
-                case 'telecentric', key = 'plane';  val = q.fPlane(frameIdx);
+            switch q.fZoom
+                case 'legacy',      key = 'alpha';  val = q.fAlpha(depthInd);
+                case 'telecentric', key = 'plane';  val = q.fPlane(depthInd);
             end
             
             SS_UV = q.uvFactor;
