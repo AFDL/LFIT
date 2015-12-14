@@ -128,7 +128,7 @@ for pIdx = 1:nPerspectives
                         imExp = ind2rgb(expImage16,colormap([q.colormap '(65536)']));
                     end
                     fout = fullfile(dout,[fname '_16bit.tif']);
-                    imwrite(imExp,fout,'tif');
+                    imwrite(imExp,fout,'tif','compression','lzw');
 
                 otherwise
                     error('Incorrect setting of the save flag in the requestVector input variable to the perspectivegen function.');

@@ -55,7 +55,7 @@ for imInd = 1:nImages
         case 5
             imExp = uint16(imageArray(:,:,imInd)*65536);
             fout = fullfile(imSavePath,[fname '.tif']);
-            imwrite(imExp,fout,'tif');
+            imwrite(imExp,fout,'tif','compression','lzw');
             
         otherwise
             error('Not yet supported. Only PNG output (flag 2 and flag 4) and TIFF output (flag 5) supported currently.');

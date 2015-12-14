@@ -45,7 +45,7 @@ else % averaged image does not exist, so compute it.
             end
         end
         I=I/size(imageName,1);
-        imwrite(uint16(I*65536),fullfile(calFolderPath,saveName)) %16bit output
+        imwrite(uint16(I*65536),fullfile(calFolderPath,saveName),'compression','lzw') %16bit output
         calImagePath=fullfile(calFolderPath,saveName);
         fprintf('\n   Complete.\n');
     end

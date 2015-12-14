@@ -185,7 +185,7 @@ fprintf('\nBeginning focal stack generation.\n');
                             imExp = ind2rgb(expImage16,colormap([q.colormap '(65536)']));
                         end
                         fout = fullfile(dout,[fname '_16bit.tif']);
-                        imwrite(imExp,fout,'tif');
+                        imwrite(imExp,fout,'tif','compression','lzw');
                     else
                         fprintf('\n');
                         warning('16-bit TIFF export is not supported when captions are enabled. Image not exported.');
