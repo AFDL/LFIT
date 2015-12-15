@@ -4,8 +4,6 @@ function [syntheticImage] = refocus(q,radArray,sRange,tRange)
 %   Requires global variable sizePixelAperture, which is the conversion
 %   factor for u and v to millimeters (mm).
 
-% profile on
-% tic
 
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
 
@@ -331,8 +329,5 @@ end%switch
         %%%Check constant magnification
 %         syntheticImage = imwarp(syntheticImage, affine2d([-M/MPrime 0 0; 0 -M/MPrime 0; 0 0 1]));
         %%%
-
-% profile viewer
-% toc
 
 end%function

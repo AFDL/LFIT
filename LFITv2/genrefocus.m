@@ -1,24 +1,5 @@
 function refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName,imageIndex,numImages,refocusedImageStack)
 %GENREFOCUS Generates a series of refocused images as defined by the request vector
-%
-%   requestVector = [alpha value, supersampling factor in (u,v), supersampling factor in (s,t), save flag, display flag, imadjust flag, colormap, background color, caption flag, caption string]
-%       {1} alpha value used in refocusing; a=1 nominal focal plane; a<1 focuses further away; a>1 focuses closer to the camera
-%       {2} supersampling factor in (u,v) is an integer by which to supersample. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {3} supersampling factor in (s,t) is an integer by which to supersample. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {4} save flag is 0 for no saving, 1 for saving a bmp, 2 for saving a png, 3 for saving a jpg of the image, 4 for a 16-bit PNG, 5 for a 16-bit TIFF
-%       {5} display flag is 0 for no display, 1 to display each refocused image with a pause, 2 to display each image without a pause
-%       {6} contrast flag is 0 for basic contrast stretching, 1 is to apply the imadjust function
-%       {7} colormap is the colormap used in displaying the image, eg 'jet' or 'gray'
-%       {8} background color is the background of the figure if the caption is enabled, eg [.8 .8 .8] or [1 1 1]
-%       {9} caption flag is 0 for no caption, 1 for caption string only, 2 for caption string + alpha value
-%       {10} caption string is the string used in the caption for caption flag of 1 or 2.
-%       {11} aperture flag is 0 for full aperture or 1 to enforce a circular aperture for microimages
-%       {12} directory flag is 0 to save refocused images on a per-image basis or 1 to save on a per-alpha basis (must be constant across requestVector lines)
-%       {13} refocusType is 0 for additive, 1 for multiplicative, 2 for filtered
-%       {14} filterInfo
-%               noiseThreshold = threshold below which intensity will be disregarded as noise
-%               filterThreshold = filter intensity threshold
-%       {15} magTypeFlag is 0 for legacy algorithm, 1 for constant magnification (aka telecentric). See documentation for more info. 
 
 
 % Check to see if saving on a per-image basis (normal) or per-alpha basis (some types of PSF experiments)

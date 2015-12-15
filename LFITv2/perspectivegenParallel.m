@@ -1,23 +1,9 @@
 function [perspectiveImage] = perspectivegenParallel(q,radArray,sRange,tRange,outputPath,imageSpecificName)
 %PERSPECTIVEGENPARALLEL Generates a series of perspective images as defined by the request vector
-%
-% Input Arguments:
-%   radArray = matrix of intensity values for a given u,v,s, and t index
-%   requestVector = defines the output; format given below
-%   requestVector = [u value, v value, super sampling factor in (s,t), save flag, display flag, imadjust flag, caption flag, caption string]
-%       {1} u value refers to the u position for which to generate a perspective view. Non-integer values ARE indeed supported, although any saved file names will have decimals.
-%       {2} v value refers to the v position for which to generate a perspective view. Non-integer values ARE indeed supported, although any saved file names will have decimals.
-%       {3} supersampling factor in (s,t) is an integer by which to supersample. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {4} save flag is 0 for no saving, 1 for saving a bmp, 2 for saving a png, 3 for saving a jpg of the image, 4 for saving a 16-bit png, 5 for saving a 16-bit TIFFg
-%       {5} display flag is 0 for no display, 1 to display each perspective image with a pause, 2 to display each image without a pause
-%       {6} imadjust flag is 0 for raw output, 1 is to apply the imadjust function to the perspective image (increases contrast)
-%       {7} colormap is the colormap used in displaying the image, eg 'jet' or 'gray'
-%       {8} background color is the background of the figure if the caption is enabled, eg [.8 .8 .8] or [1 1 1]
-%       {9} caption flag is 0 for no caption, 1 for caption string only, 2 for caption string + (u,v) coordinates appended
-%       {10} caption string is the string used in the caption for caption flag of 1 or 2.
 
 
 fprintf('\nGenerating perspective views...');
+progress(0);
 
 SS_ST = q.stFactor;
 
@@ -161,9 +147,9 @@ for pIdx = 1:nPerspectives
         
     end%if
     
-    fprintf('.');
+    % Timer logic
+    progress(pIdx,nPerspectives);
     
 end%for
-fprintf('\n   Complete.\n');
 
 end%function

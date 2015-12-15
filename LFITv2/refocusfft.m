@@ -1,9 +1,10 @@
 function [syntheticImage] = refocusfft(q,radArray,sRange,tRange)
-% refocus | Refocuses a plenoptic image to a given value of alpha
+%REFOCUS Refocuses a plenoptic image to a given value of alpha
 %
 % Requires global variable sizePixelAperture, which is the conversion factor for u and v to millimeters (mm)
 %
 % Author: Jeffrey Bolan and Paul Anglin
+
 
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
 

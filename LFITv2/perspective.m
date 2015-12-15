@@ -1,5 +1,5 @@
 function [perspectiveImage] = perspective(q,radArray,sRange,tRange)
-% perspective | Generates a perspective shift view at a (u,v) location
+%PERSPECTIVE Generates a perspective shift view at a (u,v) location
 
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
 

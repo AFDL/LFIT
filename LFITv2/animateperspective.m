@@ -1,20 +1,5 @@
 function animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName)
 %ANIMATEPERSPECTIVE Generates a perspective animation as defined by the request vector
-%
-%  requestVector:
-%       {1} Edge buffer to keep the perspective sweep from pulling in poor data at image edge.
-%       {2} supersamping factor in (u,v) is an integer by which to supersample for finer/slower movie sweeping. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {3} supersamping factor in (s,t) is an integer by which to supersample. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {4} save flag is a vector: (typeFlag 0 0;parameters)
-%               typeFlag:   0 for no saving, 1 for saving a GIF, 2 for saving a AVI, 3 for saving an MP4
-%               parameters: for a GIF, (delay time between frames, # of loops [inf for unlimited], dithering [0 = none; 1 = yes]); for an AVI, (quality [# between 0 and 100], fps [frames per second], compression [0 = none; 1 = MSVC or Motion JPEG, 2 = RLE or Lossless Motion JPEG 2000, 3 = Cinepak or Compressed Motion JPEG 2000; (1st = MATLAB older than 2010b, 2nd = newer)]); for an MP4, (quality,fpsVal, 0 (placeholder));
-%       {5} display flag is 0 for no display, 1 to display each perspective image with a pause, 2 to display each image without a pause
-%       {6} imadjust flag is 0 for raw ouput, 1 is to apply the imadjust function to the perspective image (increases contrast)
-%       {7} colormap is the colormap used in displaying the image, eg 'jet' or 'gray'
-%       {8} background color is the background of the figure if the caption is enabled, eg [.8 .8 .8] or [1 1 1]
-%       {9} caption flag is 0 for no caption, 1 for no caption w/border, 2 for caption string only, 3 for caption string + alpha value
-%       {10} caption string is the string used in the caption for caption flag of 1 or 2.
-%       {11} travelVectorIndex is 1 for square, 2 for circle, 3 for cross, 4 for load from file (WARNING: program will stop to open dialog prompt)
 
 
 fprintf('\nBeginning perspective animation generation.\n');

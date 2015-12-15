@@ -1,28 +1,5 @@
 function animaterefocus(q,radArray,sRange,tRange,outputPath,imageSetName)
 %ANIMATEREFOCUS Generates a refocusing animation as defined by the request vector
-%
-%   requestVector:
-%       {1} alpha values vector used in refocusing; [spaceType # steps; alphaStart alphaEnd; palindrome 0;]note: 1 = nominal focal plane
-%               spaceType [0 for linear, 1 for log], # of steps [integer];
-%               alphaStart [starting alpha value], alphaEnd [ending alpha value];
-%               palindrome [0 for no loop mirroring, 1 to make the loop play backwards after reaching the end of the range];
-%       {2} supersamping factor in (u,v) is an integer by which to supersample. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {3} supersamping factor in (s,t) is an integer by which to supersample. 1 is none, 2 = 2x SS, 4 = 4x SS, etc..
-%       {4} save flag is a vector: (typeFlag 0 0;parameters)
-%               typeFlag:   0 for no saving, 1 for saving a GIF, 2 for saving a AVI, 3 for saving a jpg of the image
-%               parameters: for a GIF, (delay time between frames, # of loops [inf for unlimited], dithering [0 = none; 1 = yes]); for an AVI, (quality [# between 0 and 100], fps [frames per second], compression [0 = none; 1 = MSVC or Motion JPEG, 2 = RLE or Lossless Motion JPEG 2000, 3 = Cinepak or Compressed Motion JPEG 2000; (1st = MATLAB older than 2010b, 2nd = newer)]); for an MP4, (quality,fpsVal, 0 (placeholder));
-%       {5} display flag is 0 for no display, 1 to display each refocused image with a pause, 2 to display each image without a pause
-%       {6} imadjust flag is 0 for quasi-raw output with contrast normalized on a per slice basis, 1 is to apply the imadjust function to the refocused image (increases contrast), 2 normalizes contrast on a per entire focal stack basis (more accurate)
-%       {7} colormap is the colormap used in displaying the image, eg 'jet' or 'gray'
-%       {8} background color is the background of the figure if the caption is enabled, eg [.8 .8 .8] or [1 1 1]
-%       {9} caption flag is 0 for no caption, 1 for no caption w/border, 2 for caption string only, 3 for caption string + alpha value
-%       {10} caption string is the string used in the caption for caption flag of 1 or 2.
-%       {11} aperture flag is 0 for full aperture or 1 to enforce a circular aperture for microimages
-%       {12} refocusType is 0 for additive, 1 for multiplicative, 2 for filtered
-%       {13} filterInfo
-%               noiseThreshold = threshold below which intensity will be disregarded as noise
-%               filterThreshold = filter intensity threshold
-%       {14} magTypeFlag is 0 for legacy algorithm, 1 for constant magnification (aka telecentric). See documentation for more info. 
 
 
 fprintf('\nBeginning refocusing animation generation.\n');
