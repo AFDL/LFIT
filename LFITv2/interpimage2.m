@@ -24,8 +24,6 @@ microRadius = floor((microPitch/pixelPitch)/2); % removed -1; should be 8 for re
 microPitchX = size(imageData,2)/numMicroX*pixelPitch;
 microPitchY = size(imageData,1)/numMicroY*pixelPitch;
 
-% Define max extent of i and j
-
 % Define u and v coordinate vectors in pixels
 uVect       = (microRadius:-1:-microRadius);
 vVect       = (microRadius:-1:-microRadius);
@@ -41,6 +39,29 @@ vVectPad    = (microRadius+interpPadding:-1:-microRadius-interpPadding);
 
 % Preallocate matrix
 radArrayRaw = zeros( numel(vVect),numel(uVect), kMax,lMax, 'single' );
+
+% Define aperture mask
+switch calType
+    case 'rect',    apertureFlag = 0; %allow the full square in
+    case 'hexa',    apertureFlag = 1; %allow only in the circular portion of the microimage to window out the overlap
+end
+switch apertureFlag
+    case 0 % Square/Full aperture
+        mask = ones( 1 + 2*(microRadius+interpPadding) );
+
+    case 1 % Circular mask close
+        mask = zeros( 1 + 2*(microRadius+interpPadding) );
+        mask(1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding) = fspecial( 'disk', double(microRadius) ); %interpPadding here makes circMask same size as u,v dimensions of radArray
+        mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
+
+    case 2 % Circular mask wider
+        mask = fspecial( 'disk', double(microRadius+interpPadding) ); %interpPadding here makes circMask same size as u,v dimensions of radArray
+        mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
+
+    otherwise
+        error('Aperture flag defined incorrectly. Check request vector.');
+
+end
 
 % Initialize timer and update command line
 num=0;
@@ -73,32 +94,7 @@ for k=1:kMax % column
         
         % Extract microimage (grid of pixels/intensities behind the given microlens)
         extractedI = imageData(yPixel,xPixel); % MATLAB indexing works via array(row,col) so be careful!
-        
-        % Window out data in square about circular aperture
-        switch calType
-            case 'rect',    apertureFlag = 0; %allow the full square in
-            case 'hexa',    apertureFlag = 1; %allow only in the circular portion of the microimage to window out the overlap
-        end
-        
-        switch apertureFlag
-            case 0 % Square/Full aperture
-                circMask = ones( 1 + 2*(microRadius+interpPadding) );
-                
-            case 1 % Circular mask close
-                circMask = zeros( 1 + 2*(microRadius+interpPadding) );
-                circMask(1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding) = fspecial( 'disk', double(microRadius) ); %interpPadding here makes circMask same size as u,v dimensions of radArray
-                circMask = ( circMask - min(circMask(:)) )/( max(circMask(:)) - min(circMask(:)) );
-                
-            case 2 % Circular mask wider
-                circMask = fspecial( 'disk', double(microRadius+interpPadding) ); %interpPadding here makes circMask same size as u,v dimensions of radArray
-                circMask = ( circMask - min(circMask(:)) )/( max(circMask(:)) - min(circMask(:)) );
-                
-            otherwise
-                error('Aperture flag defined incorrectly. Check request vector.');
-                
-        end
-        
-        extractedI = extractedI.*circMask;
+        extractedI = extractedI.*mask; % Apply mask
         
         % Interpolate. 
         % We know the pixel intensities at (decimal) u,v locations. 
