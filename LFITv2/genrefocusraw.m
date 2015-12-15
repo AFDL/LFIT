@@ -1,9 +1,9 @@
 function [rawImageArray] = genrefocusraw(q,radArray,sRange,tRange)
 %GENREFOCUSRAW Generates a series of refocused images, unscaled in intensity, as defined by the request vector
 
-num=0; % timer logic
+
 fprintf('\nGenerating refocused views...');
-fprintf('\n   Time remaining:       ');
+progress(0);
 
 switch q.fZoom
     case 'legacy'
@@ -17,8 +17,6 @@ switch q.fZoom
 end
 
 for fIdx = 1:nPlanes % for each refocused
-    
-    time=tic;
     
     switch q.fZoom
         case 'legacy'
@@ -36,24 +34,6 @@ for fIdx = 1:nPlanes % for each refocused
     end
         
     % Timer logic
-    time=toc(time);
-    timerVar=(time/60)*(nPlanes-fIdx);
-    if timerVar>=1
-        timerVar=round(timerVar);
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));    
-        fprintf('%g m',timerVar)
-    else
-        timerVar=round( time*(nPlanes-fIdx) );
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));    
-        fprintf('%g s',timerVar)
-    end
+    progress(fIdx,nPlanes);
     
 end%for
-
-fprintf('\n   Complete.\n');

@@ -262,8 +262,7 @@ switch lower(calType)
         fprintf('complete.\n');
         
         fprintf('Beginning algorithm: ');
-        fprintf('\n   Time remaining:           ');
-        time=tic;
+        progress(0);
         
         loop = true;
         while loop && calFail == false % Loop through each microlens in the image
@@ -345,25 +344,8 @@ switch lower(calType)
                 
                 
                 % Time remaining logic for display
-                time=toc(time);
-                timerVar=time/60*((tHeight-rowInd));
+                progress(rowInd,tHeight);
                 
-                if timerVar>=1
-                    timerVar=round(timerVar);
-                    for count=1:num+2
-                        fprintf('\b')
-                    end
-                    num=numel(num2str(timerVar));
-                    fprintf('%g m',timerVar)
-                else
-                    timerVar=round(time*((tHeight-rowInd)));
-                    for count=1:num+2
-                        fprintf('\b')
-                    end
-                    num=numel(num2str(timerVar));
-                    fprintf('%g s',timerVar)
-                end
-                time=tic;
             end
             
             lastPoints = closestPointRC(rowInd,colInd,:);
@@ -380,10 +362,6 @@ switch lower(calType)
             maxColHeight = rowInd - 1;
             calibrationPoints = closestPointRC(1:maxColHeight,1:maxRowWidth,:);
             %         calibrationPoints = closestPointRC(1:end,1:end,:);
-            
-            % User interface update
-            %         fprintf(']\n Complete.\n');
-            fprintf('\nComplete.\n');
             
             sIndMax = maxRowWidth;
             tIndMax = maxColHeight;

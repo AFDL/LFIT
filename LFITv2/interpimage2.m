@@ -64,14 +64,11 @@ switch apertureFlag
 end
 
 % Initialize timer and update command line
-num=0;
 fprintf('\nInterpolating image data onto a uniform (u,v) grid...');
-fprintf('\n   Time remaining:           ');
+progress(0);
 
 % Loop through each microlens
 for k=1:kMax % column
-    
-    time=tic;
     
     for l=1:lMax % row % careful! It's for L = ONE : L MAX
         
@@ -112,27 +109,9 @@ for k=1:kMax % column
     end%for
     
     % Timer logic
-    time=toc(time);
-    timerVar=time/60*((kMax-k));
-    
-    if timerVar>=1
-        timerVar=round(timerVar);
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g m',timerVar)
-    else
-        timerVar=round(time*((kMax-k)));
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g s',timerVar)
-    end
+    progress(k,kMax);
     
 end%for
-fprintf('\n   Complete.\n');
 
 % Calculate sRange and tRange (in mm)
 [sRange,tRange] = computestrange(calData,imagePath,microPitchX,microPitchY,pixelPitch);
@@ -145,6 +124,7 @@ switch calType
     case 'hexa'
         
         fprintf('\nResampling onto rectilinear grid from hexagonal array...');
+        progress(0);
         
         % Hypothetical s and t ranges for a rectangular array with the same number of microlenses as in the hexagonal
         sRange      = single(sRange);
@@ -200,6 +180,9 @@ switch calType
             
             ov = 1-ov;
             
+            % Timer logic
+            progress(tInd,lenT);
+            
         end
 
         % Overwrite s and t ranges with the appropriate supersampled s and t ranges (since we've supersampled up front in this function, we need to make the
@@ -207,7 +190,6 @@ switch calType
         % to the supersampling already applied here.
         sRange = sSSRange;
         tRange = tSSRange;
-        fprintf('\n   Complete.\n');
         
 end%switch
 

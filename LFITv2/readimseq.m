@@ -23,50 +23,30 @@ switch fileTypeFlag
 end
 
 disp('Reading in image sequence...');
+progress(0);
 
-num=0; %timer logic
-fprintf('   Time remaining:           ');
+imageName = dir(fullfile(imFolderPath,fileTypeExtension)); %generate structure array of all TIFF files in directory
+imageName = {imageName.name};
 
+nImages = length(imageName);
 
-imageName = dir([imFolderPath '\' fileTypeExtension]); %generate structure array of all TIFF files in directory
-if size(imageName,1) < 1
-    switch fileTypeFlag
-        case 3
-            imageName = dir(fullfile(imFolderPath,'*.jpeg'));
-        case 5
-            imageName = dir(fullfile(imFolderPath,'*.tiff'));
-    end
-    if size(imageName,1) < 1
-        error('No images found with the extension %s in %s.',fileTypeExtension,imFolderPath);
-    end
+if nImages < 1
+    error('No images found with the extension %s in %s.',fileTypeExtension,imFolderPath);
 end
 
-imageArray(:,:,1) = im2double(imread([imFolderPath '\' imageName(1).name])); % initialize I with the first image
-for imInd = 2:size(imageName,1)
-    time=tic;
-    imageArray(:,:,imInd)=im2double(imread(fullfile(imFolderPath,imageName(imInd).name)));
-    time=toc(time);
-    timerVar=time/60*((size(imageName,1)-imInd));
-    if timerVar>=1
-        timerVar=round(timerVar);
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g m',timerVar)
-    else
-        timerVar=round(time*((size(imageName,1)-imInd)));
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g s',timerVar)
-    end
+imageArray(:,:,1) = im2double(imread(fullfile(imFolderPath,imageName{1}))); % initialize I with the first image
+for imInd = 2:nImages
+    imageArray(:,:,imInd) = im2double(imread(fullfile(imFolderPath,imageName{imInd})));
+    
+    % Timer logic
+    progress(imInd,nImages+1);
 end
 
-if tfNorm == true
-    imageArray = imageArray./max(imageArray(:));
+if tfNorm
+    imageArray = imageArray/max(imageArray(:));
 end
 
-fprintf('\n   Complete.\n');
-end
+% Complete
+progress(1,1);
+
+end%function

@@ -18,15 +18,12 @@ function animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificNam
 
 
 fprintf('\nBeginning perspective animation generation.\n');
-fastTime = false;
+progress(0);
+
 % for pInd = 1:size(requestVector,1) % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
 
 %     fprintf('\nGenerating perspective animation (%i of %i)...',pInd,size(requestVector,1));
-    timerVar=0; timeInd=0; 
-    timeFlag = false; timeVector=[0]; timeAvg = .5; timeRate = ceil(q.uvFactor*1.5); % timing logic
-    if q.uvFactor == 1
-        fastTime = true;
-    end
+
 %     travelVector = gentravelvector(requestVector{pInd,1},floor(size(radArray,1)/2),floor(size(radArray,1)/2),requestVector{pInd,2},requestVector{pInd,11});
     clear vidobj; vidobj = 0;
     
@@ -38,23 +35,12 @@ fastTime = false;
     set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
     set(cF,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray,3)]);
     
-    fprintf('\n   Time remaining:       ');
-    
     nFrames = size(q.pUV,1);
     for frameInd = 1:nFrames
         
         % Sub-query for single (u,v) pair
         qi      = q;
         qi.pUV  = q.pUV(frameInd,:);
-        
-        % Timer logic
-        timeInd = timeInd + 1; %timing logic
-        if fastTime, tic; end
-        if mod(qi.pUV(1),1) || mod(qi.pUV(2),1) %ie, if u0 or v0 is not an integer. That's the only way you can really 'supersample' uv, and even so, it's really just interpolation...
-            % non integer value of u,v
-            timeFlag = true;
-            tic;
-        end
         
         % Generate perspective image frame
         perspectiveImage = perspective(qi,radArray,sRange,tRange);
@@ -145,42 +131,13 @@ fastTime = false;
         end%if
         
         % Timer logic
-        num=numel(num2str(timerVar));
-        if timeFlag
-            time=toc;
-            timeVector(timeInd)=time;
-            timeFlag = false;
-        end
-        if fastTime
-            time=toc;
-            timeVector(timeInd)=time;
-        end
-        timerVar=(timeAvg/60)*(nFrames-frameInd);
-        if timerVar >= 1
-            timerVar=round(timerVar);
-            for count=1:num+2
-                fprintf('\b')
-            end
-            fprintf('%g m',timerVar)
-        else
-            timerVar=round( timeAvg*(nFrames-frameInd) );
-            for count=1:num+2
-                fprintf('\b')
-            end
-            fprintf('%g s',timerVar)
-        end
-        if timeInd == timeRate
-            timeAvg = max(timeVector);
-            timeInd = 0;
-        end
+        progress(frameInd,nFrames);
         
     end%for
     
     try     set(cF,'WindowStyle','normal'); % release focus
     catch   % the figure couldn't be set to normal
     end
-    
-    fprintf('\n   Complete.\n');
     
 % end%for
 fprintf('\nPerspective animation generation finished.\n');

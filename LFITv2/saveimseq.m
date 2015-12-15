@@ -24,6 +24,7 @@ end
 % end
 
 disp('Reading in image sequence...');
+progress(0);
 
 imageArray = im2double(imageArray);
 
@@ -31,15 +32,10 @@ if tfNorm
     imageArray = imageArray/max(imageArray(:));
 end
 
-num=0; %timer logic
-fprintf('   Time remaining:           ');
-
 nImages = size(imageArray,3);
 for imInd = 1:nImages
     
     if ~exist(imSavePath,'dir'), mkdir(imSavePath); end
-    
-    time=tic;
     
     fname = sprintf( '_%04.f', imInd );
     switch fileTypeFlag
@@ -63,25 +59,8 @@ for imInd = 1:nImages
     end%switch
     
     % Timer logic
-    time=toc(time);
-    timerVar=(time/60)*(nImages-imInd);
-    if timerVar>=1
-        timerVar=round(timerVar);
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g m',timerVar)
-    else
-        timerVar=round( time*(nImages-imInd) );
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g s',timerVar)
-    end
+    progress(imInd,nImages);
     
 end%for
-fprintf('\n   Complete.\n');
 
 end%function

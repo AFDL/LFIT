@@ -26,10 +26,11 @@ function animaterefocus(q,radArray,sRange,tRange,outputPath,imageSetName)
 
 
 fprintf('\nBeginning refocusing animation generation.\n');
+progress(0);
+
 % for pInd = 1:size(requestVector,1) % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
     
 %     fprintf('\nGenerating refocusing animation (%i of %i)...',pInd,size(requestVector,1));
-    timerVar=0;
     
     % Preallocate focal stack
     switch q.fZoom
@@ -43,10 +44,7 @@ fprintf('\nBeginning refocusing animation generation.\n');
 
     end%switch
     
-    fprintf('\n   Time remaining:       ');
-    
     for frameInd = 1:nFrames
-        time=tic;
         
         % Sub-query at single alpha value
         qi = q;
@@ -57,25 +55,9 @@ fprintf('\nBeginning refocusing animation generation.\n');
         refocusStack(:,:,frameInd) = refocus(qi,radArray,sRange,tRange);
         
         % Timer logic
-        num=numel(num2str(timerVar));
-        time=toc(time);
-        timerVar=(time/60)*(nFrames-frameInd);
-        if timerVar>=1
-            timerVar=round(timerVar);
-            for count=1:num+2
-                fprintf('\b')
-            end
-            
-            fprintf('%g m',timerVar)
-        else
-            timerVar=round( time*(nFrames-frameInd) );
-            for count=1:num+2
-                fprintf('\b')
-            end
-            fprintf('%g s',timerVar)
-        end
+        progress(frameInd,nFrames+1);
+        
     end
-    fprintf('\n   Complete.\n');
     
     % Normalize raw intensities by the MAX intensity of the entire focal stack (regardless of contrast choice)
     refocusStack = ( refocusStack  - min(refocusStack(:)) )/( max(refocusStack(:)) - min(refocusStack(:)) );
@@ -186,7 +168,8 @@ fprintf('\nBeginning refocusing animation generation.\n');
     catch % the figure couldn't be set to normal
     end
     
-    fprintf('complete.\n');
+    % Complete
+    progress(1,1);
     
 % end%for
 fprintf('\nRefocusing animation generation finished.\n');

@@ -22,9 +22,8 @@ function [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageS
 %       {14} magTypeFlag is 0 for legacy algorithm, 1 for constant magnification (aka telecentric). See documentation for more info. 
 
 
-num=0;
-timerVar = 0;
 fprintf('\nBeginning focal stack generation.\n');
+progress(0);
 
 % nFormats = 0;
 % for fIdx = 1:nFormats % for each image format defined in request vector. (For example, to export a GIF with a caption and a GIF without a caption, use multiple lines in requestVector)
@@ -42,8 +41,6 @@ fprintf('\nBeginning focal stack generation.\n');
     try     close(focFig);
     catch   % figure not opened
     end
-    
-    fprintf('\n   Time remaining:       ');
     
     focFig = figure;
     set(focFig,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
@@ -63,8 +60,6 @@ fprintf('\nBeginning focal stack generation.\n');
     
     for frameIdx = 1:nFrames % for each frame of an animation
         
-        time=tic;
-        
         % Sub-query at single alpha value
         qi = q;
         switch q.fZoom
@@ -74,22 +69,7 @@ fprintf('\nBeginning focal stack generation.\n');
         rawImageArray(:,:,frameIdx) = refocus(qi,radArray,sRange,tRange);
         
         % Timer logic
-        num=numel(num2str(timerVar));
-        time=toc(time);
-        timerVar=(time/60)*(nFrames-frameIdx);
-        if timerVar>=1
-            timerVar=round(timerVar);
-            for count=1:num+2
-                fprintf('\b')
-            end
-            fprintf('%g m',timerVar)
-        else
-            timerVar=round( time*(nFrames-frameIdx) );
-            for count=1:num+2
-                fprintf('\b')
-            end
-            fprintf('%g s',timerVar)
-        end
+        progress(frameIdx,nFrames+1);
         
     end
     
@@ -233,7 +213,8 @@ fprintf('\nBeginning focal stack generation.\n');
     catch   % the figure couldn't be set to normal
     end
     
-    fprintf('\n   Complete.\n');
+    % Complete
+    progress(1,1);
     
 % end%for
 fprintf('\nFocal stack generation finished.\n');
