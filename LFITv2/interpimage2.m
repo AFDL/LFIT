@@ -1,21 +1,12 @@
-function [radArray,sRange,tRange] = interpimage2(calData,imagePath,calType,microPitch,pixelPitch,numMicroX,numMicroY)
+function [radArray,sRange,tRange] = interpimage2(cal,imagePath,calType,microPitch,pixelPitch,numMicroX,numMicroY)
 %INTERPIMAGE2 Generates the plaid radArray of intensities for a given image
 %
 %	Uses input calibration data to extract microimages from the raw image,
 %	interpolating them onto a plaid grid in a 4D matrix (radArray).
 
-% From the calibration data set
-% This should really be a structure --cjc
-centers     = calData{1};
-xPoints     = calData{2}; % used in visualization/debugging
-yPoints     = calData{3}; % used in visualization/debugging
-kMax        = calData{4};
-lMax        = calData{5}; % note that the notation is lowercase letter "L" max, not the number "1" max
 
 % Read in image data
 imageData   = im2double(imread(imagePath));
-imWidth     = size(imageData,2);
-imHeight    = size(imageData,1);
 
 % Calculate microlens radius in pixels
 microRadius = floor((microPitch/pixelPitch)/2); % removed -1; should be 8 for rectangular and 7 for hexagonal now. Note that this is the 'x' microPitch.
@@ -38,7 +29,7 @@ vVectPad    = (microRadius+interpPadding:-1:-microRadius-interpPadding);
 [v,u]       = ndgrid(vVect,uVect);
 
 % Preallocate matrix
-radArrayRaw = zeros( numel(vVect),numel(uVect), kMax,lMax, 'single' );
+radArrayRaw = zeros( numel(uVect),numel(vVect), cal.numS,cal.numT, 'single' );
 
 % Define aperture mask
 switch calType
@@ -68,19 +59,19 @@ fprintf('\nInterpolating image data onto a uniform (u,v) grid...');
 progress(0);
 
 % Loop through each microlens
-for k=1:kMax % column
+for s = 1:cal.numS
     
-    for l=1:lMax % row % careful! It's for L = ONE : L MAX
+    for t = 1:cal.numT
         
         % Read in center in pixel coordinates at the current microlens from the calibration data
-        xExact = centers(l,k,1);
-        yExact = centers(l,k,2);
+        xExact = cal.exactX(s,t);
+        yExact = cal.exactY(s,t);
         
         % Round the centers in order to prepare vectors for extracting a small grid of image data.
         % These use the padded vectors to extract a slightly larger window to account for any NaN cropping
         % in the interpn step below, depending on the interpolation method used.
-        xPixel = round(xExact) - uVectPad; %uVect is negative here so that Ihat below pulls from imageData from left to right (without flipping anything)
-        yPixel = round(yExact) - vVectPad; %vVect is negative here so that Ihat below pulls from imageData from top to bottom (without flipping anything)
+        xPixel = cal.roundX(s,t) - uVectPad; %uVect is negative here so that Ihat below pulls from imageData from left to right (without flipping anything)
+        yPixel = cal.roundY(s,t) - vVectPad; %vVect is negative here so that Ihat below pulls from imageData from top to bottom (without flipping anything)
         
         % uhat and vhat are our known u,v coordinates which correspond to the u,v values of the small window of pixels we are extracting
         uKnown = xExact - xPixel;
@@ -100,21 +91,21 @@ for k=1:kMax % column
         I( I<0 ) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
 
         % Note generally how I is indexed I(v,u) or I(row,col).
-        % Thus, if we're going to store this in a matrix indexed by (i,j,k,l), we must account for this.
+        % Thus, if we're going to store this in a matrix indexed by (u,v,s,t), we must account for this.
         Ip = permute(I,[2 1]);
         
         % Store data in temporary raw radArray
-        radArrayRaw(:,:,k,l) = single(Ip); %store as single
+        radArrayRaw(:,:,s,t) = single(Ip); %store as single
         
     end%for
     
     % Timer logic
-    progress(k,kMax);
+    progress(s,cal.numS);
     
 end%for
 
 % Calculate sRange and tRange (in mm)
-[sRange,tRange] = computestrange(calData,imagePath,microPitchX,microPitchY,pixelPitch);
+[sRange,tRange] = computestrange(cal,imagePath,pixelPitch);
 
 % If it's a hexagonal array, resample onto a rectilinear grid
 switch calType
@@ -181,7 +172,7 @@ switch calType
             ov = 1-ov;
             
             % Timer logic
-            progress(tInd,lenT);
+            progress(tInd,lenT-1);
             
         end
 

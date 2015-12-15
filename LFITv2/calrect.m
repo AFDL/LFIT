@@ -1,4 +1,4 @@
-function [calData,tfAcceptCal] = calrect(calImagePath)
+function [cal,tfAcceptCal] = calrect(calImagePath)
 %CALRECT Fast rectangular calibration routine for plenoptic images.
 
 
@@ -125,45 +125,15 @@ while any(X(10:end-10,end)==0)
 end
 
 
-%% Assign (s,t,u,v) coordinates to pixel values
+%% Create calibration structure for export
 
-X   = permute(X,[2 1]);
-Y   = permute(Y,[2 1]);
+cal.exactX  = X.';      % x(s,t)
+cal.exactY  = Y.';      % y(s,t)
+cal.roundX  = round( cal.exactX );
+cal.roundY  = round( cal.exactY );
+cal.numS    = size(cal.exactX,1);
+cal.numT    = size(cal.exactX,2);
 
-xc  = round(X(:,:)); % microlens centers to nearest pixel
-yc  = round(Y(:,:));
-
-% for r = -k:k
-%     u(:,:,r+k+1) = -X + (xc-r);
-%     v(:,:,r+k+1) = -Y + (yc+r);
-% end
-
-% for sInd = 1:size(X,1) 
-%     for tInd = 1:size(X,2)
-%         uhat(sInd,tInd,:)   = u(sInd,tInd,:);
-%         vhat(sInd,tInd,:)   = v(sInd,tInd,:); 
-%         i(sInd,tInd,:)      = X(sInd,tInd) + uhat(sInd,tInd,:);
-%         j(sInd,tInd,:)      = Y(sInd,tInd) + vhat(sInd,tInd,:);
-%     end
-% end
-
-% calData={i,j,uhat,vhat};
-calibrationPoints(:,:,1) = permute(X,[2 1]);
-calibrationPoints(:,:,2) = permute(Y,[2 1]);
-
-% Convert calibrationPoints to X and Y lists
-ind = 1;
-for rw = 1:size(calibrationPoints(:,:,1),1)
-    for cl = 1:size(calibrationPoints(:,:,2),2)
-        closestPoint(ind,:) = (calibrationPoints(rw,cl,:));
-        ind = ind + 1;
-    end
-end
-
-sIndMax = size(calibrationPoints,2);
-tIndMax = size(calibrationPoints,1);
-
-calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax};
 
 %% Verify calibration
 
@@ -179,26 +149,23 @@ title('Calibration Image: Microlens Centers. Inspect the image for apparent erro
 pause;
 
 % 
-loop = true;
-while loop
-    
+while true
     userInput = input('Is the calibration correct/free from observable errors? Type Y or N: ','s');
     switch lower(userInput)
         case {'y','yes'}
             tfAcceptCal = true;
             fprintf('Calibration accepted.\n');
-            loop = false;
+            break
             
         case {'n','no'}
             tfAcceptCal = false;
             fprintf('Calibration rejected.\n');
-            loop = false;
+            break
             
         otherwise
             disp('Please enter Y or N then press the <Enter> key.');
             
-    end
-    
+    end%switch
 end%while
 
 try     close(cF);

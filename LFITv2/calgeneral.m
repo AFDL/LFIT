@@ -1,4 +1,4 @@
-function [calData,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch)
+function [cal,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch)
 %CALGENERAL General method for generating calibration matrix.
 %
 %  This function generates the calibration data matrix for a given
@@ -95,8 +95,7 @@ switch lower(calType)
         fprintf('Beginning algorithm: ');
         fprintf('\nProgress: [');
         
-        loop = true;
-        while loop % Loop through each microlens in the image
+        while true % Loop through each microlens in the image
             
             if lastPoints(1,1)+lastDistX > (imageSize(2) - (subRadX +xEdgeBuffer)) % make sure the predictor stays within the bounds of the image
                 % Move to new row since the predictor has gone off the right side of the image
@@ -107,8 +106,7 @@ switch lower(calType)
                 % Trigger flag to update row spacing number and row starter point locations
                 updateRowSpc = true;
                 if rowStarterPoints(2) + rowSpc > bottomMargin % prediction traveled beyond the bottom of the image so exit the loop
-                    loop = false;
-                    break;
+                    break
                 end
                 rowStarterPointsOld = rowStarterPoints;
                 rowStarterPoints = nextGuess;
@@ -144,9 +142,8 @@ switch lower(calType)
             if ind < numCent
                 ind = ind + 1;
             else
-                loop = false;
                 colInd = colInd - 1; %for clarity when examining variables since the next column wasn't evaluated
-                break;
+                break
             end
             
         end
@@ -157,26 +154,17 @@ switch lower(calType)
         maxColHeight            = rowInd - 1;
         calibrationPoints       = closestPointRC(1:maxColHeight,1:maxRowWidth,:);
         
-        
         % User interface update
         fprintf(']\n Complete.\n');
         fprintf('\n');
         
-        sIndMax = maxRowWidth;
-        tIndMax = maxColHeight;
-        
-        % Convert calibrationPoints to X and Y lists
-        ind = 1;
-        for rw = 1:size(calibrationPoints(:,:,1),1)
-            for cl = 1:size(calibrationPoints(:,:,2),2)
-                closestPoint(ind,:) = (calibrationPoints(rw,cl,:));
-                ind = ind + 1;
-            end
-        end
-        
-        calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax};
-        
-        
+        % Create calibration structure for export
+        cal.exactX  = calibrationPoints(:,:,1);     % x(s,t)
+        cal.exactY  = calibrationPoints(:,:,2);     % y(s,t)
+        cal.roundX  = round( cal.exactX );
+        cal.roundY  = round( cal.exactY );
+        cal.numS    = maxRowWidth;
+        cal.numT    = maxColHeight;
         
         
     case 'hexa'
@@ -264,8 +252,7 @@ switch lower(calType)
         fprintf('Beginning algorithm: ');
         progress(0);
         
-        loop = true;
-        while loop && calFail == false % Loop through each microlens in the image
+        while ~calFail % Loop through each microlens in the image
             if lastPoints(1,1)+lastDistX > (imageSize(2) - 2*(subRadX +xEdgeBuffer))  % make sure the predictor stays within the bounds of the image
                 % Move to new row since the predictor has gone off the right side of the image
                 rowWidth(rowInd) = colInd - 1;
@@ -281,8 +268,7 @@ switch lower(calType)
                 % Trigger flag to update row spacing number and row starter point locations
                 updateRowSpc = true;
                 if rowStarterPoints(2) + rowSpc > bottomMargin % prediction traveled beyond the bottom of the image so exit the loop
-                    loop = false;
-                    break;
+                    break
                 end
                 rowStarterPointsOld = rowStarterPoints;
                 rowStarterPoints = nextGuess;
@@ -361,24 +347,17 @@ switch lower(calType)
             maxRowWidth = min(rowWidth);
             maxColHeight = rowInd - 1;
             calibrationPoints = closestPointRC(1:maxColHeight,1:maxRowWidth,:);
-            %         calibrationPoints = closestPointRC(1:end,1:end,:);
             
-            sIndMax = maxRowWidth;
-            tIndMax = maxColHeight;
-            
-            % calibrationPoints = closestPointRC;
-            ind = 1;
-            for rw = 1:size(calibrationPoints(:,:,1),1)
-                for cl = 1:size(calibrationPoints(:,:,2),2)
-                    closestPoint(ind,:) = (calibrationPoints(rw,cl,:));
-                    ind = ind + 1;
-                end
-            end
-            
-            calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax};
+            % Create calibration structure for export
+            cal.exactX  = calibrationPoints(:,:,1);     % x(s,t)
+            cal.exactY  = calibrationPoints(:,:,2);     % y(s,t)
+            cal.roundX  = round( cal.exactX );
+            cal.roundY  = round( cal.exactY );
+            cal.numS    = maxRowWidth;
+            cal.numT    = maxColHeight;
         else
             % Calibration failed. Don't bother computing the above calData.
-            calData = 0;
+            cal = 0;
         end
         
         
@@ -394,7 +373,7 @@ switch lower(calType)
         disp('Follow the instructions in the window to select the three initial microlens centers.');
         
         try     cF = figure('Name','Calibration','units','normalized','outerposition',[0 0 1 1]); %try to maximize
-        catch   cF = figure('Name','Calibration');
+        catch,  cF = figure('Name','Calibration');
         end
         
         imagesc(calImage(1:256,1:256)); axis image; axis off; colormap(jet); hold on;
@@ -524,54 +503,24 @@ switch lower(calType)
         end
         fprintf('.');
         
-        % Assigning (s,t,u,v) coordinates to pixel values
+        % Create calibration structure for export
+        cal.exactX  = X.';      % x(s,t)
+        cal.exactY  = Y.';      % y(s,t)
+        cal.roundX  = round( cal.exactX );
+        cal.roundY  = round( cal.exactY );
+        cal.numS    = size(cal.exactX,1);
+        cal.numT    = size(cal.exactX,2);
         
-        X = permute(X,[2 1]);
-        Y = permute(Y,[2 1]);
         
-        xc = round(X(:,:)); % microlens centers to nearest pixel
-        yc = round(Y(:,:));
-        
-        for r=-k:k
-            u(:,:,r+k+1) = -X + (xc-r);
-            v(:,:,r+k+1) = -Y + (yc+r);
-        end
-        fprintf('.');
-        for sInd=1:size(X,1)
-            for tInd=1:size(X,2)
-                uhat(sInd,tInd,:)   = u(sInd,tInd,:);
-                vhat(sInd,tInd,:)   = v(sInd,tInd,:);
-                i(sInd,tInd,:)      = X(sInd,tInd) + uhat(sInd,tInd,:);
-                j(sInd,tInd,:)      = Y(sInd,tInd) + vhat(sInd,tInd,:);
-            end
-        end
-        fprintf('.');
-
-        calibrationPoints(:,:,1) = permute(X,[2 1]);
-        calibrationPoints(:,:,2) = permute(Y,[2 1]);
-        fprintf('.');
-        % Convert calibrationPoints to X and Y lists
-        ind = 1;
-        for rw = 1:size(calibrationPoints(:,:,1),1)
-            for cl = 1:size(calibrationPoints(:,:,2),2)
-                closestPoint(ind,:) = (calibrationPoints(rw,cl,:));
-                ind = ind + 1;
-            end
-        end
-        fprintf('.');
-        sIndMax = size(calibrationPoints,2);
-        tIndMax = size(calibrationPoints,1);
-        
-        calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax};
         fprintf('complete!\n\n');
 end
 
-if calFail == false
+if ~calFail
     % Nothing above has flagged this as a bad calibration
       
     % SUBPLOTS
     try     cF = figure('Name','Inspect the corners then press any key to continue to the next step...','units','normalized','outerposition',[0 0 1 1]);
-    catch   cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
+    catch,  cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
     end
     
     calLimX     = (0.05*size(calImage,2));
@@ -583,26 +532,26 @@ if calFail == false
     imshow(calImage(1:calLimY,1:calLimX),[]); hold on;
     
     % Find all the points within the displayed window
-    tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=1 & closestPoint(:,2)<=calLimY);
-    scatter(closestPoint(tempI,1),closestPoint(tempI,2),'r+');
+    tempI = find(cal.exactX>=1 & cal.exactX<=calLimX & cal.exactY>=1 & cal.exactY<=calLimY);
+    scatter(cal.exactX(tempI),cal.exactY(tempI),'r+');
     title('Top Left');
     
     subplot(2,2,2); %TR
     imshow(calImage(1:calLimY,calLimXU-calLimX:calLimXU),[]); hold on; % resets coordinate system from 1:... instead of #:end; must account for this when plotting below
-    tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>1 & closestPoint(:,2)<=calLimY);
-    scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2),'r+'); % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
+    tempI = find(cal.exactX>=calLimXU-calLimX & cal.exactX<=calLimXU & cal.exactY>1 & cal.exactY<=calLimY);
+    scatter(cal.exactX(tempI)-(calLimXU-calLimX) + 1,cal.exactY(tempI),'r+'); % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
     title('Top Right');
     
     subplot(2,2,3); %BL
     imshow(calImage(calLimYU-calLimY:calLimYU,1:calLimX),[]); hold on;
-    tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=(calLimYU-calLimY) & closestPoint(:,2)<=calLimYU);
-    scatter(closestPoint(tempI,1),closestPoint(tempI,2) - (calLimYU-calLimY) + 1,'r+');
+    tempI = find(cal.exactX>=1 & cal.exactX<=calLimX & cal.exactY>=(calLimYU-calLimY) & cal.exactY<=calLimYU);
+    scatter(cal.exactX(tempI),cal.exactY(tempI) - (calLimYU-calLimY) + 1,'r+');
     title('Bottom Left');
     
     subplot(2,2,4); %BR
     imshow(calImage(end-calLimY:end,end-calLimX:end),[]); hold on;
-    tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>=(calLimYU-calLimY) & closestPoint(:,2)<=calLimYU);
-    scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2) - (calLimYU-calLimY) + 1,'r+');
+    tempI = find(cal.exactX>=calLimXU-calLimX & cal.exactX<=calLimXU & cal.exactY>=(calLimYU-calLimY) & cal.exactY<=calLimYU);
+    scatter(cal.exactX(tempI)-(calLimXU-calLimX) + 1,cal.exactY(tempI) - (calLimYU-calLimY) + 1,'r+');
     title('Bottom Right');
     
     pause;
@@ -610,7 +559,6 @@ if calFail == false
     catch   % figure already closed
     end
     
-   
     fprintf('\n|   POST-CALIBRATION MENU   |\n');
     fprintf('-----------------------------------------------------------------\n');
     fprintf('[1] = Accept the calibration. \n');
@@ -619,20 +567,19 @@ if calFail == false
     fprintf('[4] = View the "corners" calibration window.\n');
     fprintf('\n');
     
-    loop = true;
-    while loop
+    while true
         
         userInput = input('Enter a number from the menu above to proceed: ','s');
         switch lower(strtrim(userInput))
             case {'1','one','y','yes'}
                 tfAcceptCal = true;
                 fprintf('Calibration accepted. Continuing...\n');
-                loop = false;
+                break
                 
             case {'2','two','n','no'}
                 tfAcceptCal = false;
                 calFailString ='Calibration rejected.';
-                loop = false;
+                break
                 
             case {'3','three'}
                 % FULL WINDOW
@@ -641,17 +588,16 @@ if calFail == false
                 imshow(calImage,[])
                 hold on
                 title('Calibration Image: Microlens Centers. Press any key to be prompted to validate/reject the calibration...');
-                scatter(closestPoint(:,1),closestPoint(:,2),'r+');
+                scatter(cal.exactX(:),cal.exactY(:),'r+');
                 pause;
                 try     close(cFR);
                 catch   % figure already closed
                 end
-                loop = false;
                 
             case {'4','four'}
                 % SUBPLOTS
                 try     cF = figure('Name','Inspect the corners then press any key to continue to the next step...','units','normalized','outerposition',[0 0 1 1]);
-                catch   cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
+                catch,  cF = figure('Name','Inspect the corners then press any key to continue to the next step...');
                 end
                 
                 calLimX = (0.05*size(calImage,2));
@@ -662,35 +608,34 @@ if calFail == false
                 subplot(2,2,1); %TL
                 imshow(calImage(1:calLimY,1:calLimX),[]); hold on;
                 % Find all the points within the displayed window
-                tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=1 & closestPoint(:,2)<=calLimY);
-                scatter(closestPoint(tempI,1),closestPoint(tempI,2),'r+');
+                tempI = find(cal.exactX>=1 & cal.exactX<=calLimX & cal.exactY>=1 & cal.exactY<=calLimY);
+                scatter(cal.exactX(tempI),cal.exactY(tempI),'r+');
                 title('Top Left');
                 
                 subplot(2,2,2); %TR
                 imshow(calImage(1:calLimY,calLimXU-calLimX:calLimXU),[]); hold on; % resets coordinate system from 1:... instead of #:end; must account for this when plotting below
-                tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>1 & closestPoint(:,2)<=calLimY);
-                scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2),'r+'); % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
+                tempI = find(cal.exactX>=calLimXU-calLimX & cal.exactX<=calLimXU & cal.exactY>1 & cal.exactY<=calLimY);
+                scatter(cal.exactX(tempI)-(calLimXU-calLimX) + 1,cal.exactY(tempI),'r+'); % Account for offset. The plus 1 is because MATLAB images are indexed starting with 1, not 0.
                 title('Top Right');
                 
                 subplot(2,2,3); %BL
                 imshow(calImage(calLimYU-calLimY:calLimYU,1:calLimX),[]);
                 hold on;
-                tempI = find(closestPoint(:,1)>=1 & closestPoint(:,1)<=calLimX & closestPoint(:,2)>=(calLimYU-calLimY) & closestPoint(:,2)<=calLimYU);
-                scatter(closestPoint(tempI,1),closestPoint(tempI,2) - (calLimYU-calLimY) + 1,'r+');
+                tempI = find(cal.exactX>=1 & cal.exactX<=calLimX & cal.exactY>=(calLimYU-calLimY) & cal.exactY<=calLimYU);
+                scatter(cal.exactX(tempI),cal.exactY(tempI) - (calLimYU-calLimY) + 1,'r+');
                 title('Bottom Left');
                 
                 subplot(2,2,4); %BR
                 imshow(calImage(end-calLimY:end,end-calLimX:end),[]);
                 hold on;
-                tempI = find(closestPoint(:,1)>=calLimXU-calLimX & closestPoint(:,1)<=calLimXU & closestPoint(:,2)>=(calLimYU-calLimY) & closestPoint(:,2)<=calLimYU);
-                scatter(closestPoint(tempI,1)-(calLimXU-calLimX) + 1,closestPoint(tempI,2) - (calLimYU-calLimY) + 1,'r+');
+                tempI = find(cal.exactX>=calLimXU-calLimX & cal.exactX<=calLimXU & cal.exactY>=(calLimYU-calLimY) & cal.exactY<=calLimYU);
+                scatter(cal.exactX(tempI)-(calLimXU-calLimX) + 1,cal.exactY(tempI) - (calLimYU-calLimY) + 1,'r+');
                 title('Bottom Right');
                 
                 pause;
                 try     close(cFR);
                 catch   %figure already closed
                 end
-                loop = false;
                 
             otherwise
                 disp('Please enter a number from the above menu then press the <Enter> key.');
