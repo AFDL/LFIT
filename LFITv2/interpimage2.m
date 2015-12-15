@@ -21,8 +21,8 @@ imHeight    = size(imageData,1);
 microRadius = floor((microPitch/pixelPitch)/2); % removed -1; should be 8 for rectangular and 7 for hexagonal now. Note that this is the 'x' microPitch.
 
 % Calculate actual pitch between microlenses in x and y directions for (s,t) range calculations (especially hexagonal case)
-microPitchX = (size(imageData,2)/numMicroX).*pixelPitch;
-microPitchY = (size(imageData,1)/numMicroY).*pixelPitch;
+microPitchX = size(imageData,2)/numMicroX*pixelPitch;
+microPitchY = size(imageData,1)/numMicroY*pixelPitch;
 
 % Define max extent of i and j
 
@@ -168,8 +168,8 @@ switch calType
         % Interpolation weights
         wt4a        = 1/( 2 + 2*sqrt(3) );
         wt4b        = 1/( 2 + 2/sqrt(3) );
-        wt3a        = 1/( 1 + 2/sqrt(2) );
-        wt3b        = 1/( 2 + 1*sqrt(2) );
+        wt3a        = 1/( 1 + 2*sqrt(3/7) );
+        wt3b        = 1/( 2 + 1*sqrt(7/3) );
         
         % Loop through the raw grid, copying data to the supersampled grid
         % as appropriate
@@ -177,7 +177,7 @@ switch calType
         for tInd = 2:lenT-1
             
             % Vectorize along s (no sense in looping)
-            sInd = 2:lenS-1;
+            sInd = 1:lenS-1;
                 
             % Center: perfect alignment, copy data from raw to SS
             radArray( :,:, 2*sInd-ov,2*tInd ) = ...
@@ -196,7 +196,7 @@ switch calType
                 radArrayRaw( :,:, sInd+1,tInd+1 )*wt3b + ...    % South-East
                 radArrayRaw( :,:, sInd,tInd+1 )*wt3b;           % South-West
 
-            % Bottom-right: Above another lens, use downward-pointing triangle
+            % Bottom-right: above another lens, use downward-pointing triangle
             radArray( :,:, 2*sInd-ov+1,2*tInd+1 ) = ...
                 radArrayRaw( :,:, sInd+1,tInd )*wt3b + ...      % North-East
                 radArrayRaw( :,:, sInd+1,tInd+1 )*wt3a + ...    % South
