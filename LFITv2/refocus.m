@@ -101,6 +101,8 @@ switch superSampling
         parfor ( uvIdx = 1:numelUV, Inf )
            
             if mask(uvIdx) > 0 % if mask pixel is not zero, calculate.
+                
+                sQuery=0; tQuery=0; % To avoid warnings
 
                 switch q.fZoom
                     case 'legacy'

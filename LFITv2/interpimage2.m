@@ -110,7 +110,7 @@ end%for
 % If it's a hexagonal array, resample onto a rectilinear grid
 switch calType
     case 'rect'
-        % Nothing to do
+        radArray    = radArrayRaw;
    
     case 'hexa'
         
@@ -124,57 +124,58 @@ switch calType
         lenS        = length(sRange);
         lenT        = length(tRange);
         
-        % Create a rectilinear sampling grid with precisely double the
-        % resolution in both s and t
+        % Create a rectilinear sampling grid with double the horizontal
+        % resolution and a vertical resolution to maintain aspect ratio.
         sSSRange    = linspace( sRange(1), sRange(end), 2*length(sRange) );
-        tSSRange    = linspace( tRange(1), tRange(end), 2*length(tRange) );
+        tSSRange    = tRange(1) : mean(diff(sSSRange)) : tRange(end);
         
         % Create supersampled radiance array
-        radArray    = zeros( length(uVect),length(vVect), length(sSSRange),length(tSSRange), 'single' );
+        radArray    = zeros( length(uVect),length(vVect), length(sSSRange),length(tRange), 'single' );
 
-        % Interpolation weights
-        wt4a        = 1/( 2 + 2*sqrt(3) );
-        wt4b        = 1/( 2 + 2/sqrt(3) );
-        wt3a        = 1/( 1 + 2*sqrt(3/7) );
-        wt3b        = 1/( 2 + 1*sqrt(7/3) );
+%         % Interpolation weights for four-point method
+%         wt4a        = 1/( 2 + 1*sqrt(3) );
+%         wt4b        = 1/( 2 + 4/sqrt(3) );
         
-        % Loop through the raw grid, copying data to the supersampled grid
-        % as appropriate
-        ov = 1;     % First row should always overhang due to calibration
+        % Does the first row overhang?
+        oh0         = ( centers(1,1,1) < centers(2,1,1) );
+        
+        % Loop through the raw grid, supersampling horizontally
         for tInd = 2:lenT-1
             
-            % Vectorize along s (no sense in looping)
-            sInd = 1:lenS-1;
+            % Does this row overhang?
+            oh = 1-mod(oh0+tInd,2);
+            
+            % Vectorize along s (no reason to loop)
+            sInd = 2:lenS-1;
                 
             % Center: perfect alignment, copy data from raw to SS
-            radArray( :,:, 2*sInd-ov,2*tInd ) = ...
+            radArray( :,:, 2*sInd-oh,tInd ) = ...
                 radArrayRaw( :,:, sInd,tInd );
-
-            % Right: between lenses, use four point interpolation
-            radArray( :,:, 2*sInd-ov+1,2*tInd ) = ...
-                radArrayRaw( :,:, sInd+1,tInd-1 )*wt4a + ...    % North
-                radArrayRaw( :,:, sInd+1,tInd )*wt4b + ...      % East
-                radArrayRaw( :,:, sInd+1,tInd+1 )*wt4a + ...    % South
-                radArrayRaw( :,:, sInd,tInd )*wt4b;             % West
-
-            % Bottom: below lens, use upward-pointing triangle
-            radArray( :,:, 2*sInd-ov,2*tInd+1 ) = ...
-                radArrayRaw( :,:, sInd,tInd )*wt3a + ...        % North
-                radArrayRaw( :,:, sInd+1,tInd+1 )*wt3b + ...    % South-East
-                radArrayRaw( :,:, sInd,tInd+1 )*wt3b;           % South-West
-
-            % Bottom-right: above another lens, use downward-pointing triangle
-            radArray( :,:, 2*sInd-ov+1,2*tInd+1 ) = ...
-                radArrayRaw( :,:, sInd+1,tInd )*wt3b + ...      % North-East
-                radArrayRaw( :,:, sInd+1,tInd+1 )*wt3a + ...    % South
-                radArrayRaw( :,:, sInd,tInd )*wt3b;             % North-West
             
-            ov = 1-ov;
+            % Right: between lenses, use two-point method
+            radArray( :,:, 2*sInd-oh+1,tInd ) = ...
+                radArrayRaw( :,:, sInd+1,tInd )*0.5 + ...   	% East
+                radArrayRaw( :,:, sInd,tInd )*0.5;              % West
+
+%             % Right: between lenses, use four-point method
+%             radArray( :,:, 2*sInd-oh+1,tInd ) = ...
+%                 radArrayRaw( :,:, sInd+1,tInd-1 )*wt4a + ...    % North
+%                 radArrayRaw( :,:, sInd+1,tInd )*wt4b + ...      % East
+%                 radArrayRaw( :,:, sInd+1,tInd+1 )*wt4a + ...    % South
+%                 radArrayRaw( :,:, sInd,tInd )*wt4b;             % West
             
             % Timer logic
             progress(tInd,lenT-1);
             
         end
+        
+        % Now supersample vertically to maintain aspect ratio
+        [g1u g1v g1s g1t] = ndgrid( single(uVect),single(vVect), sSSRange,tRange );
+        [g2u g2v g2s g2t] = ndgrid( single(uVect),single(vVect), sSSRange,tSSRange );
+        radArray = interpn( g1u,g1v,g1s,g1t, radArray, g2u,g2v,g2s,g2t, 'linear',0 );
+        
+        % Complete
+        progress(1,1);
 
         % Overwrite s and t ranges with the appropriate supersampled s and t ranges (since we've supersampled up front in this function, we need to make the
         % other functions think that the supersampled ranges are normal. Of course, this means any supersampling applied in later functions will be in addition
