@@ -137,7 +137,7 @@ switch calType
 %         wt4b        = 1/( 2 + 4/sqrt(3) );
         
         % Does the first row overhang?
-        oh0         = ( centers(1,1,1) < centers(2,1,1) );
+        oh0         = ( cal.exactX(1,1) < cal.exactX(1,2) );
         
         % Loop through the raw grid, supersampling horizontally
         for tInd = 2:lenT-1
