@@ -33,7 +33,7 @@ switch loadFlag
         
     case 2 % Clear calibration and save new
         try
-            delete(fullfile(calFolderPath,[imageSetName '_calibration.mat']),'cal');
+            delete(fullfile(calFolderPath,[imageSetName '_calibration.mat']));
             [warnmsg, msgid] = lastwarn;
             if strcmp(msgid,'MATLAB:DELETE:FileNotFound')
                 fprintf('Previous calibration for the given Image Set Name not found. Recomputing calibration...\n');
@@ -108,8 +108,8 @@ switch loadFlag
         end
         
         % Create calibration structure for export
-        cal.exactX  = cLocX.';   	% x(s,t)
-        cal.exactY  = cLocY.';      % y(s,t)
+        cal.exactX  = permute(cLocX,[2 1]);     % x(s,t)  !!!
+        cal.exactY  = permute(cLocY,[2 1]);     % y(s,t)  !!!
         cal.roundX  = round( cal.exactX );
         cal.roundY  = round( cal.exactY );
         cal.numS    = size(cal.exactX,1);

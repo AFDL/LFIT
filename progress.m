@@ -1,5 +1,8 @@
 function progress( m, n )
-% When called within a loop, displays the progress with time remaining.
+%PROGRESS displays the estimated time remaining of an iterative task.
+%   progress(0)   initializes the timer.
+%   progress(m,n) displays the time remaining on iteration m of n.
+%   progress(n,n) indicates that the task has completed.
 
 
 global progress_t0 progress_lasttoc

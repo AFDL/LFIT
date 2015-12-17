@@ -127,8 +127,8 @@ end
 
 %% Create calibration structure for export
 
-cal.exactX  = X.';      % x(s,t)
-cal.exactY  = Y.';      % y(s,t)
+cal.exactX  = permute(X,[2 1]);     % x(s,t)
+cal.exactY  = permute(Y,[2 1]);     % y(s,t)
 cal.roundX  = round( cal.exactX );
 cal.roundY  = round( cal.exactY );
 cal.numS    = size(cal.exactX,1);

@@ -156,7 +156,7 @@ switch calType
             oh = 1-mod(oh0+tInd,2);
             
             % Vectorize along s (no reason to loop)
-            sInd = 2:lenS-1;
+            sInd = 1:lenS-1;
                 
             % Center: perfect alignment, copy data from raw to SS
             radArray( :,:, 2*sInd-oh,tInd ) = ...

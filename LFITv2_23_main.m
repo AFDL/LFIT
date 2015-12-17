@@ -72,7 +72,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
         else % load external calibration points
             calImagePath = 0; % doesn't matter since we're loading external points
         end
-        [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
+        cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
         
         %%%%---MAIN PROGRAM---%%%%
         
@@ -106,7 +106,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             imagePath = fullfile(plenopticImagesPath,imageName(imageIndex).name);
             
             % Interpolate image data
-            [radArray,sRange,tRange] = interpimage2(calData,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
+            [radArray,sRange,tRange] = interpimage2(cal,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
             
             % Open second GUI after processing the initially selected image
             LFITv2_GUI_SinglePanel;
@@ -130,7 +130,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
         
         % Calibration
         calImagePath = imageavg(calFolderPath,'avgcal.tif'); % average calibration images
-        [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
+        cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
         
         %%%%---MAIN BATCH MODE LOOP---%%%%
         
@@ -141,7 +141,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             imagePath = fullfile(plenopticImagesPath,imageName(imageIndex).name);
             
             % Interpolate image data
-            [radArray,sRange,tRange] = interpimage2(calData,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
+            [radArray,sRange,tRange] = interpimage2(cal,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
             
             %%%%%%%%---------------------------------%%%%%%%%
             %%%%%%%%---USER EDITS BEGIN BELOW HERE---%%%%%%%%
