@@ -64,8 +64,6 @@ for k=1:numelST
     
     imStack(s,t,:,:) = imageData( yPixel, xPixel ).*mask;
     
-    figure(1); imagesc( imageData( yPixel, xPixel ).*mask ); drawnow;
-    
     progress(k,numelST);
 end
 
