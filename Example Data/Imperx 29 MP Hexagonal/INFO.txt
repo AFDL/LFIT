@@ -1,0 +1,7 @@
+29 MP Imperx Bobcat (Hexagonal)
+
+Main Lens Focal Length: 50 mm
+Reference "Ruler" Height: 1215 mm
+
+f/stop = f/4;
+exposure: 20,892 microseconds
