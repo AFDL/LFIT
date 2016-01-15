@@ -694,3 +694,30 @@ function tagCameraSelection_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to tagCameraSelection (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
+
+
+function tagNumThreads_Callback(hObject, eventdata, handles)
+% hObject    handle to tagNumThreads (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of tagNumThreads as text
+%        str2double(get(hObject,'String')) returns contents of tagNumThreads as a double
+input = str2double(get(hObject,'String'));
+handles.numThreads = input;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function tagNumThreads_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to tagNumThreads (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
