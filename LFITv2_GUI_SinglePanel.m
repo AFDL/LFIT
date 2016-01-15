@@ -498,9 +498,9 @@ q.display       = 'fast';
 q.colormap      = handles.colormapR;
 q.background    = [1 1 1];
 
-tic
+
 refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages);
-toc
+
 updatePerspPlot(hObject)
 
 % --- Executes on button press in tagGenSaveR.
