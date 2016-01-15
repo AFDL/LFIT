@@ -110,7 +110,7 @@ classdef lfiQuery
         end
         
         function obj = set.codec( obj, val )
-            opts = {'uncompressed','jpeg','jpeg2000','jpeg2000-lossless','h264'};
+            opts = {'uncompressed','jpeg','jpeg2000','jpeg2000-lossless','h264','gif'};
             if isempty(val)
                 obj.codec = '';
             elseif ischar(val) && any(strcmpi(val,opts))

@@ -333,7 +333,6 @@ function tagColormapMenuP_Callback(hObject, eventdata, handles)
 % items = get(hObject,'String');
 index_selected = get(hObject,'Value');
 handles.colormapP   = handles.colormapList{index_selected};
-handles.colormapGIF = handles.colormapList{index_selected};
 handles.colormapRM  = handles.colormapList{index_selected};
 handles.colormapPM  = handles.colormapList{index_selected};
 handles.colormapFS  = handles.colormapList{index_selected};
@@ -737,7 +736,7 @@ function tagCodecRM_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns tagCodecRM contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from tagCodecRM
-types = {'uncompressed','jpeg','jpeg2000-lossless','jpeg2000','h264'};
+types = {'uncompressed','jpeg','jpeg2000-lossless','jpeg2000','h264','gif'};
 handles.vidCodecRM = types{ get(hObject,'Value') };
 handles.vidCodecPM = types{ get(hObject,'Value') };
 
@@ -759,7 +758,7 @@ end
 if verLessThan('matlab', '7.11')
     set(hObject,'String',{'None (uncompressed)';'MSVC';'RLE';'Cinepak'});
 else
-    set(hObject,'String',{'Uncompressed AVI';'Motion JPEG AVI';'Motion JPEG 2000 (lossless)';'Motion JPEG 2000 (lossy)';'MPEG-4 (H.264)'});
+    set(hObject,'String',{'Uncompressed AVI';'Motion JPEG AVI';'Motion JPEG 2000 (lossless)';'Motion JPEG 2000 (lossy)';'MPEG-4 (H.264)';'GIF'});
 end
 
 
@@ -823,6 +822,8 @@ function tagExportPerspectiveVid_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if strcmpi( handles.vidCodecPM, 'h264' )
     fileType = 'mp4';
+elseif strcmpi( handles.vidCodecPM, 'gif' )
+    fileType = 'gif';
 else
     fileType = 'avi';
 end
@@ -850,6 +851,8 @@ function tagExportRefocusVid_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if strcmpi( handles.vidCodecPM, 'h264' )
     fileType = 'mp4';
+elseif strcmpi( handles.vidCodecPM, 'gif' )
+    fileType = 'gif';
 else
     fileType = 'avi';
 end
@@ -885,141 +888,6 @@ q.codec         = handles.vidCodecRM;
 q.framerate     = handles.frameRateRM;
 q.display       = 'fast';
 q.colormap      = handles.colormapRM;
-q.background    = [0 0 0];
-
-animaterefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
-
-
-function tagFrameDelayGIF_Callback(hObject, eventdata, handles)
-% hObject    handle to tagFrameDelayGIF (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of tagFrameDelayGIF as text
-%        str2double(get(hObject,'String')) returns contents of tagFrameDelayGIF as a double
-handles.frameDelayGIF = str2double(get(hObject,'String'));
-
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes during object creation, after setting all properties.
-function tagFrameDelayGIF_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to tagFrameDelayGIF (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in tagDitheringGIF.
-function tagDitheringGIF_Callback(hObject, eventdata, handles)
-% hObject    handle to tagDitheringGIF (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of tagDitheringGIF
-handles.ditheringGIF = get(hObject,'Value');
-
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes on button press in tagLimitLoops.
-function tagLimitLoops_Callback(hObject, eventdata, handles)
-% hObject    handle to tagLimitLoops (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of tagLimitLoops
-handles.limitLoopsGIF = get(hObject,'Value');
-
-% Update handles structure
-guidata(hObject, handles);
-
-
-function tagLoopLimit_Callback(hObject, eventdata, handles)
-% hObject    handle to tagLoopLimit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of tagLoopLimit as text
-%        str2double(get(hObject,'String')) returns contents of tagLoopLimit as a double
-handles.loopLimitGIF = str2double(get(hObject,'String'));
-
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes during object creation, after setting all properties.
-function tagLoopLimit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to tagLoopLimit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in tagPerspectiveGIF.
-function tagPerspectiveGIF_Callback(hObject, eventdata, handles)
-% hObject    handle to tagPerspectiveGIF (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-q               = lfiQuery('perspective');
-q.pUV           = gentravelvector( handles.edgeBuffer, size(handles.radArray), handles.SSUVPM, handles.travelVector );
-q.uvFactor      = handles.SSUVPM;
-q.stFactor      = handles.SSSTPM;
-q.saveas        = 'gif';
-q.framerate     = 1/handles.frameDelayGIF;
-q.display       = 'fast';
-if handles.enhanceContrastGIF, q.contrast = 'imadjust'; end
-q.colormap      = handles.colormapGIF;
-q.background    = [0 0 0];
-
-animateperspective(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
-
-
-% --- Executes on button press in tagRefocusGIF.
-function tagRefocusGIF_Callback(hObject, eventdata, handles)
-% hObject    handle to tagRefocusGIF (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-q               = lfiQuery('focus');
-q.fMethod       = handles.refocusType;
-q.fFilter       = [handles.noiseThreshold handles.filterThreshold];
-if handles.telecentric
-    q.fZoom     = 'telecentric';
-    q.fGridX    = linspace( handles.Xmin, handles.Xmax, handles.VoxX );
-    q.fGridY    = linspace( handles.Ymin, handles.Ymax, handles.VoxY );
-    q.fPlane    = linspace( handles.Zmin, handles.Zmax, handles.VoxZ );
-    q.fLength   = handles.focLenMain;
-    q.fMag      = handles.magnification;
-else
-    q.fZoom     = 'legacy';
-    if handles.stepSpaceRM,     alpha = logspace( log10(handles.alphaStartRM), log10(handles.alphaEndRM), handles.stepsRM );
-    else                        alpha = linspace( handles.alphaStartRM, handles.alphaEndRM, handles.stepsRM );
-    end
-    if handles.mirrorLoopRM,    alpha = [ alpha(2:end) fliplr(alpha) ];
-    end
-    q.fAlpha    = alpha;
-end
-q.uvFactor      = handles.SSUVRM;
-q.stFactor      = handles.SSSTRM;
-if handles.dynamicContrastGIF,  q.contrast = 'imadjust';
-else                            q.contrast = 'stack';
-end
-q.mask          = handles.aperMask;
-q.saveas        = 'gif';
-q.framerate     = 1/handles.frameDelayGIF;
-q.display       = 'fast';
-q.colormap      = handles.colormapGIF;
 q.background    = [0 0 0];
 
 animaterefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
@@ -1222,18 +1090,6 @@ set(handles.tagQualityRM, 'String', handles.qualityRM);
 set(handles.tagCodecRM, 'Value', 2);
 set(handles.tagColormapMenuP,'Value',find(strcmp(handles.colormapRM, handles.colormapList)));
 
-handles.frameDelayGIF = 0;
-handles.ditheringGIF = 1;
-handles.limitLoopsGIF = 0;
-handles.loopLimitGIF = 1;
-handles.colormapGIF = 'gray';
-
-set(handles.tagFrameDelayGIF, 'String', handles.frameDelayGIF);
-set(handles.tagDitheringGIF, 'Value', handles.ditheringGIF);
-set(handles.tagLimitLoops, 'Value', handles.limitLoopsGIF);
-set(handles.tagLoopLimit, 'String', handles.loopLimitGIF);
-set(handles.tagColormapMenuP,'Value',find(strcmp(handles.colormapGIF, handles.colormapList)));
-
 handles.alphaStartFS = 0.90;
 handles.stepsFS = 20;
 handles.alphaEndFS = 1.10;
@@ -1400,11 +1256,6 @@ set(handles.tagMirrorLoopRM, 'Value', handles.mirrorLoopRM);
 set(handles.tagFrameRateRM, 'String', handles.frameRateRM);
 set(handles.tagQualityRM, 'String', handles.qualityRM);
 set(handles.tagCodecRM, 'Value', 2);
-
-set(handles.tagFrameDelayGIF, 'String', handles.frameDelayGIF);
-set(handles.tagDitheringGIF, 'Value', handles.ditheringGIF);
-set(handles.tagLimitLoops, 'Value', handles.limitLoopsGIF);
-set(handles.tagLoopLimit, 'String', handles.loopLimitGIF);
 
 set(handles.tagCurIm,'String', handles.firstImage); % image name
 
