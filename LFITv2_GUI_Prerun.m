@@ -142,6 +142,16 @@ guidata(hObject, handles);
 
 uiresume(handles.mainFigGUI);
 
+% Get parallel pool status
+p = gcp('nocreate');
+if isempty(p)
+    parpool( handles.numThreads );      % Create new pool
+elseif p.NumWorkers ~= handles.numThreads
+    delete(p);                          % Destroy existing pool
+    parpool( handles.numThreads );      % Create new pool
+else
+    % Pool of appropriate size already exists
+end
 
 
 
@@ -482,6 +492,7 @@ state.v17 = handles.loadFlag;
 state.v18 = handles.saveFlag;
 state.v19 = handles.sizePixelAperture;
 state.v20 = handles.sensorType;
+state.v21 = handles.numThreads;
 
 save(fullfile(pathname,filename), 'state','-mat');
 
@@ -509,6 +520,7 @@ try
     handles.saveFlag            = temp.state.v18;
     handles.sizePixelAperture   = temp.state.v19;
     handles.sensorType          = temp.state.v20;
+    handles.numThreads          = temp.state.v21;
         
     set(handles.tagTextCal, 'String', handles.cal_path);
     set(handles.tagTextPlen, 'String', handles.plen_path);
@@ -623,6 +635,8 @@ handles.loadFlag            = 1;
 handles.saveFlag            = 1;
 handles.startProgram        = false;
 handles.sensorType          = 'hexa';   % 'rect' or 'hexa' (string)
+
+handles.numThreads          = 4;
 
 set(handles.tagTextCal, 'String', handles.cal_path);
 set(handles.tagTextPlen, 'String', handles.plen_path);
