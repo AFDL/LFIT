@@ -167,7 +167,7 @@ else
     imagePath = fullfile(handles.plenopticImagesPath,imageName(1).name);
     
     % Interpolate image data
-    [radArray,sRange,tRange] = interpimage2(handles.calData,imagePath,handles.sensorType,handles.microPitch,handles.pixelPitch,handles.numMicroX,handles.numMicroY);
+    [radArray,sRange,tRange] = interpimage2(handles.cal,imagePath,handles.sensorType,handles.microPitch,handles.pixelPitch,handles.numMicroX,handles.numMicroY);
        
     % Update local handles
     handles.radArray = radArray;
