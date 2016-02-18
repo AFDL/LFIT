@@ -1,4 +1,14 @@
+<<<<<<< HEAD
 #VERSION CHANGELOG
+=======
+﻿#VERSION CHANGELOG
+
+###v2.30: MAJOR Release
+* Reorganization of GUI to remove extraneous/duplicate options
+* Parallelization of general functions for increased efficiency
+* Replacement of 'request vectors' with object for easier batch mode input
+* New faster hexagonal resampling
+>>>>>>> refs/remotes/origin/devel
 
 ###v2.23: BUGFIX.
 * Fixed a bug in Prerun GUI which did not allow the size of the pixel aperture to be changed based on magnification/camera specs.  Fix results in improved depth accuracy of all refocusing options.

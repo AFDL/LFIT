@@ -1,237 +1,198 @@
-function [radArray,sRange,tRange] = interpimage2(calData,imagePath,calType,microPitch,pixelPitch,numMicroX,numMicroY)
-% interpimage2 | Generates the plaid radArray of intensities for a given image
+function [radArray,sRange,tRange] = interpimage2(cal,imagePath,calType,microPitch,pixelPitch,numMicroX,numMicroY)
+%INTERPIMAGE2 Generates the plaid radArray of intensities for a given image
 %
-% Uses input calibration data to extract microimages from the raw image,
-% interpolating them onto a plaid grid in a 4D matrix (radArray)
+%	Uses input calibration data to extract microimages from the raw image,
+%	interpolating them onto a plaid grid in a 4D matrix (radArray).
 
-% From the calibration data set
-centers = calData{1};
-xPoints = calData{2}; %used in visualization/debugging
-yPoints = calData{3}; %used in visualization/debugging
-kMax = calData{4};
-lMax = calData{5}; % note that the notation is lowercase letter "L" max, not the number "1" max
+
+%% IMPORT DATA AND DEFINE CONSTANTS
 
 % Read in image data
-imageData=im2double(imread(imagePath));
-imWidth = size(imageData,2);
-imHeight = size(imageData,1);
+imageData   = im2double(imread(imagePath));
 
-% Calculate microlens radius in pixels
+% Calculate microlens radius and padding
 microRadius = floor((microPitch/pixelPitch)/2); % removed -1; should be 8 for rectangular and 7 for hexagonal now. Note that this is the 'x' microPitch.
+microPad    = 1;
 
-% Calculate actual pitch between microlenses in x and y directions for (s,t) range calculations (especially hexagonal case)
-microPitchX = (size(imageData,2)/numMicroX).*pixelPitch;
-microPitchY = (size(imageData,1)/numMicroY).*pixelPitch;
+% Define (u,v) coordinate vectors in pixels
+uVect       = single( microRadius : -1 : -microRadius );
+vVect       = single( microRadius : -1 : -microRadius );
 
-% Define max extent of i and j
+[v,u]       = ndgrid(vVect,uVect);
 
-% Define u and v coordinate vectors in pixels
-uVect = (microRadius:-1:-microRadius);
-vVect = (microRadius:-1:-microRadius);
-% uVect = (-microRadius:1:microRadius);
-% vVect = (-microRadius:1:microRadius);
+% Define (u,v) coordinate vectors with padding
+uVectPad    = single( microRadius+microPad : -1 : -microRadius-microPad );
+vVectPad    = single( microRadius+microPad : -1 : -microRadius-microPad );
 
-% Define padding
-interpPadding = 1;
+% Define aperture mask
+switch calType
+    case 'rect',    apertureFlag = 0; %allow the full square in
+    case 'hexa',    apertureFlag = 1; %allow only in the circular portion of the microimage to window out the overlap
+end
+switch apertureFlag
+    case 0 % Square/Full aperture
+        mask = ones( 1 + 2*(microRadius+microPad) );
 
-% Define u and v coordinate system vectors, padded by 1 pixel on each side.
-uVectPad = (microRadius+interpPadding:-1:-microRadius-interpPadding);
-vVectPad = (microRadius+interpPadding:-1:-microRadius-interpPadding);
-% uVectPad = (-microRadius-interpPadding:1:microRadius+interpPadding);
-% vVectPad = (-microRadius-interpPadding:1:microRadius+interpPadding);
+    case 1 % Circular mask close
+        mask = zeros( 1 + 2*(microRadius+microPad) );
+        mask(1+microPad:end-microPad,1+microPad:end-microPad) = fspecial( 'disk', double(microRadius) ); %interpPadding here makes circMask same size as u,v dimensions of radArray
+        mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
 
-[v,u]=ndgrid(vVect,uVect);
+    case 2 % Circular mask wider
+        mask = fspecial( 'disk', double(microRadius+microPad) ); %interpPadding here makes circMask same size as u,v dimensions of radArray
+        mask = ( mask - min(mask(:)) )/( max(mask(:)) - min(mask(:)) );
 
-% Preallocate matrix
-radArrayRaw=zeros(numel(vVect),numel(uVect),kMax,lMax);
+    otherwise
+        error('Aperture flag defined incorrectly. Check request vector.');
 
-% Initialize timer and update command line
-num=0;
-fprintf('\nInterpolating image data onto a uniform (u,v) grid...');
-fprintf('\n   Time remaining:           ');
+end
+
+
+%% RESHAPE IMAGE INTO 4D ARRAY OF MICROIMAGES
+
+fprintf('\nReshaping image into microimage stack...');
+progress(0);
+
+imStack = zeros( cal.numS,cal.numT, length(uVectPad),length(vVectPad), 'single' );
+
+numelST = cal.numS*cal.numT;
+for k=1:numelST
+    [s,t]   = ind2sub( [cal.numS cal.numT], k );
+    
+    xPixel  = round(cal.exactX(s,t)) - uVectPad;
+    yPixel  = round(cal.exactY(s,t)) - vVectPad;
+    
+    imStack(s,t,:,:) = imageData( yPixel, xPixel ).*mask;
+    
+    progress(k,numelST);
+end
+
+clear imageData
+
+
+%% INTERPOLATE 4D ARRAY FROM DECIMAL TO INTEGER INDICES
+
+fprintf('\nInterpolating microlens data onto a uniform (u,v) grid...');
+progress(0);
+
+radArrayRaw = zeros( numel(uVect),numel(vVect), cal.numS,cal.numT, 'single' );
 
 % Loop through each microlens
-for k=1:kMax % column
-    time=tic;
-    for l=1:lMax % row % careful! It's for L = ONE : L MAX
+for s = 1:cal.numS
+    
+    % Slice variables to reduce parfor overhead
+    calSliceX   = cal.exactX(s,:);
+    calSliceY   = cal.exactY(s,:);
+    imSlice     = squeeze( imStack(s,:,:,:) );
+    
+    parfor ( t = 1:cal.numT, Inf )
         
-        % Read in center in pixel coordinates at the current microlens from the calibration data
-        xExact = centers(l,k,1);
-        yExact = centers(l,k,2);
+     	% Calculate the distance from microlens center to the nearest pixel
+        xShift  = calSliceX(t) - round(calSliceX(t));
+        yShift  = calSliceY(t) - round(calSliceY(t));
         
-        % Round the centers in order to prepare vectors for extracting a small grid of image data.
-        % These use the padded vectors to extract a slightly larger window to account for any NaN cropping
-        % in the interpn step below, depending on the interpolation method used.
-        xPixel = round(xExact) - uVectPad; %uVect is negative here so that Ihat below pulls from imageData from left to right (without flipping anything)
-        yPixel = round(yExact) - vVectPad; %vVect is negative here so that Ihat below pulls from imageData from top to bottom (without flipping anything)
+        % Create vector of decimal (u,v) values
+        uKnown  = single( xShift+uVectPad );
+        vKnown  = single( yShift+vVectPad );
         
-        % uhat and vhat are our known u,v coordinates which correspond to the u,v values of the small window of pixels we are extracting
-        uKnown = xExact - xPixel;
-        vKnown = yExact - yPixel;
+        [vKnown,uKnown] = ndgrid(vKnown,uKnown);
         
-        % Grid the coordinate vectors (via ndgrid as required for interpn)
-        [vKnownGrid,uKnownGrid]=ndgrid(vKnown,uKnown);
-        
-        % Extract microimage (grid of pixels/intensities behind the given microlens)
-        extractedI=imageData(yPixel,xPixel); % MATLAB indexing works via array(row,col) so be careful!
-        
-        % Window out data in square about circular aperture
-        switch calType
-            case 'rect'
-                apertureFlag = 0; %allow the full square in
-            case 'hexa'
-                apertureFlag = 1; %allow only in the circular portion of the microimage to window out the overlap
-        end
-        
-        switch apertureFlag
-            case 0
-                % Square/Full aperture
-                circMask = ones(1+(2*((microRadius+interpPadding))));
-            case 1
-                % Circular mask close
-                circMask = zeros(1+(2*((microRadius+interpPadding))));
-                circMask(1+interpPadding:end-interpPadding,1+interpPadding:end-interpPadding) = fspecial('disk', double(microRadius)); %interpPadding here makes circMask same size as u,v dimensions of radArray
-                cirlims=[min(min(circMask)) max(max(circMask))];
-                circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
-            case 2
-                % Circular mask wider
-                circMask = fspecial('disk', double(microRadius+interpPadding)); %interpPadding here makes circMask same size as u,v dimensions of radArray
-                cirlims=[min(min(circMask)) max(max(circMask))];
-                circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
-            otherwise
-                error('Aperture flag defined incorrectly. Check request vector.');
-        end
-        
-        extractedI = extractedI.*circMask;
-        
-        % Interpolate. 
-        % We know the pixel intensities at (decimal) u,v locations. 
-        % Thus, we interpolate to get intensities at uniform/integer u,v locations.
-        I=interpn(vKnownGrid,uKnownGrid,extractedI,v,u,'linear');
-        I(I<0) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
+        % Interpolate from decimal (u,v) to integer (u,v)
+        I = interpn( vKnown,uKnown, squeeze(imSlice(t,:,:)), v,u, 'linear' );
+        I( I<0 ) = 0; % positivity constraint. Set negative values to 0 since they are non-physical.
 
         % Note generally how I is indexed I(v,u) or I(row,col).
-        % Thus, if we're going to store this in a matrix indexed by (i,j,k,l), we must account for this.
-        Ip = permute(I,[2 1]);
+        % Thus, if we're going to store this in a matrix indexed by (u,v,s,t), we must account for this.
+        radArrayRaw(:,:,s,t) = permute(I,[2 1]);
         
-        % Store data in temporary raw radArray
-        radArrayRaw(:,:,k,l) = single(Ip); %store as single
-    end
+    end%parfor
     
     % Timer logic
-    time=toc(time);
-    timerVar=time/60*((kMax-k));
+    progress(s,cal.numS);
     
-    if timerVar>=1
-        timerVar=round(timerVar);
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g m',timerVar)
-    else
-        timerVar=round(time*((kMax-k)));
-        for count=1:num+2
-            fprintf('\b')
-        end
-        num=numel(num2str(timerVar));
-        fprintf('%g s',timerVar)
-    end
-end
-fprintf('\n   Complete.\n');
+end%for
 
 % Calculate sRange and tRange (in mm)
-[sRange,tRange] = computestrange(calData,imagePath,microPitchX,microPitchY,pixelPitch);
+[sRange,tRange] = computestrange(cal,imagePath,pixelPitch);
 
-% If it's a hexagonal array, resample onto a rectilinear grid
+
+%% RESAMPLE TO RECTANGULAR GRID
+
 switch calType
     case 'rect'
-        % no resampling required
-        radArray = single(radArrayRaw);
+        radArray    = radArrayRaw;
    
     case 'hexa'
         
-        num=0;
-        fprintf('\nResampling onto rectilinear grid from hexagonal array...');
-        fprintf('\n   Time remaining:           ');
+        fprintf('\nResampling from hexagonal to rectangular grid...');
+        progress(0);
         
         % Hypothetical s and t ranges for a rectangular array with the same number of microlenses as in the hexagonal
-        sRange = single(sRange);
-        tRange = single(tRange);
+        sRange      = single(sRange);
+        tRange      = single(tRange);
         
-        % Create a rectilinear sampling grid
-        spacingFactor = 2; % essentially supersampling factor in s. By setting this to 2, the resampled grid in the s direction will be twice as dense as the original s range.
-        sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*spacingFactor); % this SS in the s direction allows some values to line up
-        spacing = sSSRange(2) - sSSRange(1); % mm in horizontal direction
-        tSSRange = linspace(tRange(1),tRange(end),round((tRange(end) - tRange(1))/spacing)  ); %t spacing should be the same as s spacing
-        [tSSGrid, sSSGrid] = ndgrid(double(tSSRange),double(sSSRange));
+        lenS        = length(sRange);
+        lenT        = length(tRange);
         
+        % Create a rectilinear sampling grid with double the horizontal
+        % resolution and a vertical resolution to maintain aspect ratio.
+        sSSRange    = linspace( sRange(1), sRange(end), 2*length(sRange) );
+        tSSRange    = tRange(1) : mean(diff(sSSRange)) : tRange(end);
+        
+        % Create supersampled radiance array
+        radArray    = zeros( length(uVect),length(vVect), length(sSSRange),length(tRange), 'single' );
 
-        % Relate known x and y coordinate microlens locations to physical s and t locations in millimeters
-        xKnown = reshape(centers(:,:,1),[],1).*pixelPitch - (imWidth.*pixelPitch)/2;
-        yKnown = reshape(centers(:,:,2),[],1).*pixelPitch - (imHeight.*pixelPitch)/2;
+%         % Interpolation weights for four-point method
+%         wt4a        = 1/( 2 + 1*sqrt(3) );
+%         wt4b        = 1/( 2 + 4/sqrt(3) );
+        
+        % Does the first row overhang?
+        oh0         = ( cal.exactX(1,1) < cal.exactX(1,2) );
+        
+        % Loop through the raw grid, supersampling horizontally
+        for tInd = 2:lenT-1
+            
+            % Does this row overhang?
+            oh = 1-mod(oh0+tInd,2);
+            
+            % Vectorize along s (no reason to loop)
+            sInd = 1:lenS-1;
+                
+            % Center: perfect alignment, copy data from raw to SS
+            radArray( :,:, 2*sInd-oh,tInd ) = ...
+                radArrayRaw( :,:, sInd,tInd );
+            
+            % Right: between lenses, use two-point method
+            radArray( :,:, 2*sInd-oh+1,tInd ) = ...
+                radArrayRaw( :,:, sInd+1,tInd )*0.5 + ...   	% East
+                radArrayRaw( :,:, sInd,tInd )*0.5;              % West
 
-        % Create interpolation vectors
-        radArray = zeros(numel(uVect),numel(vVect),numel(sSSRange),numel(tSSRange),'single');
-        
-        % Interpolate the known hexagonal data to the rectilinear grid defined above
-        
-        % Initialize scatteredInterpolant, assuming a new enough version of MATLAB
-        if verLessThan('matlab', '8.1')
-            error('MATLAB 2013a or newer required for hexagonal resampling.');
-        else
-            initIntensity = double(reshape(permute(radArrayRaw(1,1,:,:),[4 3 2 1]),[],1));
-            Ifun = scatteredInterpolant(yKnown,xKnown,initIntensity,'linear');
-        end
-        
-       
-        % Cycle through each u and v value, interpolating for s and t
-        for uInd = 1:numel(uVect)
-            time=tic;
-            for vInd = 1:numel(vVect)
-                knownIntensity = double(reshape(permute(radArrayRaw(uInd,vInd,:,:),[4 3 2 1]),[],1)); %rearrange intensity data into a single vector, holding an s value while varying t, incrementing to next s and sweeping through t again, etc...
-                if verLessThan('matlab', '8.1')
-                    error('MATLAB 2013a or newer required for hexagonal resampling.');
-                else
-                    Ifun.Values = knownIntensity; % intensities change, but we evaluate the same points
-                    % Speed of below statement appears to be limited by the scattered interpolation; not the permute or reshape.
-                    radArray(uInd,vInd,:,:) = permute(reshape(Ifun(tSSGrid(:),sSSGrid(:)),numel(tSSRange),numel(sSSRange)),[2 1]);
-                end
-            end
+%             % Right: between lenses, use four-point method
+%             radArray( :,:, 2*sInd-oh+1,tInd ) = ...
+%                 radArrayRaw( :,:, sInd+1,tInd-1 )*wt4a + ...    % North
+%                 radArrayRaw( :,:, sInd+1,tInd )*wt4b + ...      % East
+%                 radArrayRaw( :,:, sInd+1,tInd+1 )*wt4a + ...    % South
+%                 radArrayRaw( :,:, sInd,tInd )*wt4b;             % West
             
             % Timer logic
-            time=toc(time);
-            timerVar=time/60*((numel(uVect)-uInd));
+            progress(tInd,lenT);
             
-            if timerVar>=1
-                timerVar=round(timerVar);
-                for count=1:num+2
-                    fprintf('\b')
-                end
-                num=numel(num2str(timerVar));
-                fprintf('%g m',timerVar)
-            else
-                timerVar=round(time*((numel(uVect)-uInd)));
-                for count=1:num+2
-                    fprintf('\b')
-                end
-                num=numel(num2str(timerVar));
-                fprintf('%g s',timerVar)
-            end
         end
         
-        % Remove any NaN's if present.
-        radArray = single(radArray);
-        radArray(isnan(radArray)) = single(0);
+        % Now supersample vertically to maintain aspect ratio
+        [g1u g1v g1s g1t] = ndgrid( uVect,vVect, sSSRange,tRange );
+        [g2u g2v g2s g2t] = ndgrid( uVect,vVect, sSSRange,tSSRange );
+        radArray = interpn( g1u,g1v,g1s,g1t, radArray, g2u,g2v,g2s,g2t, 'linear',0 );
+        
+        % Complete
+        progress(1,1);
 
         % Overwrite s and t ranges with the appropriate supersampled s and t ranges (since we've supersampled up front in this function, we need to make the
         % other functions think that the supersampled ranges are normal. Of course, this means any supersampling applied in later functions will be in addition
         % to the supersampling already applied here.
         sRange = sSSRange;
         tRange = tSSRange;
-        fprintf('\n   Complete.\n');
-end
+        
+end%switch
 
-end
-
-
+end%function

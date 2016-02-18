@@ -19,9 +19,9 @@ $RECYCLE.BIN/
 
 # MATLAB autosave files
 *.asv
-
-# gedit autosave files
 *~
+*.cfg
+*.gcfg
 
 # =========================
 # Operating System Files

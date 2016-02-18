@@ -1,9 +1,10 @@
-function [syntheticImage] = refocusfft(radArray,alphaVal,SS_UV,SS_ST,sRange,tRange,apertureFlag)
-% refocus | Refocuses a plenoptic image to a given value of alpha
+function [syntheticImage] = refocusfft(q,radArray,sRange,tRange)
+%REFOCUS Refocuses a plenoptic image to a given value of alpha
 %
 % Requires global variable sizePixelAperture, which is the conversion factor for u and v to millimeters (mm)
 %
 % Author: Jeffrey Bolan and Paul Anglin
+
 
 global sizePixelAperture; % (si*pixelPitch)/focLenMicro;
 
@@ -13,19 +14,19 @@ tRange = single(tRange); %double for consistency/program won't run otherwise
 interpPadding = 1; %HARDCODED; if the padding in interpimage2.m changes, change this accordingly.
 microRadius = single(floor(size(radArray,1)/2)) - interpPadding; %since we've padded the extracted data by a pixel in interpimage2, subtract 1
 
+SS_UV = q.uvFactor;
+SS_ST = q.stFactor;
+
 % Define aperture mask
-switch apertureFlag
-    case 0
-        % Square/Full aperture
-        circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
-    case 1
-        % Circular mask
-        circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
-        circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
-        cirlims=[min(min(circMask)) max(max(circMask))];
-        circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
-    otherwise
-        error('Aperture flag defined incorrectly. Check request vector.');
+if strcmpi( q.mask, 'circ' )
+    % Circular mask
+    circMask = zeros(1+(2*((microRadius+interpPadding)*SS_UV)));
+    circMask(1+interpPadding*SS_UV:end-interpPadding*SS_UV,1+interpPadding*SS_UV:end-interpPadding*SS_UV) = fspecial('disk', double(microRadius)*SS_UV); %interpPadding here makes circMask same size as u,v dimensions of radArray
+    cirlims=[min(min(circMask)) max(max(circMask))];
+    circMask=(circMask-cirlims(1))./(cirlims(2) - cirlims(1));
+else
+    % No mask
+    circMask = ones(1+(2*((microRadius+interpPadding)*SS_UV)));
 end
 
 uRange = linspace(microRadius,-microRadius,1+(microRadius*2));
@@ -41,18 +42,16 @@ vSSRange = linspace(microRadius,-microRadius,(1+(microRadius*2)*SS_UV));
 sSSRange = linspace(sRange(1),sRange(end),(numel(sRange))*SS_ST);
 tSSRange = linspace(tRange(1),tRange(end),(numel(tRange))*SS_ST);
 
-if SS_ST == 1 && SS_UV == 1
-    superSampling = 'none';
+if SS_ST == 1
+    if SS_UV == 1,  superSampling = 'none';
+    else            superSampling = 'uv';
+    end
+else
+    if SS_UV == 1,  superSampling = 'st';
+    else            superSampling = 'both';
+    end
 end
-if SS_ST ~= 1 && SS_UV ~= 1
-    superSampling = 'both';
-end
-if SS_ST ~= 1 && SS_UV == 1
-    superSampling = 'st';
-end
-if SS_ST == 1 && SS_UV ~= 1
-    superSampling = 'uv';
-end
+
 % tic
 
 % -----------------
@@ -86,6 +85,7 @@ if mod(size(RAD,1),2)  %Is this odd?
 else %then it's even
     kx = -floor(size(RAD,1)/2) : floor(size(RAD,1)/2) - 1;
 end
+
 if mod(size(RAD,2),2)  %Is this odd?  
     ky = -floor(size(RAD,2)/2) : floor(size(RAD,2)/2);
 else %then it's even
@@ -292,8 +292,8 @@ for kk = 1:length(focalPlanes)
 
     %Reset our variables
     
-    G = 0.*G;
-    GOS = 0.*GOS;
+    G = zeros(size(G));
+    GOS = zeros(size(GOS));
     
 
 end

@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Light Field Imaging Toolkit (LFIT) v2.23 - DEMO PROGRAM %
+% Light Field Imaging Toolkit (LFIT) v2.30 - DEMO PROGRAM %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % AUTHORS:
@@ -49,14 +49,14 @@ global sizePixelAperture; % Conversion from aperture pixels to millimeters as de
 LFITv2_GUI_Prerun;
 
 %% Main Program
-if startProgram == true % If not, the GUI was closed somehow without pressing "Run"
+if startProgram % If not, the GUI was closed somehow without pressing "Run"
     
     % Initialization
     if runMode == 0 % single image (NOT batch) mode
         
         % Process a single image
-        numImages = 1;
-        imageIndex = 1;
+        numImages           = 1;
+        imageIndex          = 1;
         refocusedImageStack = 0;
         
         % Update command line
@@ -72,7 +72,7 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
         else % load external calibration points
             calImagePath = 0; % doesn't matter since we're loading external points
         end
-        [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
+        cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
         
         %%%%---MAIN PROGRAM---%%%%
         
@@ -90,23 +90,23 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
             % Update variables
             imageSpecificName = [imageSetName '_' imageName(imageIndex).name(1:end-4)]; %end-4 removes .tif
             
-            if strcmp(plenopticImagesPath,newPath) == false
+            if ~strcmp(plenopticImagesPath,newPath)
                 plenopticImagesPath = newPath; % if the user selects an image outside of the main plenoptic images directory.
                 
                 % Since the user chose an image in a different directory than was defined originally, prompt for a new output folder.
-                directory_name = uigetdir([plenopticImagesPath '\'],'Select an output folder to hold all exported/processed images...');
+                directory_name = uigetdir([plenopticImagesPath filesep],'Select an output folder to hold all exported/processed images...');
                 if directory_name ~= 0
                     outputPath = directory_name;
                 else
-                    outputPath = [plenopticImagesPath '\' 'Output']; % if user didn't select a folder, make one in the same directory as the plenoptic images
-                    fprintf('\nNo output directory selected. Output will be in: %s \n',outputPath);
+                    outputPath = fullfile(plenopticImagesPath,'Output'); % if user didn't select a folder, make one in the same directory as the plenoptic images
+                    fprintf('\nNo output directory selected. Output will be in: %s\n',outputPath);
                 end
             end
             
-            imagePath = [plenopticImagesPath '\' imageName(imageIndex).name];
+            imagePath = fullfile(plenopticImagesPath,imageName(imageIndex).name);
             
             % Interpolate image data
-            [radArray,sRange,tRange] = interpimage2(calData,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
+            [radArray,sRange,tRange] = interpimage2(cal,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
             
             % Open second GUI after processing the initially selected image
             LFITv2_GUI_SinglePanel;
@@ -117,7 +117,7 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
         %%%%---------------------------%%%%
         
         % Batch process all images in plenopticImagesPath folder
-        imageName = dir([plenopticImagesPath '\' '*.tif']);
+        imageName = dir(fullfile(plenopticImagesPath,'*.tif'));
         
         numImages = size(imageName,1);
         refocusedImageStack = 0;
@@ -130,7 +130,7 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
         
         % Calibration
         calImagePath = imageavg(calFolderPath,'avgcal.tif'); % average calibration images
-        [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
+        cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
         
         %%%%---MAIN BATCH MODE LOOP---%%%%
         
@@ -138,10 +138,10 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
             
             % Update variables
             imageSpecificName = [imageSetName '_' imageName(imageIndex).name(1:end-4)]; %end-4 removes .tif
-            imagePath = [plenopticImagesPath '\' imageName(imageIndex).name];
+            imagePath = fullfile(plenopticImagesPath,imageName(imageIndex).name);
             
             % Interpolate image data
-            [radArray,sRange,tRange] = interpimage2(calData,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
+            [radArray,sRange,tRange] = interpimage2(cal,imagePath,sensorType,microPitch,pixelPitch,numMicroX,numMicroY);
             
             %%%%%%%%---------------------------------%%%%%%%%
             %%%%%%%%---USER EDITS BEGIN BELOW HERE---%%%%%%%%
@@ -151,46 +151,74 @@ if startProgram == true % If not, the GUI was closed somehow without pressing "R
             %         just comment out the non-perspective shift functions below for example.
             
             %%%%---PERSPECTIVE SHIFT---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[u,v,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,backgroundColor,captionFlag,'A caption string'];
-            requestVectorP = {0.0, 0.0,1,4,2,1,'gray',[.8 .8 .8],0,'No caption';
-                             -6.0, 0.0,1,4,2,1,'gray',[.8 .8 .8],0,'No caption';
-                              6.0, 0.0,1,4,2,1,'gray',[.8 .8 .8],0,'No caption';};
-            perspectivegen(radArray,outputPath,imageSpecificName,requestVectorP,sRange,tRange);
+            q               = lfiQuery( 'perspective' );
+            q.pUV           = [0 0; -6 0; 6 0];         % List of (u,v) coordinates
+            q.saveas        = 'jpg';
+            q.quality       = 90;
+            q.display       = 'fast';
+            q.contrast      = 'imadjust';
+            q.verify;       % Verify that all query parameters are good
+            perspectivegen(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
             %%%%---IMAGE REFOCUSING---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[alpha,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,directoryFlag,refocusType,filterInfo,TelecentricInfo];
-            % MUST CHOOSE SAME SS_ST for each image!
-            requestVectorR = {0.9500,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 0];
-                              0.9528,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 1];
-                              1.0000,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 2];
-                              1.0710,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 3];
-                              1.1354,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 4];
-                              1.0700,1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,0,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 200 50 -1 5];};
-            %(x,y,alphaIndex,imageIndex)
-            refocusedImageStack = genrefocus(radArray,outputPath,imageSpecificName,requestVectorR,sRange,tRange,imageIndex,numImages,refocusedImageStack);
+            q               = lfiQuery( 'focus' );
+            q.fMethod       = 'filt';
+            q.fFilter       = [0 0.9];
+            q.fZoom         = 'telecentric';
+            q.fGridX        = linspace(-18,18,300);
+            q.fGridY        = linspace(-12,12,200);
+            q.fPlane        = [0 1 2 3 4 5];            % List of focal planes
+            q.fLength       = 50;
+            q.fMag          = -1;
+            q.saveas        = 'jpg';
+            q.quality       = 90;
+            q.display       = 'fast';
+            q.contrast      = 'simple';
+            q.mask          = 'circ';
+            q.verify;       % Verify that all query parameters are good
+            refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName,imageIndex,numImages);
             
             %%%%---FOCAL STACK GENERATION---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,refocusType,filterInfo,TelecentricInfo];
-            requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0];};
-            [focalStack] = genfocalstack(radArray,outputPath,imageSpecificName,requestVectorFS,sRange,tRange); % has output argument (optional). [focalStack] = genfocalstack(...)
+            requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]};
+            q = lfiQuery('focus'); q = q.import(requestVectorFS); % Request vectors may be converted to queries for legacy support
+            q.verify;       % Verify that all settings are good
+            [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageSpecificName); % has output argument (optional). [focalStack] = genfocalstack(...)
             
             %%%%---ANIMATION - PERSPECTIVES---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[edgeBuffer,SS_UV, SS_ST, saveFlag, displayFlag, imadjustFlag, captionFlag, caption string,travelVectorIndex]
-            requestVectorPM = {3,1,2,[1 0 0; 0 inf 1;],2,1,'gray',[.8 .8 .8],0,'No caption',2; %GIF example
-                               3,1,2,[3 0 0; 95 30 1;],2,1,'gray',[0 0 0],0,'No caption',2;}; %MP4 example
-            animateperspective(radArray,outputPath,imageSpecificName,requestVectorPM,sRange,tRange);
+            q               = lfiQuery( 'perspective' );
+            q.pUV           = gentravelvector( 3, size(radArray), 1, 2 );
+            q.stFactor      = 2;
+            q.saveas        = 'gif';
+            q.framerate     = 10;
+            q.display       = 'fast';
+            q.contrast      = 'imadjust';
+            q.verify;       % Verify that all query parameters are good
+            animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);
+            
+            q.saveas        = 'mp4';
+            q.quality       = 90;
+            q.verify;       % Verify that all query parameters are good
+            animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);      % Same animation, different format
             
             %%%%---ANIMATION - REFOCUSING---%%%%
-            % Request Vector Format - Shorthand (see documentation for full details)
-            %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,imadjustFlag,colormap,background color,caption flag,caption string,apertureFlag,refocusType,filterInfo,TelecentricInfo]
-            requestVectorRM = {[1 5; .8 1.2; 1 0;],1,1,[1 0 0; 0 inf 1;],2,1,'gray',[.8 .8 .8],0,'No caption',1,2,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]}; %GIF example
-%                                [1 280; .6 1.4; 1 0;],1,1,[3 0 0; 95 30 1;],2,1,'gray',[0 0 0],0,'No caption',1,2,[0 0.9]}; %MP4 example
-            animaterefocus(radArray,outputPath,imageSpecificName,requestVectorRM,sRange,tRange);
+            q               = lfiQuery( 'focus' );
+            q.fMethod       = 'filt';
+            q.fFilter       = [0 0.9];
+            q.fZoom         = 'telecentric';
+            q.fGridX        = linspace(-18,18,300);
+            q.fGridY        = linspace(-12,12,200);
+            q.fPlane        = [0 1 2 3 4 5];            % List of focal planes
+            q.fLength       = 50;
+            q.fMag          = -1;
+            q.saveas        = 'gif';
+            q.framerate     = INF; % Play as fast as possible (delay=0)
+            q.display       = 'fast';
+            q.contrast      = 'imadjust';
+            q.verify;       % Verify that all query parameters are good
+            animaterefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
             %%%%%%%%-------------------------------%%%%%%%%

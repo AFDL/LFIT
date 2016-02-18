@@ -1,46 +1,28 @@
-function [ sRange,tRange ] = computestrange(calData,imagePath,microPitchX,microPitchY,pixelPitch)
-% computestrange | Calculates the s and t ranges for the calibration set
+function [ sRange,tRange ] = computestrange(cal,imagePath,pixelPitch)
+%COMPUTESTRANGE Calculates the s and t ranges for the calibration set
 
-% From calibration data
-centers = calData{1};
-xPoints = calData{2};
-yPoints = calData{3};
-kMax = calData{4};
-lMax = calData{5};
 
-xCenter = size(im2double(imread(imagePath)),2)/2;
-yCenter = size(im2double(imread(imagePath)),1)/2;
-imageCenter = [xCenter yCenter];
-
+imCenterX   = size(imread(imagePath),2)/2;
+imCenterY   = size(imread(imagePath),1)/2;
 
 % Create s and t ranges based on median row and column
-midX = median(xPoints);
-midY = median(yPoints);
+calCenterX  = median( cal.exactX(:) );
+calCenterY  = median( cal.exactY(:) );
 
-calibratedAreaCenter = [midX midY];
-closestPoint(:,1) = xPoints;
-closestPoint(:,2) = yPoints;
-[centerMicrolensInd, offsetDist] = dsearchn(closestPoint(:,:),calibratedAreaCenter);
-locationCenterMicrolens = closestPoint(centerMicrolensInd,:);
+calCenterXY         = [calCenterX calCenterY];
+microlensesXY(:,1)	= cal.exactX(:);
+microlensesXY(:,2) 	= cal.exactY(:);
+calCenterInd        = dsearchn( microlensesXY, calCenterXY );
 
-% Logic to account for if one side is cropped more than the other
-xCenters = centers(:,:,1);
-yCenters = centers(:,:,2);
+% Find s and t indices for the microlens closest to the center
+[calCenterS,calCenterT] = ind2sub( size(cal.exactX), calCenterInd );
 
-% Find k and l indices for the microlens closest to the center
-indexK = dsearchn(xCenters(:),locationCenterMicrolens(1));
-indexL = dsearchn(yCenters(:),locationCenterMicrolens(2));
+calLimLeft   = min( cal.exactX(:,calCenterT) );     % find the minimum x pixel value from the center row
+calLimTop    = min( cal.exactY(calCenterS,:) );     % find the minimum y pixel value from the center column
+calLimRight  = max( cal.exactX(:,calCenterT) );     % find the maximum x pixel value from the center row
+calLimBottom = max( cal.exactY(calCenterS,:) );     % find the maximum y pixel value from the center column
 
-[unused,kCenter] = ind2sub(size(xCenters),indexK);
-[lCenter,unused] = ind2sub(size(yCenters),indexL);
+sRange      = linspace( calLimLeft-imCenterX, calLimRight-imCenterX, cal.numS )*pixelPitch;
+tRange      = linspace( calLimTop-imCenterY, calLimBottom-imCenterY, cal.numT )*pixelPitch;
 
-leftLimit = min(min(xCenters(lCenter,:))); % find the minimum x pixel value from the center row
-topLimit = min(min(yCenters(:,kCenter))); % find the minimum y pixel value from the center column
-rightLimit = max(max(xCenters(lCenter,:))); % find the maximum x pixel value from the center row
-bottomLimit = max(max(yCenters(:,kCenter))); % find the maximum y pixel value from the center column
-
-sRange = linspace(leftLimit-imageCenter(1),rightLimit-imageCenter(1),kMax).*pixelPitch;
-tRange = linspace(topLimit-imageCenter(2),bottomLimit-imageCenter(2),lMax).*pixelPitch;
-
-end
-
+end%function

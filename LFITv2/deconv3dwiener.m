@@ -1,5 +1,5 @@
 function [reconVol] = deconv3dwiener(in3DPSF, inFocalStack, regVal)
-% deconv3dwiener | Computes 3D Wiener filter deconvolution of a focal stack and 3D PSF
+%DECONV3DWIENER Computes 3D Wiener filter deconvolution of a focal stack and 3D PSF
 %
 %  Takes a (centered) 3D PSF and focal stack as inputs. With the inputted regularization parameter,
 %  a 3D Wiener filter deconvolution is taken. Outputs a 3D reconstructed volume.
@@ -8,21 +8,21 @@ function [reconVol] = deconv3dwiener(in3DPSF, inFocalStack, regVal)
 %  Adapted by: Jeffrey Bolan | 9/19/14
 
 % Move centered focal stack and centered PSF to top left corner and take FFTs
-fdPSF = fftn(fftshift(in3DPSF)); %fdPSF = frequency domain PSF
-fdFocalStack = fftn(fftshift(inFocalStack)); %fdFocalStack = frequency domain focal stack
+fdPSF       = fftn(fftshift(in3DPSF)); %fdPSF = frequency domain PSF
+fdFocalStack= fftn(fftshift(inFocalStack)); %fdFocalStack = frequency domain focal stack
 
 % Normalize
-fdPSF = fdPSF./max(max(max(fdPSF)));
-fdFocalStack = fdFocalStack./max(max(max(fdFocalStack)));
+fdPSF       = fdPSF/max(max(fdPSF(:));
+fdFocalStack= fdFocalStack/max(fdFocalStack(:));
 
 % 3D Deconvolution (Wiener)
-Y = (conj(fdPSF).*fdFocalStack)./(conj(fdPSF).*fdPSF + regVal);
+Y = ( conj(fdPSF).*fdFocalStack )./( conj(fdPSF).*fdPSF + regVal );
 
 % Move back to spatial domain and center
 y = fftshift(ifftn(Y));
 
 % Normalize
-y = y./max(max(max(y)));
+y = y/max(y(:));
 
 % Output
 reconVol = y;

@@ -1,5 +1,5 @@
-function [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,calType,numMicroX,numMicroY,microPitch,pixelPitch)
-% computecal | Generates calibration data matrix for the microlens array.
+function cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,calType,numMicroX,numMicroY,microPitch,pixelPitch)
+%COMPUTECALDATA Generates calibration data matrix for the microlens array.
 %
 %  Finds microlens center locations and returns accompanying calibration data array.
 %
@@ -16,25 +16,24 @@ function [calData] = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag
 
 
 switch loadFlag
-    case 0
-        % No load/save
+    case 0 % No load/save
         recompute = true;
-    case 1
-        % Auto load/save
+        
+    case 1 % Auto load/save
         fprintf('Loading calibration data from file...');
         try
-            load([calFolderPath '\' imageSetName '_' 'calData.mat'],'calData');
+            load(fullfile(calFolderPath,[imageSetName '_calibration.mat']),'cal');
             fprintf('complete.\n');
             recompute = false;
-        catch generror1
+        catch
             %load failed
             recompute = true;
             warning('Calibration data failed to load. Recomputing calibration...');
         end
-    case 2
-        % Clear calibration and save new
+        
+    case 2 % Clear calibration and save new
         try
-            delete([calFolderPath '\' imageSetName '_' 'calData.mat'],'calData');
+            delete(fullfile(calFolderPath,[imageSetName '_calibration.mat']));
             [warnmsg, msgid] = lastwarn;
             if strcmp(msgid,'MATLAB:DELETE:FileNotFound')
                 fprintf('Previous calibration for the given Image Set Name not found. Recomputing calibration...\n');
@@ -42,11 +41,12 @@ switch loadFlag
                 fprintf('Successfully deleted old calibration. Recomputing calibration...\n');
             end
             recompute = true;
-        catch generror1
+        catch
             %load failed
             recompute = true;
             warning('Calibration data unable to be deleted. Recomputing calibration...');
         end
+        
     case 3
         % Load points from file
         
@@ -57,8 +57,8 @@ switch loadFlag
             errorStr = ['Failed to read ' loadPathX xName];
             error(errorStr);
         else
-            sIndMax = str2num(fgetl(fileIDX));
-            tIndMax = str2num(fgetl(fileIDX));
+            sIndMax = str2double(fgetl(fileIDX));
+            tIndMax = str2double(fgetl(fileIDX));
             c_x = fscanf(fileIDX,'%f',[1 inf]);
             cLocX = reshape(c_x,sIndMax,tIndMax);
             cLocX = cLocX + 1; % convert C coordinates to MATLAB coordinates
@@ -71,8 +71,8 @@ switch loadFlag
             errorStr = ['Failed to read ' loadPathY yName];
             error(errorStr);
         else
-            sIndMax = str2num(fgetl(fileIDY));
-            tIndMax = str2num(fgetl(fileIDY));
+            sIndMax = str2double(fgetl(fileIDY));
+            tIndMax = str2double(fgetl(fileIDY));
             c_y = fscanf(fileIDY,'%f',[1 inf]);
             cLocY = reshape(c_y,sIndMax,tIndMax);
             cLocY = cLocY + 1; % convert C coordinates to MATLAB coordinates
@@ -107,45 +107,47 @@ switch loadFlag
             tIndMax = tIndMax - 1;
         end
         
-        % Format imported data into the LFIT container, calData
-        calibrationPoints(:,:,1) = cLocX';
-        calibrationPoints(:,:,2) = cLocY';
-        closestPoint(:,1) = c_x;
-        closestPoint(:,2) = c_y;
-        
-        calData = {calibrationPoints,closestPoint(:,1),closestPoint(:,2),sIndMax,tIndMax};
+        % Create calibration structure for export
+        cal.exactX  = permute(cLocX,[2 1]);     % x(s,t)  !!!
+        cal.exactY  = permute(cLocY,[2 1]);     % y(s,t)  !!!
+        cal.roundX  = round( cal.exactX );
+        cal.roundY  = round( cal.exactY );
+        cal.numS    = size(cal.exactX,1);
+        cal.numT    = size(cal.exactX,2);
         
         recompute = false;
+        
     otherwise
         warning('Load flag defined incorrectly internally. Recomputing calibration...');
         recompute = true;
-end
+        
+end%switch
 
 
-if recompute == true
+if recompute
     
     switch calType
         case 'rect'
             % Run fast method (Kyle's)
-            [calData,tfAcceptCal] = calrect(calImagePath);
+            [cal,tfAcceptCal] = calrect(calImagePath);
             
             % Check whether user accepted or rejected the fast calibration from above.
-            while tfAcceptCal == false
+            while ~tfAcceptCal
                 
-                inputLoop = true;
-                while inputLoop == true
+                while true
                     userInput = input('Do you wish to reattempt the quick calibration method? Type Y for quick calibration or N for alternate algorithm: ','s');
-                    switch userInput
-                        case {'Y','y','yes','YES','Yes'}
+                    switch lower(userInput)
+                        case {'y','yes'}
                             tfReattemptQuick = true;
                             fprintf('Re.\n');
-                            inputLoop = false;
+                            
                             % Run fast method (Kyle's)
-                            [calData,tfAcceptCal] = calrect(calImagePath);
-                        case {'N','n','no','NO','No'}
+                            [cal,tfAcceptCal] = calrect(calImagePath);
+                            break
+                            
+                        case {'n','no'}
                             tfReattemptQuick = false;
                             fprintf('Calibration rejected. Now preparing alternate method...\n');
-                            inputLoop = false;
                             fprintf('\nAlternate Calibration Method\n');
                             fprintf('  Setting a threshold value between 0 and 1:\n');
                             fprintf('   Lower values increase sensitivity, but are more likely to pick up noise/artifacts as well.\n');
@@ -160,37 +162,43 @@ if recompute == true
                             end
                             
                             % Call alternate calibration method (slower fallback/Jeffrey's)
-                            [calData,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch);
+                            [cal,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch);
+                            break
+                            
                         otherwise
                             disp('Please type Y or N and then press the <Enter> key.');
-                    end
-                end
-            end
+                            
+                    end%switch
+                    
+                end%while
+                
+            end%while
             
         case 'hexa'
             
             % Run fast method (Kyle's modified for hexagonal)
-            [calData,tfAcceptCal] = calgeneral(calImagePath,'hexafast',0,numMicroX,numMicroY,microPitch,pixelPitch);
+            [cal,tfAcceptCal] = calgeneral(calImagePath,'hexafast',0,numMicroX,numMicroY,microPitch,pixelPitch);
             
             % Check whether user accepted or rejected the fast calibration from above.
-            while tfAcceptCal == false
+            while ~tfAcceptCal
                 
-                inputLoop = true;
                 fprintf('\n|   CALIBRATION MENU   |\n');
                 fprintf('-----------------------------------------------------------------\n');
                 fprintf('[1] = Select new points to recompute fast hexagonal calibration. \n');
                 fprintf('[2] = Use alternate hexagonal calibration method (slower). \n');
                 fprintf('[3] = QUIT.\n');
                 fprintf('\n');
-                while inputLoop == true
+                
+                while true
                     userInput = input('Enter a number from the menu above to proceed: ','s');
-                    switch userInput
-                        case {'1','one','[1]','ONE','One',' 1'}
+                    switch lower(strtrim(userInput))
+                        case {'1','one'}
                             % Fast Hexagonal Calibration (modified rectangular algorithm)
                             fprintf('\nRecomputing calibration with fast algorithm...\n');
-                            [calData,tfAcceptCal] = calgeneral(calImagePath,'hexafast',0,numMicroX,numMicroY,microPitch,pixelPitch);
-                            inputLoop = false;
-                        case {'2','two','[2]','TWO','Two',' 2'}
+                            [cal,tfAcceptCal] = calgeneral(calImagePath,'hexafast',0,numMicroX,numMicroY,microPitch,pixelPitch);
+                            break
+                            
+                        case {'2','two'}
                             fprintf('\nRecomputing calibration with alternate algorithm...\n');
                             % Old/Legacy Hexagonal Calibration Method
                             fprintf('\nAlternate Hexagonal Calibration Method\n');
@@ -205,29 +213,33 @@ if recompute == true
                                     fprintf('This number is not between 0 and 1.\n');
                                 end
                             end
-                            [calData,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch);
-                            inputLoop = false;
+                            [cal,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch);
+                            break
                             
-                        case {'3','three','[3]','THREE','Three',' 3'}
+                        case {'3','three'}
                             error('PROGRAM EXECUTION ENDED BY USER.');
+                            
                         otherwise
                             disp('Please enter a number from the above menu then press the <Enter> key.');
-                    end
-                end
-            end
+                            
+                    end%switch
+                    
+                end%while
+                
+            end%while
+            
         otherwise
             error('Incorrect calibration type indicated.');
+            
+    end%switch
+    
+    if saveFlag && tfAcceptCal
+        % Save matrix to file
+        fprintf('Saving matrix to file...');
+        save(fullfile(calFolderPath,[imageSetName '_calibration.mat']),'cal');
+        fprintf('complete.\n');
     end
     
-    if saveFlag == true
-        if tfAcceptCal == true
-            % Save matrix to file
-            fprintf('Saving matrix to file...');
-            save([calFolderPath '\' imageSetName '_' 'calData.mat'],'calData');
-            fprintf('complete.\n');
-        end
-    end
-    
-end
+end%if
 
-end
+end%function
