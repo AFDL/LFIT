@@ -349,8 +349,8 @@ switch lower(calType)
             calibrationPoints = closestPointRC(1:maxColHeight,1:maxRowWidth,:);
             
             % Create calibration structure for export
-            cal.exactX  = calibrationPoints(:,:,1);     % x(s,t)
-            cal.exactY  = calibrationPoints(:,:,2);     % y(s,t)
+            cal.exactX  = calibrationPoints(:,:,1)';     % x(s,t)
+            cal.exactY  = calibrationPoints(:,:,2)';     % y(s,t)
             cal.roundX  = round( cal.exactX );
             cal.roundY  = round( cal.exactY );
             cal.numS    = maxRowWidth;
