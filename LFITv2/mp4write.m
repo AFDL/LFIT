@@ -1,8 +1,15 @@
 function [vidobj] = mp4write(frame,cMap,vidobj,filename,frameInd,quality,fpsVal,totalFrames)
-%MP4WRITE Writes the current frame to a new or existing MP4 file
+%MP4WRITE Writes the current frame to a new or existing MP4 file.
 %   
-%  Checks against multiple MATLAB versions, but only versions R2010b or
-%  newer support MP4 export.
+% Checks against multiple MATLAB versions, but only versions R2010b or
+% newer support MP4 export.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 if verLessThan('matlab', '7.11') % lower MATLAB versions than R2010b don't support VideoWriter, but do support avifile (which doesn't really support MP4 output).
 

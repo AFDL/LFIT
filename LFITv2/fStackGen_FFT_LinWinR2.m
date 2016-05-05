@@ -1,23 +1,14 @@
-% Generate focal stack using FFT based refocusing
-%R2 - FFT Refocusing using Kaiser-bessel windowing function
-%R3 - Optimize R2 by removing all the old code for using interpn. Also add
-%a section to generate Beta values by interpolating/extrapolating the
-%values given from Jackson et.al.
-%R4 - Rename to LinWin, remove kaiser-bessel windowing. Linear window
-%performs better.
-
-%LinWinR2 - Clean up code, remove debugging variables, etc.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%% IMPORTANT! Double precision is required for all data!!!!!!   %%%%%%
-
-%%%%%% Single precision will result in unusable results as padding size
-%%%%%% increases
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function [fStackFFT, spec, specOS] = fStackGen_FFT_LinWinR2(focalPlanes, RAD, x_array, y_array, u_array, v_array, padVec)
+%FSTACKGEN_FFT_LINWINR2 Generate a focal stack using FFT based refocusing.
+%
+% IMPORTANT! Double precision is required for all data! Single precision
+% will result in unusable results as padding size increases.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 w = 2; % Window size. This is fixed to 2 as of R4. Linear window (triangle) is always length 2

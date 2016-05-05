@@ -1,16 +1,22 @@
 function [cal,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numMicroY,microPitch,pixelPitch)
 %CALGENERAL General method for generating calibration matrix.
 %
-%  This function generates the calibration data matrix for a given
-%  calibration image. The basic algorithm outline is as follows:
-%    1. Identifies all distinct objects (spots) in the scene
-%    2. Calculates weighted centroids for all objects.
-%    3. User selects first three points.
-%    4. Program moves L->R along each row, guessing the location of the
-%       next microlens, then searching the known list of centroid locations
-%       for the closest result. If the returned location is too great a
-%       distance away from the guess, the program assumes the guess is true
-%       and repeats the process throughout the whole image.
+% This function generates the calibration data matrix for a given
+% calibration image. The basic algorithm outline is as follows:
+%   1. Identifies all distinct objects (spots) in the scene
+%   2. Calculates weighted centroids for all objects.
+%   3. User selects first three points.
+%   4. Program moves L->R along each row, guessing the location of the
+%      next microlens, then searching the known list of centroid locations
+%      for the closest result. If the returned location is too great a
+%      distance away from the guess, the program assumes the guess is true
+%      and repeats the process throughout the whole image.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 % Assign variables

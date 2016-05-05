@@ -1,5 +1,11 @@
 function [ sRange,tRange ] = computestrange(cal,imagePath,pixelPitch)
-%COMPUTESTRANGE Calculates the s and t ranges for the calibration set
+%COMPUTESTRANGE Calculates the s and t ranges for the calibration set.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 imCenterX   = size(imread(imagePath),2)/2;

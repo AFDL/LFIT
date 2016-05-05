@@ -1,11 +1,16 @@
 function [reconVol] = deconv3dwiener(in3DPSF, inFocalStack, regVal)
-%DECONV3DWIENER Computes 3D Wiener filter deconvolution of a focal stack and 3D PSF
+%DECONV3DWIENER Computes 3D Wiener filter deconvolution of a focal stack and 3D PSF.
 %
-%  Takes a (centered) 3D PSF and focal stack as inputs. With the inputted regularization parameter,
-%  a 3D Wiener filter deconvolution is taken. Outputs a 3D reconstructed volume.
+% Takes a (centered) 3D PSF and focal stack as inputs. With the inputted
+% regularization parameter, a 3D Wiener filter deconvolution is taken.
+% Outputs a 3D reconstructed volume.
 %
-%  Original Author: Paul Anglin
-%  Adapted by: Jeffrey Bolan | 9/19/14
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 % Move centered focal stack and centered PSF to top left corner and take FFTs
 fdPSF       = fftn(fftshift(in3DPSF)); %fdPSF = frequency domain PSF

@@ -6,6 +6,12 @@ function gifwrite(frame,cMap,filename,delayTime,ind)
 % filename = full file path (unless saving in the current directory)
 % delayTime = delay between frames (0 default)
 % ind = which frame of the GIF that is currently being written (1 = first frame)
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 im = frame2im(frame);

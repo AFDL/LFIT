@@ -1,16 +1,23 @@
-function [pathString, LFIversion] = toolkitpathv2(useAltPath,altPathString)
-% toolkitpath | Returns path to the folder containing the LFI toolkit and the current version.
+function [pathString, LFIversion] = toolkitpathv2(altPath)
+%TOOLKITPATH Returns the path to the LFIT containing folder and the current version.
 %
-%  Usage Notes: The default path for the toolkit is typically "C:\Users\<current user>\MATLAB\LFITv2\".
-%  It is assumed that the toolkit will be in the MATLAB user directory as above regardless. However, if a different
-%  path is desired for the toolkit folder, the usage of altPath is supported. For example, to use this function to
-%  return "C:\Users\<current user>\MATLAB\LFI_toolkit_V001\", call this function as LFI_toolkit_path(true,'C:\Users\<current user>\MATLAB\LFI_toolkit_V001\');
+% Usage Notes: The default path for the toolkit is typically "C:\Users\<current user>\MATLAB\LFITv2\".
+% It is assumed that the toolkit will be in the MATLAB user directory as above regardless. However, if a different
+% path is desired for the toolkit folder, the usage of altPath is supported. For example, to use this function to
+% return "C:\Users\<current user>\MATLAB\LFI_toolkit_V001\", call this function as LFI_toolkit_path(true,'C:\Users\<current user>\MATLAB\LFI_toolkit_V001\');
 %
-%  Author: Jeffrey Bolan | 9/10/2014
-%  -Last change: Limited scope of LFITv2 subfolder check by removing exist and rewriting (1/27/2015)
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 % Check flag to see if non standard path is in use
-if ~useAltPath
+if nargin>0
+    % Use literally the path the user gave
+    pathString = altPath;
+else
     if ~isempty(dir('LFITv2')) %better than using 'exist', which looks on the entire search path.
         tempUserString = cd;
         pathString = fullfile(tempUserString,'LFITv2',filesep);
@@ -19,9 +26,6 @@ if ~useAltPath
         userString = tempUserString(1:end-1);
         pathString = fullfile(userString,'LFITv2',filesep);
     end
-else
-    % Use literally the path the user gave
-    pathString = altPathString;
 end
 
 % Add LFI_toolkit path to search path

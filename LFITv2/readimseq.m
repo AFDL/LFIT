@@ -1,12 +1,20 @@
 function [imageArray] = readimseq(imFolderPath,tfAskUserForDir,fileTypeFlag,tfNorm)
-%READIMSEQ Reads in a sequence of images in a folder into a 3D array
+%READIMSEQ Reads in a sequence of images in a folder into a 3D array.
 %
-%   imFolderPath        =  path to directory containing image seqences (no trailing slash)
-%   tfAskUserForDir     =  true or false; controls whether function prompts the user to select a directory
-%   fileTypeExtension   =  string in this format: '*.tif' or '*.png' or '*.bmp' etc. to control what file type is read in
-%   tfNorm              =  true or false; if true, normalizes the image array by the maximum intensity in the entire array
+% imFolderPath      : path to directory containing image seqences (no
+%                     trailing slash)
+% tfAskUserForDir   : true or false; controls whether function prompts the
+%                     user to select a directory
+% fileTypeExtension : string in this format: '*.tif' or '*.png' or '*.bmp'
+%                     etc. to control what file type is read in
+% tfNorm            : true or false; if true, normalizes the image array by
+%                     the maximum intensity in the entire array
 %
-% Authored by: Jeffrey Bolan based on Kyle Johnson's code | 10/2/2014
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 if tfAskUserForDir == true
    imFolderPath = uigetdir(userpath,'Select a folder containing the image sequence to be read into MATLAB...'); 

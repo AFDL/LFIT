@@ -1,9 +1,17 @@
 function [onlineVersion,checkSuccess] = updatecheck(currentVersion)
 %UPDATECHECK Checks online for updates to LFI Toolkit and notifies user if a newer version is available.
 %
-%  A text file, uploaded to Elise Munz's personal Auburn web space, with the most current version number
-%  is compared against the current version of the LFI Toolkit (generally obtained by querying the text file
-%  in the LFI_toolkit function folder) as passed to this function.
+% A text file, found on the LFIT github repository, with the most current
+% version number is compared against the current version of the LFI Toolkit
+% (generally obtained by querying the text file in the LFI_toolkit function
+% folder) as passed to this function.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 % Update checker functionality
 checkSuccess = 0;

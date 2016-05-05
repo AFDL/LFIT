@@ -1,27 +1,27 @@
 function [] = saveimseq(imageArray,imSavePath,tfAskUserForDir,fileTypeFlag,tfNorm)
-%READIMSEQ Reads in a sequence of images in a folder into a 3D array
+%READIMSEQ Reads in a sequence of images in a folder into a 3D array.
 %
-%   imageArray          =  image stack to save slice by slice
-%   imSavePath          =  path to save directory for image sequence (no trailing slash)
-%   tfAskUserForDir     =  true or false; controls whether function prompts the user to select a directory
-%   fileTypeFlag        =  integer; 0 for no saving, 1 for saving a bmp, 2 for saving a png, 3 for saving a jpg of the image, 4 for a 16-bit PNG, 5 for a 16-bit TIFF
-%   tfNorm              =  true or false; if true, normalizes the image array by the maximum intensity in the entire array
+% imageArray      : image stack to save slice by slice
+% imSavePath      : path to save directory for image sequence (no trailing
+%                   slash)
+% tfAskUserForDir : true or false; controls whether function prompts the
+%                   user to select a directory
+% fileTypeFlag    : integer; 0 for no saving, 1 for saving a bmp, 2 for
+%                   saving a png, 3 for saving a jpg of the image, 4 for a
+%                   16-bit PNG, 5 for a 16-bit TIFF
+% tfNorm          : true or false; if true, normalizes the image array by
+%                   the maximum intensity in the entire array
 %
-% Authored by: Jeffrey Bolan based on Kyle Johnson's code | 10/2/2014
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 if tfAskUserForDir == true
    imSavePath = uigetdir(userpath,'Select the folder to save the image sequence into...'); 
 end
-
-% switch fileTypeFlag
-%     case 0,     error('0 is not a valid fileTypeFlag for readImageSeq(..). Check function call.');
-%     case 1,     fileTypeExtension = '*.bmp';
-%     case 2,     fileTypeExtension = '*.png';
-%     case 3,     fileTypeExtension = '*.jpg';
-%     case 4,     fileTypeExtension = '*.png';
-%     case 5,     fileTypeExtension = '*.tif';
-%     otherwise,  error('Bad fileTypeFlag passed to readImageSeq. Check function call.');
-% end
 
 disp('Reading in image sequence...');
 progress(0);

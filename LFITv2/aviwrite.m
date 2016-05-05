@@ -4,6 +4,13 @@ function [vidobj] = aviwrite(frame,cMap,codec,vidobj,filename,frameInd,quality,f
 % Supports multiple MATLAB versions, but be careful of
 % codec/compression/output format differences between versions of MATLAB
 % older than R2010b and newer versions.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 if verLessThan('matlab', '7.11') % lower MATLAB versions don't support VideoWriter, but do support avifile
     

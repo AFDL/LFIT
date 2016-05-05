@@ -1,18 +1,22 @@
 function cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,calType,numMicroX,numMicroY,microPitch,pixelPitch)
 %COMPUTECALDATA Generates calibration data matrix for the microlens array.
 %
-%  Finds microlens center locations and returns accompanying calibration data array.
+% For the rectangular case:
+%   Runs efficient method developed by Kyle Johnson first. User is prompted
+%   to accept/reject the result (when shown calibration image of microlens
+%   locations). If rejected, an alternate calibration method is run. This
+%   method, developed by Jeffrey Bolan, is slower, but implements a
+%   different algorithm which might yield usable results if the primary
+%   calibration method fails.
 %
-%  For the rectangular case:
-%  Runs efficient method developed by Kyle Johnson first. User is prompted
-%  to accept/reject the result (when shown calibration image of microlens
-%  locations). If rejected, an alternate calibration method is run. This method,
-%  developed by Jeffrey Bolan, is slower, but implements a different algorithm
-%  which might yield usable results if the primary calibration method
-%  fails.
+% For the hexagonal case:
+%   Follow the command line prompts.
 %
-%  For the hexagonal case:
-%  Follow the command line prompts.
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 switch loadFlag

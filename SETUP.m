@@ -1,6 +1,6 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%       INSTALLER SCRIPT FOR LFIT       %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                      INSTALLER SCRIPT FOR LFIT                      %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Run this script once to install the LFI 
 % Toolkit in the appropriate MATLAB folder.
@@ -10,9 +10,15 @@
 % approved by the user. As always, AVOID 
 % saving user files in this LFI_toolkit
 % folder to avoid loss of data.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
-clc; clear all; close all;
+clear variables; close all; clc;
 
 tempUserString = userpath;
 userString = tempUserString(1:end-1);

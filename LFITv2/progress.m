@@ -1,8 +1,15 @@
 function progress( m, n )
 %PROGRESS displays the estimated time remaining of an iterative task.
-%   progress(0)   initializes the timer.
-%   progress(m,n) displays the time remaining on iteration m of n.
-%   progress(n,n) indicates that the task has completed.
+%
+% progress(0)   initializes the timer.
+% progress(m,n) displays the time remaining on iteration m of n.
+% progress(n,n) indicates that the task has completed.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 global progress_t0 progress_lasttoc

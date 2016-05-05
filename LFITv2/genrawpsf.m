@@ -1,15 +1,19 @@
 function [outputPSF] = genrawpsf(microDiameterExact,psfFlag)
-%GENRAWPSF Generates a raw, unpadded PSF to be used in refocusing
+%GENRAWPSF Generates a raw, unpadded PSF to be used in refocusing.
 %
-%  microDiameterExact: exact diameter of a microlens in pixels
+% microDiameterExact: exact diameter of a microlens in pixels
 %
-%  psfFlag: 0 = reserved
-%           1 = disk (ceiling, ie all ones)
-%           2 = disk (sums to 1)
-%           3 = disk (normalized to max of 1)
+% psfFlag: 0 = reserved
+%          1 = disk (ceiling, ie all ones)
+%          2 = disk (sums to 1)
+%          3 = disk (normalized to max of 1)
 %           
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
-%  Author: Jeffrey Bolan | 9/19/14
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 microRadius = (microDiameterExact/2) - 1;
 

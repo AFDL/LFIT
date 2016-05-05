@@ -1,9 +1,15 @@
 function [ calImagePath ] = imageavg(calFolderPath,saveName)
 %IMAGEAVG Takes multiple images and averages them together.
 %
-%   Function will write a new image 'avgcal.tif' in the same directory as the
-%   input directory. Input the full path of the folder containing
-%   all of the calibration files which should be labeled 0000 to 0099.
+% Function will write a new image 'avgcal.tif' in the same directory as the
+% input directory. Input the full path of the folder containing
+% all of the calibration files which should be labeled 0000 to 0099.
+%
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
 if exist(fullfile(calFolderPath,'avgcal.tif'),'file') == 2 % if averaged calibration image already exists, just give the string back.
