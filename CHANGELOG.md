@@ -1,5 +1,9 @@
 #VERSION CHANGELOG
 
+###v2.31: BUGFIX
+* Fixed alternate hexagonal calibration
+* Fixed focal stack output filenames
+
 ###v2.30: MAJOR Release
 * Reorganization of GUI to remove extraneous/duplicate options
 * Parallelization of general functions for increased efficiency
