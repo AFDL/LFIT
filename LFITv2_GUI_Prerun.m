@@ -1,24 +1,33 @@
 function varargout = LFITv2_GUI_Prerun(varargin)
-% LFITV2_GUI_PRERUN M-file for LFITv2_GUI_Prerun.fig
-%      LFITV2_GUI_PRERUN, by itself, creates a new LFITV2_GUI_PRERUN or raises the existing
-%      singleton*.
+%LFITV2_GUI_PRERUN M-file for LFITv2_GUI_Prerun.fig
+% LFITV2_GUI_PRERUN, by itself, creates a new LFITV2_GUI_PRERUN or raises
+% the existing singleton*.
 %
-%      H = LFITV2_GUI_PRERUN returns the handle to a new LFITV2_GUI_PRERUN or the handle to
-%      the existing singleton*.
+% H = LFITV2_GUI_PRERUN returns the handle to a new LFITV2_GUI_PRERUN or
+% the handle to the existing singleton*.
 %
-%      LFITV2_GUI_PRERUN('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in LFITV2_GUI_PRERUN.M with the given input arguments.
+% LFITV2_GUI_PRERUN('CALLBACK',hObject,eventData,handles,...) calls the
+% local function named CALLBACK in LFITV2_GUI_PRERUN.M with the given input
+% arguments.
 %
-%      LFITV2_GUI_PRERUN('Property','Value',...) creates a new LFITV2_GUI_PRERUN or raises
-%      the existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before LFITv2_GUI_Prerun_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to LFITv2_GUI_Prerun_OpeningFcn via varargin.
+% LFITV2_GUI_PRERUN('Property','Value',...) creates a new LFITV2_GUI_PRERUN
+% or raises the existing singleton*. Starting from the left, property
+% value pairs are applied to the GUI before LFITv2_GUI_Prerun_OpeningFcn
+% gets called. An unrecognized property name or invalid value makes
+% property application stop. All inputs are passed to
+% LFITv2_GUI_Prerun_OpeningFcn via varargin.
 %
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
+% *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+% instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
+%
+% This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
+% under version 3 of the GNU General Public License. Refer to the included
+% LICENSE or <http://www.gnu.org/licenses/> for the full text.
+
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

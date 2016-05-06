@@ -10,7 +10,7 @@
 % approved by the user. As always, AVOID 
 % saving user files in this LFI_toolkit
 % folder to avoid loss of data.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

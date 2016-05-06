@@ -5,7 +5,7 @@ function [pathString, LFIversion] = toolkitpathv2(altPath)
 % It is assumed that the toolkit will be in the MATLAB user directory as above regardless. However, if a different
 % path is desired for the toolkit folder, the usage of altPath is supported. For example, to use this function to
 % return "C:\Users\<current user>\MATLAB\LFI_toolkit_V001\", call this function as LFI_toolkit_path(true,'C:\Users\<current user>\MATLAB\LFI_toolkit_V001\');
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
