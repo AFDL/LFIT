@@ -1,6 +1,6 @@
 function animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName)
 %ANIMATEPERSPECTIVE Generates a perspective animation as defined by the request vector.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
@@ -12,10 +12,6 @@ fprintf('\nBeginning perspective animation generation.\n');
 progress(0);
 
 vidobj = 0;
-
-try     close(cF);
-catch   % figure already closed
-end
 
 cF = figure;
 set(cF,'WindowStyle','modal'); % lock focus to window to prevent user from selecting main GUI
@@ -50,7 +46,6 @@ for frameInd = 1:nFrames
             case 'caption',     caption = q.caption;
             case 'annotation',  caption = sprintf( '(%g,%g)', qi.pUV(1), qi.pUV(2) );
             case 'both',        caption = sprintf( '%s --- (%g,%g)', q.caption, qi.pUV(1), qi.pUV(2) );
-
         end%switch
         displayimage( perspectiveImage, caption, q.colormap, q.background );
 

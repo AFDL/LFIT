@@ -1,12 +1,12 @@
 function gifwrite(frame,cMap,filename,delayTime,ind)
 %GIFWRITE Use inside a loop to create a GIF file frame-by-frame
 %
-% frame = image to write to GIF file
-% cMap = colormap used to display the image
-% filename = full file path (unless saving in the current directory)
-% delayTime = delay between frames (0 default)
-% ind = which frame of the GIF that is currently being written (1 = first frame)
-%
+% frame     : image to write to GIF file
+% cMap      : colormap used to display the image
+% filename  : full file path (unless saving in the current directory)
+% delayTime : delay between frames (0 default)
+% ind       : which frame of the GIF that is currently being written (1 = first frame)
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

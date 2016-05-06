@@ -1,12 +1,26 @@
 classdef lfiQuery
 %LFIQUERY Creates a light field image (lfi) reconstruction query.
 %
+% Use this function to craft a query to be used with GENREFOCUS or
+% PERSPECTIVEGEN. The user must create a new query, selecting either focus
+% or perspective as the reconstruction type. Then the user may (optionally)
+% refine the query by specifying reconstruction parameters.
+%
+% Example:
+%   q = lfiQuery('focus');
+%   q.fMethod = 'add';
+%   q.fAlpha  = 1.02;
+%   q.verify();
+%
+% See also: GENREFOCUS, PERSPECTIVEGEN
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
 % under version 3 of the GNU General Public License. Refer to the included
 % LICENSE or <http://www.gnu.org/licenses/> for the full text.
     
+
     properties (SetAccess=immutable)
         
         adjust      = '';           % reconstruction type: 'focus', 'perspective', 'both'

@@ -4,7 +4,7 @@ function obj = autoremove( obj )
 % This method will automatically clear parameters which are set, but not
 % used. It will not affect the functionality of any reconstruction. It is
 % merely a cleaning tool to keep queries tidy.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

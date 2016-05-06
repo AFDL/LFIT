@@ -3,7 +3,7 @@ function [fStackFFT, spec, specOS] = fStackGen_FFT_LinWinR2(focalPlanes, RAD, x_
 %
 % IMPORTANT! Double precision is required for all data! Single precision
 % will result in unusable results as padding size increases.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

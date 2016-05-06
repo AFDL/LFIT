@@ -4,7 +4,7 @@ function [ calImagePath ] = imageavg(calFolderPath,saveName)
 % Function will write a new image 'avgcal.tif' in the same directory as the
 % input directory. Input the full path of the folder containing
 % all of the calibration files which should be labeled 0000 to 0099.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

@@ -9,7 +9,7 @@ function [imageArray] = readimseq(imFolderPath,tfAskUserForDir,fileTypeFlag,tfNo
 %                     etc. to control what file type is read in
 % tfNorm            : true or false; if true, normalizes the image array by
 %                     the maximum intensity in the entire array
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

@@ -1,6 +1,6 @@
 function obj = import( obj, vec, type )
 %IMPORT Import a legacy requestVector.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

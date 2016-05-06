@@ -4,7 +4,7 @@ function [reconVol] = deconv3dwiener(in3DPSF, inFocalStack, regVal)
 % Takes a (centered) 3D PSF and focal stack as inputs. With the inputted
 % regularization parameter, a 3D Wiener filter deconvolution is taken.
 % Outputs a 3D reconstructed volume.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

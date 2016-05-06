@@ -7,7 +7,7 @@ function [outputPSF] = genrawpsf(microDiameterExact,psfFlag)
 %          1 = disk (ceiling, ie all ones)
 %          2 = disk (sums to 1)
 %          3 = disk (normalized to max of 1)
-%           
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

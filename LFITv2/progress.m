@@ -4,7 +4,7 @@ function progress( m, n )
 % progress(0)   initializes the timer.
 % progress(m,n) displays the time remaining on iteration m of n.
 % progress(n,n) indicates that the task has completed.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

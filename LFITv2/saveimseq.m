@@ -11,7 +11,7 @@ function [] = saveimseq(imageArray,imSavePath,tfAskUserForDir,fileTypeFlag,tfNor
 %                   16-bit PNG, 5 for a 16-bit TIFF
 % tfNorm          : true or false; if true, normalizes the image array by
 %                   the maximum intensity in the entire array
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

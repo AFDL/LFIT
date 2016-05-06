@@ -1,6 +1,6 @@
 function animaterefocus(q,radArray,sRange,tRange,outputPath,imageSetName)
 %ANIMATEREFOCUS Generates a refocusing animation as defined by the request vector.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

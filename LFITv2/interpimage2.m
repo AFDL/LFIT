@@ -3,7 +3,7 @@ function [radArray,sRange,tRange] = interpimage2(cal,imagePath,calType,microPitc
 %
 % Uses input calibration data to extract microimages from the raw image,
 % interpolating them onto a plaid grid in a 4D matrix (radArray).
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

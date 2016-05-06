@@ -1,6 +1,6 @@
 function [  ] = perspectivegen(q,radArray,sRange,tRange,outputPath,imageSpecificName)
 %PERSPECTIVEGEN Generates a series of perspective images as defined by the request vector.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

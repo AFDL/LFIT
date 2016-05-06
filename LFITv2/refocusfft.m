@@ -3,7 +3,7 @@ function [syntheticImage] = refocusfft(q,radArray,sRange,tRange)
 %
 % Requires global variable sizePixelAperture, which is the conversion
 % factor for u and v to millimeters (mm).
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

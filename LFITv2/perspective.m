@@ -1,6 +1,6 @@
 function [perspectiveImage] = perspective(q,radArray,sRange,tRange)
 %PERSPECTIVE Generates a perspective shift view at a (u,v) location.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

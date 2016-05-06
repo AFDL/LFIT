@@ -11,7 +11,7 @@ function cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,image
 %
 % For the hexagonal case:
 %   Follow the command line prompts.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

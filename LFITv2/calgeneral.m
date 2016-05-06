@@ -11,7 +11,7 @@ function [cal,tfAcceptCal] = calgeneral(calImagePath,calType,sens,numMicroX,numM
 %      for the closest result. If the returned location is too great a
 %      distance away from the guess, the program assumes the guess is true
 %      and repeats the process throughout the whole image.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

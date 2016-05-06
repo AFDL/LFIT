@@ -5,7 +5,7 @@ function [onlineVersion,checkSuccess] = updatecheck(currentVersion)
 % version number is compared against the current version of the LFI Toolkit
 % (generally obtained by querying the text file in the LFI_toolkit function
 % folder) as passed to this function.
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

@@ -4,7 +4,7 @@ function [travelVector] = gentravelvector(edgeBuffer,sizeRad,SS_UV,travelVectorI
 % Set edgeBuffer to keep the path off the very edges of the image.
 % Set SS_UV to gain finer, non-integer steps along the path.
 % travelVectorIndex: 1 = square, 2 = circle, 3 = cross, 4 = load from file
-%
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed

@@ -1,7 +1,6 @@
 function [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageSpecificName)
-%GENFOCALSTACK Generates a focal stack of refocused images as defined by
-%the request vector.
-%
+%GENFOCALSTACK Generates a focal stack of refocused images as defined by the request vector.
+
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
