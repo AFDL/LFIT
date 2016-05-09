@@ -58,7 +58,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
         fprintf('-------------------------------------------------\n');
         
         % Adds toolkit path to MATLAB search path. Checks first for subfolder LFITv2 then looks in user folder for LFITv2
-        [LFI_path,progVersion] = toolkitpathv2(false,'<alt path string>'); % assumes default toolkit path unless function called with true and alternate path string; see documentation
+        [LFI_path,progVersion] = toolkitpathv2(); % assumes default toolkit path unless function called with alternate path string; see documentation
         
         % Calibration
         if loadFlag ~= 3 % standard calibration
