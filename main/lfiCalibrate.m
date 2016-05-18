@@ -19,7 +19,7 @@ end
 
 switch lower(calMethod)
 	case {'rect','rectFast'}
-		cal = lfiCalibrate_rectFast( calImagePath );
+		cal = lfiCalibrate__rectFast( calImagePath );
 
 		if ~isstruct(cal)
 			warning('Fast rectangular calibration failed. Trying robust method.');
@@ -27,7 +27,7 @@ switch lower(calMethod)
 		end%if
 
 	case {'hexa','hexaFast'}
-		cal = lfiCalibrate_hexaFast( calImagePath );
+		cal = lfiCalibrate__hexaFast( calImagePath );
 
 		if ~isstruct(cal)
 			warning('Fast hexagonal calibration failed. Trying robust method.');
@@ -35,12 +35,12 @@ switch lower(calMethod)
 		end%if
 
 	case 'rectRobust'
-		cal = lfiCalibrate_rectRobust( calImagePath );
+		cal = lfiCalibrate__rectRobust( calImagePath );
 		
 		if ~isstruct(cal), error('Robust rectangular calibration failed.'); end
 
 	case 'hexaRobust'
-		cal = lfiCalibrate_hexaRobust( calImagePath );
+		cal = lfiCalibrate__hexaRobust( calImagePath );
 
 		if ~isstruct(cal), error('Robust hexagonal calibration failed.'); end
 

@@ -8,11 +8,11 @@ function [rad] = lfiBuildRadiance( cal, imagePath )
 % LICENSE or <http://www.gnu.org/licenses/> for the full text.
 
 
-global lfitPref_useDragon, lfitPref_numThreads
+global lfitPref__useDragon, lfitPref__numThreads
 
 %% USE DRAGON IF AVAILABLE
 
-if lfitPref_useDragon && libisloaded('Dragon')
+if lfitPref__useDragon && libisloaded('Dragon')
 	DRG_buildRadiance();
 	return;
 end
@@ -31,7 +31,7 @@ mlPadding	= 1;
 uVec	= single( mlRadius : -1 : -mlRadius );
 vVec	= single( mlRadius : -1 : -mlRadius );
 
-[v,u]	= ndgrid(vVec,uVec)		% !!! Should this be u,v instead? Want consistent variable ordering throughout
+[v,u]	= ndgrid(vVec,uVec);    % !!! Should this be u,v instead? Want consistent variable ordering throughout
 
 % Define (u,v) coordinate vectors with padding
 
@@ -50,10 +50,10 @@ imStack = zeros( cal.numS,cal.numT, length(uVectPad),length(vVectPad), 'single' 
 
 numelST = cal.numS*cal.numT;
 for k=1:numelST
-	[s,t]   = ind2sub( [cal.numS cal.numT], k );
+	[s,t]  = ind2sub( [cal.numS cal.numT], k );
 
-	xPixel  = round(cal.exactX(s,t)) - uVectPad;
-	yPixel  = round(cal.exactY(s,t)) - vVectPad;
+	xPixel = round(cal.exactX(s,t)) - uVectPad;
+	yPixel = round(cal.exactY(s,t)) - vVectPad;
 
 	imStack(s,t,:,:) = imageData( yPixel, xPixel ).*mask;
 
@@ -72,21 +72,21 @@ radArrayRaw = zeros( numel(uVect),numel(vVect), cal.numS,cal.numT, 'single' );
 
 % Loop through each microlens
 for s = 1:cal.numS
-    
+
 	% Slice variables to reduce parfor overhead
-	calSliceX   = cal.exactX(s,:);
-	calSliceY   = cal.exactY(s,:);
-	imSlice     = squeeze( imStack(s,:,:,:) );
+	calSliceX = cal.exactX(s,:);
+	calSliceY = cal.exactY(s,:);
+	imSlice   = squeeze( imStack(s,:,:,:) );
     
 	parfor ( t = 1:cal.numT, lfitPref_numThreads )
 
 		% Calculate the distance from microlens center to the nearest pixel
-		xShift  = calSliceX(t) - round(calSliceX(t));
-		yShift  = calSliceY(t) - round(calSliceY(t));
+		xShift = calSliceX(t) - round(calSliceX(t));
+		yShift = calSliceY(t) - round(calSliceY(t));
 
 		% Create vector of decimal (u,v) values
-		uKnown  = single( xShift+uVectPad );
-		vKnown  = single( yShift+vVectPad );
+		uKnown = single( xShift+uVectPad );
+		vKnown = single( yShift+vVectPad );
 
 		[vKnown,uKnown] = ndgrid(vKnown,uKnown);
 
@@ -108,28 +108,28 @@ end%for
 
 %% CALCULATE (s,t) RANGE
 
-imCenterX   = size(imread(imagePath),2)/2;
-imCenterY   = size(imread(imagePath),1)/2;
+imCenterX = size(imread(imagePath),2)/2;
+imCenterY = size(imread(imagePath),1)/2;
 
 % Create s and t ranges based on median row and column
-calCenterX  = median( cal.exactX(:) );
-calCenterY  = median( cal.exactY(:) );
+calCenterX         = median( cal.exactX(:) );
+calCenterY         = median( cal.exactY(:) );
 
-calCenterXY         = [calCenterX calCenterY];
-microlensesXY(:,1)	= cal.exactX(:);
-microlensesXY(:,2) 	= cal.exactY(:);
-calCenterInd        = dsearchn( microlensesXY, calCenterXY );
+calCenterXY        = [calCenterX calCenterY];
+microlensesXY(:,1) = cal.exactX(:);
+microlensesXY(:,2) = cal.exactY(:);
+calCenterInd       = dsearchn( microlensesXY, calCenterXY );
 
 % Find s and t indices for the microlens closest to the center
 [calCenterS,calCenterT] = ind2sub( size(cal.exactX), calCenterInd );
 
-calLimLeft   = min( cal.exactX(:,calCenterT) );     % find the minimum x pixel value from the center row
-calLimTop    = min( cal.exactY(calCenterS,:) );     % find the minimum y pixel value from the center column
-calLimRight  = max( cal.exactX(:,calCenterT) );     % find the maximum x pixel value from the center row
-calLimBottom = max( cal.exactY(calCenterS,:) );     % find the maximum y pixel value from the center column
+calLimLeft   = min( cal.exactX(:,calCenterT) );    % find the minimum x pixel value from the center row
+calLimTop    = min( cal.exactY(calCenterS,:) );    % find the minimum y pixel value from the center column
+calLimRight  = max( cal.exactX(:,calCenterT) );    % find the maximum x pixel value from the center row
+calLimBottom = max( cal.exactY(calCenterS,:) );    % find the maximum y pixel value from the center column
 
-sRange      = linspace( calLimLeft-imCenterX, calLimRight-imCenterX, cal.numS )*pixelPitch;
-tRange      = linspace( calLimTop-imCenterY, calLimBottom-imCenterY, cal.numT )*pixelPitch;
+sRange = linspace( calLimLeft-imCenterX, calLimRight-imCenterX, cal.numS )*pixelPitch;
+tRange = linspace( calLimTop-imCenterY, calLimBottom-imCenterY, cal.numT )*pixelPitch;
 
 clear imCenter*, calCenter*, microlensesXY, calLim*
 
@@ -138,34 +138,33 @@ clear imCenter*, calCenter*, microlensesXY, calLim*
 
 switch calType
 	case 'rect'
-		radArray    = radArrayRaw;
+		radArray = radArrayRaw;
    
 	case 'hexa'
-        
 		fprintf('\nResampling from hexagonal to rectangular grid...');
 		progress(0);
 
 		% Hypothetical s and t ranges for a rectangular array with the same number of microlenses as in the hexagonal
-		sRange      = single(sRange);
-		tRange      = single(tRange);
+		sRange = single(sRange);
+		tRange = single(tRange);
 
-		lenS        = length(sRange);
-		lenT        = length(tRange);
+		lenS   = length(sRange);
+		lenT   = length(tRange);
 
 		% Create a rectilinear sampling grid with double the horizontal
 		% resolution and a vertical resolution to maintain aspect ratio.
-		sSSRange    = linspace( sRange(1), sRange(end), 2*length(sRange) );
-		tSSRange    = tRange(1) : mean(diff(sSSRange)) : tRange(end);
+		sSSRange = linspace( sRange(1), sRange(end), 2*length(sRange) );
+		tSSRange = tRange(1) : mean(diff(sSSRange)) : tRange(end);
 
 		% Create supersampled radiance array
-		radArray    = zeros( length(uVect),length(vVect), length(sSSRange),length(tRange), 'single' );
+		radArray = zeros( length(uVect),length(vVect), length(sSSRange),length(tRange), 'single' );
 
 %		% Interpolation weights for four-point method
-%		wt4a        = 1/( 2 + 1*sqrt(3) );
-%		wt4b        = 1/( 2 + 4/sqrt(3) );
+%		wt4a     = 1/( 2 + 1*sqrt(3) );
+%		wt4b     = 1/( 2 + 4/sqrt(3) );
 
 		% Does the first row overhang?
-		oh0         = ( cal.exactX(1,1) < cal.exactX(1,2) );
+		oh0      = ( cal.exactX(1,1) < cal.exactX(1,2) );
 
 		% Loop through the raw grid, supersampling horizontally
 		for tInd = 2:lenT-1
@@ -182,8 +181,8 @@ switch calType
 
 			% Right: between lenses, use two-point method
 			radArray( :,:, 2*sInd-oh+1,tInd ) = ...
-				radArrayRaw( :,:, sInd+1,tInd )*0.5 + ...   	% East
-				radArrayRaw( :,:, sInd,tInd )*0.5;              % West
+				radArrayRaw( :,:, sInd+1,tInd )*0.5 + ...    % East
+				radArrayRaw( :,:, sInd,tInd )*0.5;           % West
 
 %			% Right: between lenses, use four-point method
 %			radArray( :,:, 2*sInd-oh+1,tInd ) = ...
@@ -195,8 +194,8 @@ switch calType
 			% Timer logic
 			progress(tInd,lenT);
 
-        end
-        
+		end
+
 		% Now supersample vertically to maintain aspect ratio
 		[g1u g1v g1s g1t] = ndgrid( uVect,vVect, sSSRange,tRange );
 		[g2u g2v g2s g2t] = ndgrid( uVect,vVect, sSSRange,tSSRange );
@@ -205,12 +204,11 @@ switch calType
 		% Complete
 		progress(1,1);
 
-		% Overwrite s and t ranges with the appropriate supersampled s and t ranges (since we've supersampled up front in this function, we need to make the
-		% other functions think that the supersampled ranges are normal. Of course, this means any supersampling applied in later functions will be in addition
-		% to the supersampling already applied here.
+		% Overwrite (s,t) with the newly supersampled (s,t). Any later
+		% supersampling will be in addition to this.
 		sRange = sSSRange;
 		tRange = tSSRange;
-        
+
 end%switch
 
 end%function
