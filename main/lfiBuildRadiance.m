@@ -1,4 +1,4 @@
-function [rad] = lfiBuildRadiance( cal, imagePath )
+function [lightfield] = lfiBuildRadiance( cal, imageFile )
 #LFIBUILDRADIANCE converts a plenoptic image into a 4D radiance array using the provided calibration.
 
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
@@ -21,24 +21,21 @@ end
 %% IMPORT DATA AND DEFINE CONSTANTS
 
 % Read in image data
-plenopticImage = im2double(imread(imagePath));
+imageData = im2double(imread(imageFile));
 
 % Calculate microlens radius and padding
-mlRadius	= floor();
+mlRadius	= floor( microPitch/pixelPitch/2 );  % REPLACE WITH `cal` FIELD
 mlPadding	= 1;
 
 % Define (u,v) coordinate vectors in pixels
 uVec	= single( mlRadius : -1 : -mlRadius );
 vVec	= single( mlRadius : -1 : -mlRadius );
 
-[v,u]	= ndgrid(vVec,uVec);    % !!! Should this be u,v instead? Want consistent variable ordering throughout
+[v,u]	= ndgrid(vVec,uVec);  % !!! Should this be u,v instead? Want consistent variable ordering throughout
 
 % Define (u,v) coordinate vectors with padding
-
-
-
-
-
+uVectPad    = single( mlRadius+mlPadding : -1 : -mlRadius-mlPadding );
+vVectPad    = single( mlRadius+mlPadding : -1 : -mlRadius-mlPadding );
 
 
 %% RESHAPE IMAGE INTO 4D ARRAY OF MICROIMAGES
@@ -60,7 +57,7 @@ for k=1:numelST
 	progress(k,numelST);
 end
 
-clear plenopticImage, xPixel, yPixel
+clear imageData, xPixel, yPixel
 
 
 %% INTERPOLATE 4D ARRAY FROM DECIMAL TO INTEGER INDICES
@@ -78,7 +75,7 @@ for s = 1:cal.numS
 	calSliceY = cal.exactY(s,:);
 	imSlice   = squeeze( imStack(s,:,:,:) );
     
-	parfor ( t = 1:cal.numT, lfitPref_numThreads )
+	parfor ( t = 1:cal.numT, lfitPref__numThreads )
 
 		% Calculate the distance from microlens center to the nearest pixel
 		xShift = calSliceX(t) - round(calSliceX(t));
@@ -108,8 +105,8 @@ end%for
 
 %% CALCULATE (s,t) RANGE
 
-imCenterX = size(imread(imagePath),2)/2;
-imCenterY = size(imread(imagePath),1)/2;
+imCenterX = size(imread(imageFile),2)/2;
+imCenterY = size(imread(imageFile),1)/2;
 
 % Create s and t ranges based on median row and column
 calCenterX         = median( cal.exactX(:) );
@@ -123,10 +120,10 @@ calCenterInd       = dsearchn( microlensesXY, calCenterXY );
 % Find s and t indices for the microlens closest to the center
 [calCenterS,calCenterT] = ind2sub( size(cal.exactX), calCenterInd );
 
-calLimLeft   = min( cal.exactX(:,calCenterT) );    % find the minimum x pixel value from the center row
-calLimTop    = min( cal.exactY(calCenterS,:) );    % find the minimum y pixel value from the center column
-calLimRight  = max( cal.exactX(:,calCenterT) );    % find the maximum x pixel value from the center row
-calLimBottom = max( cal.exactY(calCenterS,:) );    % find the maximum y pixel value from the center column
+calLimLeft   = min( cal.exactX(:,calCenterT) );  % find the minimum x pixel value from the center row
+calLimTop    = min( cal.exactY(calCenterS,:) );  % find the minimum y pixel value from the center column
+calLimRight  = max( cal.exactX(:,calCenterT) );  % find the maximum x pixel value from the center row
+calLimBottom = max( cal.exactY(calCenterS,:) );  % find the maximum y pixel value from the center column
 
 sRange = linspace( calLimLeft-imCenterX, calLimRight-imCenterX, cal.numS )*pixelPitch;
 tRange = linspace( calLimTop-imCenterY, calLimBottom-imCenterY, cal.numT )*pixelPitch;
@@ -181,15 +178,15 @@ switch calType
 
 			% Right: between lenses, use two-point method
 			radArray( :,:, 2*sInd-oh+1,tInd ) = ...
-				radArrayRaw( :,:, sInd+1,tInd )*0.5 + ...    % East
-				radArrayRaw( :,:, sInd,tInd )*0.5;           % West
+				radArrayRaw( :,:, sInd+1,tInd )*0.5 + ...  % East
+				radArrayRaw( :,:, sInd,tInd )*0.5;         % West
 
 %			% Right: between lenses, use four-point method
 %			radArray( :,:, 2*sInd-oh+1,tInd ) = ...
-%				radArrayRaw( :,:, sInd+1,tInd-1 )*wt4a + ...    % North
-%				radArrayRaw( :,:, sInd+1,tInd )*wt4b + ...      % East
-%				radArrayRaw( :,:, sInd+1,tInd+1 )*wt4a + ...    % South
-%				radArrayRaw( :,:, sInd,tInd )*wt4b;             % West
+%				radArrayRaw( :,:, sInd+1,tInd-1 )*wt4a + ...  % North
+%				radArrayRaw( :,:, sInd+1,tInd )*wt4b + ...    % East
+%				radArrayRaw( :,:, sInd+1,tInd+1 )*wt4a + ...  % South
+%				radArrayRaw( :,:, sInd,tInd )*wt4b;           % West
 
 			% Timer logic
 			progress(tInd,lenT);
@@ -210,5 +207,16 @@ switch calType
 		tRange = tSSRange;
 
 end%switch
+
+
+%% STRUCTURE OUTPUT DATA
+
+% We can't use radArray without sRange and tRange, so they may as well be
+% packaged together.
+
+lightfield.rad = radArray;
+lightfield.s   = sRange;
+lightfield.t   = tRange;
+
 
 end%function
