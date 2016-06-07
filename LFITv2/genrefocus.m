@@ -12,7 +12,7 @@ refocusedImageStack = genrefocusraw(q,radArray,sRange,tRange);
 
 if strcmpi( q.grouping, 'image' ) % as in typical plenoptic processing
     subdir = imageSpecificName;
-    lims=[min(refocusedImageStack(:) max(refocusedImageStack(:)]; %set max intensity based on a per-image basis
+    lims=[min(refocusedImageStack(:)) max(refocusedImageStack(:))]; %set max intensity based on a per-image basis
 end
 
 for fIdx = 1:size(refocusedImageStack,3)
@@ -21,7 +21,7 @@ for fIdx = 1:size(refocusedImageStack,3)
     
     if strcmpi( q.grouping, 'alpha' )
         subdir = num2str(alphaList(fIdx),'%4.5f');
-        lims=[min(refocusedImage(:) max(refocusedImage(:)]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
+        lims=[min(refocusedImage(:)) max(refocusedImage(:))]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
     end
     
     refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );

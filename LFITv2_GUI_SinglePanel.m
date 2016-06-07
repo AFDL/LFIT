@@ -499,7 +499,7 @@ q.colormap      = handles.colormapR;
 q.background    = [1 1 1];
 
 
-refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages);
+refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 
 updatePerspPlot(hObject)
 
@@ -532,7 +532,7 @@ q.display       = 'fast';
 q.colormap      = handles.colormapR;
 q.background    = [1 1 1];
 
-refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName,handles.imageIndex,handles.numImages);
+refocusedImageStack = genrefocus(q,handles.radArray,handles.sRange,handles.tRange,handles.outputPath,handles.imageSpecificName);
 updatePerspPlot(hObject)  
 
 % --- Executes on button press in tagApertureNone.
