@@ -1,4 +1,4 @@
-function [lightfield] = lfiBuildRadiance( cal, imageFile )
+function [ lightfield ] = lfiBuildRadiance( cal, imageFile )
 #LFIBUILDRADIANCE converts a plenoptic image into a 4D radiance array using the provided calibration.
 
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
