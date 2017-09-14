@@ -1,5 +1,5 @@
 function [ lightfield ] = lfiBuildRadiance( cal, imageFile )
-#LFIBUILDRADIANCE converts a plenoptic image into a 4D radiance array using the provided calibration.
+%LFIBUILDRADIANCE converts a plenoptic image into a 4D radiance array using the provided calibration.
 
 % Copyright (c) 2014-2016 Dr. Brian Thurow <thurow@auburn.edu>
 %
@@ -24,18 +24,18 @@ end
 imageData = im2double(imread(imageFile));
 
 % Calculate microlens radius and padding
-mlRadius	= floor( microPitch/pixelPitch/2 );  % REPLACE WITH `cal` FIELD
-mlPadding	= 1;
+mlRadius  = floor( microPitch/pixelPitch/2 );  % REPLACE WITH `cal` FIELD
+mlPadding = 1;
 
 % Define (u,v) coordinate vectors in pixels
-uVec	= single( mlRadius : -1 : -mlRadius );
-vVec	= single( mlRadius : -1 : -mlRadius );
+uVec  = single( mlRadius : -1 : -mlRadius );
+vVec  = single( mlRadius : -1 : -mlRadius );
 
-[v,u]	= ndgrid(vVec,uVec);  % !!! Should this be u,v instead? Want consistent variable ordering throughout
+[v,u] = ndgrid(vVec,uVec);  % !!! Should this be u,v instead? Want consistent variable ordering throughout
 
 % Define (u,v) coordinate vectors with padding
-uVectPad    = single( mlRadius+mlPadding : -1 : -mlRadius-mlPadding );
-vVectPad    = single( mlRadius+mlPadding : -1 : -mlRadius-mlPadding );
+uVectPad = single( mlRadius+mlPadding : -1 : -mlRadius-mlPadding );
+vVectPad = single( mlRadius+mlPadding : -1 : -mlRadius-mlPadding );
 
 
 %% RESHAPE IMAGE INTO 4D ARRAY OF MICROIMAGES
@@ -74,7 +74,7 @@ for s = 1:cal.numS
 	calSliceX = cal.exactX(s,:);
 	calSliceY = cal.exactY(s,:);
 	imSlice   = squeeze( imStack(s,:,:,:) );
-    
+
 	parfor ( t = 1:cal.numT, lfitPref__numThreads )
 
 		% Calculate the distance from microlens center to the nearest pixel

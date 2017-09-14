@@ -11,144 +11,139 @@ function obj = import( obj, vec, type )
 %% GUESS THE IMPORT TYPE IF UNSPECIFIED
 
 if nargin<3
-    switch size(vec,2)
-        case 10,                    type = 'perspectivegen';
-        case 11,                    type = 'animateperspective';
-        case 14
-            if numel(vec{1,4})>1,   type = 'animaterefocus';
-            else                    type = 'genfocalstack';
-            end
-        case 15,                    type = 'genrefocus';
-        otherwise,                  error('Unable to determine type of requestVector. You must manually specify.');
-    end
+	switch size(vec,2)
+		case 10,                  type = 'perspectivegen';
+		case 11,                  type = 'animateperspective';
+		case 14
+			if numel(vec{1,4})>1, type = 'animaterefocus';
+			else                  type = 'genfocalstack';
+			end
+		case 15,                  type = 'genrefocus';
+		otherwise,                error('Unable to determine type of requestVector. You must manually specify.');
+		end
 end
 
 
 %% CONSISTENTLY INDEXED PARAMETERS
 
-obj.stFactor        = vec{1,3};
+obj.stFactor = vec{1,3};
 
 if vec{1,5} == 0
-    obj.display = false;
+	obj.display = false;
 else
-    flags = {'slow','fast'};
-    obj.display = flags{ vec{1,5} };
+	flags = {'slow','fast'};
+	obj.display = flags{ vec{1,5} };
 end
 
 flags = {'simple','imadjust','stack'};
 obj.contrast = flags{ vec{1,6}+1 };
 
-obj.colormap        = vec{1,7};
-obj.background      = vec{1,8};
+obj.colormap   = vec{1,7};
+obj.background = vec{1,8};
 
-obj.caption         = vec{:,10};
+obj.caption	= vec{:,10};
 
 
 %% FILE TYPE AND FORMAT
 
 if vec{1,4}(1) == 0
-    obj.saveas = false;
+	obj.saveas = false;
 else
-    switch lower(type)
-        case {'animateperspective','animaterefocus'}
-            flags = {'gif','avi','mp4'};
-            obj.saveas = flags{ vec{1,4}(1,1) };
-            
-            if vec{1,4}(1,1)==1
-                obj.framerate   = 1/vec{1,4}(2,1);
-            else
-                obj.framerate   = vec{1,4}(2,2);
-                obj.quality     = vec{1,4}(2,1);
-                
-                if vec{1,4}(1,1)==2
-                    flags = {'uncompressed','jpeg','jpeg2000-lossless','jpeg2000'};
-                    obj.codec = flags{ vec{1,4}(2,3) };
-                end
-            end
+	switch lower(type)
+		case {'animateperspective','animaterefocus'}
+			flags = {'gif','avi','mp4'};
+			obj.saveas = flags{ vec{1,4}(1,1) };
 
-        otherwise
-            flags = {'bmp','png','jpg','png16','tif16'};
-            obj.saveas = flags{ vec{1,4} };
+			if vec{1,4}(1,1)==1
+				obj.framerate = 1/vec{1,4}(2,1);
+			else
+				obj.framerate = vec{1,4}(2,2);
+				obj.quality   = vec{1,4}(2,1);
 
-    end%switch
+				if vec{1,4}(1,1)==2
+					flags = {'uncompressed','jpeg','jpeg2000-lossless','jpeg2000'};
+					obj.codec = flags{ vec{1,4}(2,3) };
+				end
+			end
+
+		otherwise
+			flags = {'bmp','png','jpg','png16','tif16'};
+			obj.saveas = flags{ vec{1,4} };
+
+	end%switch
 end%if
 
 
 %% EVERYTHING ELSE
 
 switch lower(type)
-    case 'perspectivegen'
-%         obj.adjust      = 'perspective';
-        obj.pUV         = cell2mat( vec(:,1:2) );
-        
-    case 'animateperspective'
-%         obj.adjust      = 'perspective';
-        obj.pUV         = gentravelvector(vec{1,1},000,000,vec{1,2},vec{1,11});
-        obj.uvFactor    = vec{1,2};
-        
-    case {'animaterefocus','genfocalstack'}
-%         obj.adjust      = 'focus';
-        obj.uvFactor    = vec{1,2};
-        
-        if vec{1,11} == 0
-            obj.mask = false;
-        else
-            obj.mask = 'circ';
-        end
+	case 'perspectivegen'
+		obj.pUV = cell2mat( vec(:,1:2) );
 
-        flags = {'add','mult','filt'};
-        obj.fMethod = flags{ vec{1,12} };
+	case 'animateperspective'
+		obj.pUV      = gentravelvector(vec{1,1},000,000,vec{1,2},vec{1,11});
+		obj.uvFactor = vec{1,2};
 
-        obj.fFilter     = vec{1,13};
+	case {'animaterefocus','genfocalstack'}
+		obj.uvFactor = vec{1,2};
 
-        if vec{1,14}(1) == 0
-            obj.fZoom   = 'legacy';
-            if vec{1,1}(1,1),   obj.fAlpha = logspace( log10(vec{1,1}(2,1)), log10(vec{1,1}(2,2)), vec{1,1}(1,2) );
-            else                obj.fAlpha = linspace( vec{1,1}(2,1), vec{1,1}(2,2), vec{1,1}(1,2) );
-            end
-            if strcmpi(type,'animaterefocus') && vec{1,1}(3,1)
-                obj.fAlpha = [ obj.fAlpha(2:end-1) fliplr(obj.fAlpha) ];
-            end
-        else
-            obj.fZoom   = 'telecentric';
-            obj.fGridX  = linspace( vec{1,14}(2), vec{1,14}(3), vec{1,14}(8) );
-            obj.fGridY  = linspace( vec{1,14}(5), vec{1,14}(6), vec{1,14}(9) );
-            obj.fLength = vec{1,14}(11);
-            obj.fMag    = vec{1,14}(12);
-            obj.fPlane  = vec{1,14}(13);
-        end
-        
-    case 'genrefocus'
-%         obj.adjust      = 'focus';
-        obj.uvFactor    = vec{1,2};
-        
-        if vec{1,11} == 0
-            obj.mask = false;
-        else
-            obj.mask = 'circ';
-        end
-        
-        if vec{1,12}
-            obj.grouping = 'alpha';
-        else
-            obj.grouping = 'image';
-        end
+		if vec{1,11} == 0
+			obj.mask = false;
+		else
+			obj.mask = 'circ';
+		end
 
-        flags = {'add','mult','filt'};
-        obj.fMethod = flags{ vec{1,13} };
+		flags = {'add','mult','filt'};
+		obj.fMethod = flags{ vec{1,12} };
+		obj.fFilter = vec{1,13};
 
-        obj.fFilter     = vec{1,14};
+		if vec{1,14}(1) == 0
+			obj.fZoom = 'legacy';
+			if vec{1,1}(1,1),   obj.fAlpha = logspace( log10(vec{1,1}(2,1)), log10(vec{1,1}(2,2)), vec{1,1}(1,2) );
+			else                obj.fAlpha = linspace( vec{1,1}(2,1), vec{1,1}(2,2), vec{1,1}(1,2) );
+			end
+			if strcmpi(type,'animaterefocus') && vec{1,1}(3,1)
+				obj.fAlpha = [ obj.fAlpha(2:end-1) fliplr(obj.fAlpha) ];
+			end
+		else
+			obj.fZoom   = 'telecentric';
+			obj.fGridX  = linspace( vec{1,14}(2), vec{1,14}(3), vec{1,14}(8) );
+			obj.fGridY  = linspace( vec{1,14}(5), vec{1,14}(6), vec{1,14}(9) );
+			obj.fLength = vec{1,14}(11);
+			obj.fMag    = vec{1,14}(12);
+			obj.fPlane  = vec{1,14}(13);
+		end
 
-        if vec{1,15}(1) == 0
-            obj.fZoom   = 'legacy';
-            obj.fAlpha  = cell2mat( vec(:,1) );
-        else
-            obj.fZoom   = 'telecentric';
-            obj.fGridX  = linspace( vec{1,15}(2), vec{1,15}(3), vec{1,15}(8) );
-            obj.fGridY  = linspace( vec{1,15}(5), vec{1,15}(6), vec{1,15}(9) );
-            obj.fLength = vec{1,15}(11);
-            obj.fMag    = vec{1,15}(12);
-            obj.fPlane  = vec{1,15}(13);
-        end
-        
+	case 'genrefocus'
+		obj.uvFactor = vec{1,2};
+
+		if vec{1,11} == 0
+			obj.mask = false;
+		else
+			obj.mask = 'circ';
+		end
+
+		if vec{1,12}
+			obj.grouping = 'alpha';
+		else
+			obj.grouping = 'image';
+		end
+
+		flags = {'add','mult','filt'};
+		obj.fMethod = flags{ vec{1,13} };
+
+		obj.fFilter = vec{1,14};
+
+		if vec{1,15}(1) == 0
+			obj.fZoom   = 'legacy';
+			obj.fAlpha  = cell2mat( vec(:,1) );
+		else
+			obj.fZoom   = 'telecentric';
+			obj.fGridX  = linspace( vec{1,15}(2), vec{1,15}(3), vec{1,15}(8) );
+			obj.fGridY  = linspace( vec{1,15}(5), vec{1,15}(6), vec{1,15}(9) );
+			obj.fLength = vec{1,15}(11);
+			obj.fMag    = vec{1,15}(12);
+			obj.fPlane  = vec{1,15}(13);
+		end
+		
 end%switch

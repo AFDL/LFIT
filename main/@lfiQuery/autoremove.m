@@ -13,52 +13,52 @@ function obj = autoremove( obj )
 
 
 switch obj.adjust
-    case 'focus'
-        obj.pUV = [];
+	case 'focus'
+		obj.pUV = [];
 
-        if ~strcmpi( obj.fMethod, 'filt' )
-            obj.fFilter = [];
-        end
+		if ~strcmpi( obj.fMethod, 'filt' )
+			obj.fFilter = [];
+		end
 
-        switch obj.fZoom
-            case 'legacy'
-                obj.fPlane  = [];
-                obj.fGridX  = [];
-                obj.fGridY  = [];
-                obj.fLength = [];
-                obj.fMag    = [];
+		switch obj.fZoom
+			case 'legacy'
+				obj.fPlane  = [];
+				obj.fGridX  = [];
+				obj.fGridY  = [];
+				obj.fLength = [];
+				obj.fMag	= [];
 
-            case 'telecentric'
-                obj.fAlpha  = [];
+			case 'telecentric'
+				obj.fAlpha  = [];
 
-        end%switch
-        
-    case 'perspective'
-        obj.fMethod = '';
-        obj.fFilter = [];
-        obj.fZoom   = '';
-        obj.fAlpha  = [];
-        obj.fPlane  = [];
-        obj.fGridX  = [];
-        obj.fGridY  = [];
-        obj.fLength = [];
-        obj.fMag    = [];
-                
+		end%switch
+		
+	case 'perspective'
+		obj.fMethod = '';
+		obj.fFilter = [];
+		obj.fZoom   = '';
+		obj.fAlpha  = [];
+		obj.fPlane  = [];
+		obj.fGridX  = [];
+		obj.fGridY  = [];
+		obj.fLength = [];
+		obj.fMag	= [];
+				
 end%switch
 
 switch obj.saveas
-    case {'bmp','png','png16','tif16'}
-        obj.quality = [];
-        obj.codec = '';
-        
-    case {'jpg','mp4'}
-        obj.codec = '';
-        
-    case 'gif'
-        obj.quality = [];
-        
+	case {'bmp','png','png16','tif16'}
+		obj.quality = [];
+		obj.codec = '';
+		
+	case {'jpg','mp4'}
+		obj.codec = '';
+		
+	case 'gif'
+		obj.quality = [];
+		
 end%switch
 
 if ~obj.title
-    obj.caption = '';
+	obj.caption = '';
 end
