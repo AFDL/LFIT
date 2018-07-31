@@ -36,7 +36,7 @@ else % averaged image does not exist, so compute it.
             % Timer logic
             progress(imageIndex,nImages+1);
         end
-        I=I/size(imageName,1);
+        I=I/length(imageName);
         imwrite(uint16(I*65536),fullfile(calFolderPath,saveName),'compression','lzw') %16bit output
         calImagePath=fullfile(calFolderPath,saveName);
         
