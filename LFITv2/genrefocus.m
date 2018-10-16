@@ -16,62 +16,65 @@ if strcmpi( q.grouping, 'image' ) % as in typical plenoptic processing
 end
 
 for fIdx = 1:size(refocusedImageStack,3)
-    
+
     refocusedImage = refocusedImageStack(:,:,fIdx);
-    
+
     if strcmpi( q.grouping, 'alpha' )
         subdir = num2str(alphaList(fIdx),'%4.5f');
         lims=[min(refocusedImage(:)) max(refocusedImage(:))]; %set max intensity based on max intensity slice from entire FS at a given alpha; this keeps intensities correct relative to each slice
     end
-    
-    refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
-    if strcmpi(q.contrast,'imadjust'), refocusedImage = imadjust(refocusedImage); end
-    
+
+    switch q.contrast
+        case 'simple',      refocusedImage = ( refocusedImage - lims(1) )/( lims(2) - lims(1) );
+        case 'imadjust',    refocusedImage = imadjust(refocusedImage);
+        otherwise,          % Nothing to do
+    end
+
     switch q.fZoom
         case 'legacy',      key = 'alpha';  val = q.fAlpha(fIdx);
         case 'telecentric', key = 'plane';  val = q.fPlane(fIdx);
     end
-    
+
     SS_UV = q.uvFactor;
     SS_ST = q.stFactor;
-        
+
     if q.title % Title image?
-        
+
         try     close(cF);
         catch   % figure already closed
         end
-        
+
         cF = figure;
         switch q.title
             case 'caption',     caption = q.caption;
-            case 'annotation',  caption = sprintf( '%s = %g', q.caption, key,val );
+            case 'annotation',  caption = sprintf( '%s = %g', key,val );
             case 'both',        caption = sprintf( '%s --- [%s = %g]', q.caption, key,val );
         end
         displayimage(refocusedImage,caption,q.colormap,q.background);
-        
+
         frame = getframe(1);
         expImage = frame2im(frame);
-        
+
     else % no title
-        
+
         if any(strcmpi( q.saveas, {'png16','tif16'} ))
             expImage16 = gray2ind(refocusedImage,65536); % for 16-bit output
         end
         expImage = gray2ind(refocusedImage,256); % allows for colormap
-        
+
     end%if
-    
+
     if q.saveas % Save image?
-        
+
         dout = fullfile(outputPath,'Refocused',subdir);
         if ~exist(dout,'dir'), mkdir(dout); end
-        
+
         if strcmpi( q.fZoom, 'telecentric' ) %telecentric flag
             fname = sprintf( '_z%4.5f', val );
         else
-            fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', val, SS_ST, SS_UV ); 
+            fname = sprintf( '_alp%4.5f_stSS%g_uvSS%g', val, SS_ST, SS_UV );
         end
-        
+
         switch q.saveas
             case 'bmp'
                 fout = fullfile(dout,[fname '.bmp']);
@@ -117,30 +120,30 @@ for fIdx = 1:size(refocusedImageStack,3)
                 error('Incorrect setting of the save flag in the requestVector input variable to the genfocalstack function.');
 
         end%switch
-        
+
     end%if
 
     if q.display % Display image?
-        
+
         if q.title
             % Image already displayed, nothing to do
         else
             cF = figure;
             displayimage(expImage,'',q.colormap,q.background);
         end
-            
+
         switch q.display % How fast?
             case 'slow',   pause;
             case 'fast',   drawnow;
         end
-        
+
     else
-         
+
         try     close(cF);
         catch   % figure already closed
         end
-        
+
     end%if
-    
+
 end%for
 

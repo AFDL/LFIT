@@ -10,7 +10,7 @@ function [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageS
 
 fprintf('\nBeginning focal stack generation.\n');
 progress(0);
-    
+
 try     close(focFig);
 catch   % figure not opened
 end
@@ -23,11 +23,11 @@ set(focFig,'position', [0 0 q.stFactor*size(radArray,4) q.stFactor*size(radArray
 switch q.fZoom
     case 'legacy'
         nFrames = length(q.fAlpha);
-        rawImageArray = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,nFrames,'single');
+        focalStack = zeros(size(radArray,4)*q.stFactor,size(radArray,3)*q.stFactor,nFrames,'single');
 
     case 'telecentric'
         nFrames = length(q.fPlane);
-        rawImageArray = zeros(length(q.fGridY),length(q.fGridX),nFrames,'single');
+        focalStack = zeros(length(q.fGridY),length(q.fGridX),nFrames,'single');
 
 end%switch
 
@@ -39,16 +39,16 @@ for frameIdx = 1:nFrames % for each frame of an animation
         case 'legacy',      qi.fAlpha = q.fAlpha(frameIdx);
         case 'telecentric', qi.fPlane = q.fPlane(frameIdx);
     end
-    rawImageArray(:,:,frameIdx) = refocus(qi,radArray,sRange,tRange);
+    focalStack(:,:,frameIdx) = refocus(qi,radArray,sRange,tRange);
 
     % Timer logic
     progress(frameIdx,nFrames+1);
 
 end
 
-lims = [ min(rawImageArray(:)) max(rawImageArray(:)) ]; % set max intensity based on max intensity slice from entire FS; this keeps intensities correct relative to each slice
-
-focalStack = ( rawImageArray - lims(1) )/( lims(2) - lims(1) ); % normalize raw intensities by the MAX intensity of the entire focal stack.
+if strcmpi( q.contrast, 'stack' )
+    focalStack = ( focalStack - min(focalStack(:)) )/( max(focalStack(:)) - min(focalStack(:)) ); % normalize raw intensities by the MAX intensity of the entire focal stack.
+end
 
 if q.saveas % if we're going to save images, then apply captions, display, and/or save, otherwise skip this loop.
 
@@ -58,7 +58,7 @@ if q.saveas % if we're going to save images, then apply captions, display, and/o
         switch q.contrast
             case 'simple',      refocusedImage = ( refocusedImage - min(refocusedImage(:)) )/( max(refocusedImage(:)) - min(refocusedImage(:)) );
             case 'imadjust',    refocusedImage = imadjust( refocusedImage );
-            case 'stack',       % Nothing to do
+            otherwise,          % Nothing to do
         end
 
         switch q.fZoom
@@ -76,7 +76,7 @@ if q.saveas % if we're going to save images, then apply captions, display, and/o
                 case 'annotation',  caption = sprintf( '[%s = %g]', key,val );
                 case 'both',        caption = sprintf( '%s --- [%s = %g]', q.caption, key,val );
             end
-            displayimage(expImage,caption,q.colormap,q.background);  
+            displayimage(expImage,caption,q.colormap,q.background);
 
             try
                 set(0, 'currentfigure', focFig);  %make refocusing figure current figure (in case user clicked on another)
@@ -167,7 +167,7 @@ if q.saveas % if we're going to save images, then apply captions, display, and/o
 
             switch q.display
                 case 'slow',     pause;
-                case 'fast',     drawnow;  
+                case 'fast',     drawnow;
             end
 
         else

@@ -27,8 +27,10 @@ for frameInd = 1:nFrames
     % Generate perspective image frame
     perspectiveImage = perspective(qi,radArray,sRange,tRange);
 
-    if strcmpi( q.contrast, 'imadjust' )
-        perspectiveImage = imadjust(perspectiveImage);
+    switch q.contrast
+        case 'simple',      perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/( max(perspectiveImage(:)) - min(perspectiveImage(:)) );
+        case 'imadjust',    perspectiveImage = imadjust(perspectiveImage);
+        otherwise,          % Nothing to do
     end
 
     try

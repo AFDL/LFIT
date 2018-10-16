@@ -15,23 +15,24 @@ SS_ST = q.stFactor;
 
 nPerspectives = size( q.pUV, 1 );
 for pIdx = 1:nPerspectives
-    
+
     qi      = q;
     qi.pUV  = q.pUV(pIdx,:);
-    
+
     perspectiveImage = perspective(qi,radArray,sRange,tRange);
-    
+
     switch q.contrast
-        case 'simple',      % THIS FUNCTIONALITY WAS NOT PREVIOUSLY HERE, SHOULD IT HAVE BEEN? --cjc    %
+        case 'simple',      perspectiveImage = ( perspectiveImage - min(perspectiveImage(:)) )/( max(perspectiveImage(:)) - min(perspectiveImage(:)) );
         case 'imadjust',    perspectiveImage = imadjust(perspectiveImage);
+        otherwise,          % Nothing to do
     end
-    
+
     try     close(cF);
     catch   % figure not yet opened
     end
- 
+
     if q.title % Title image?
-        
+
         cF = figure;
         switch q.title
             case 'caption',     caption = q.caption{pIdx};
@@ -39,28 +40,28 @@ for pIdx = 1:nPerspectives
             case 'both',        caption = sprintf( '%s --- (%g,%g)', q.caption(pIdx), qi.pUV(1), qi.pUV(2) );
         end
         displayimage(perspectiveImage,caption,q.colormap,q.background);
-        
+
         frame = getframe(1);
         expImage = frame2im(frame);
-        
+
     else
-        
+
         if any(strcmpi( q.saveas, {'png16','tif16'} ))
             expImage16 = gray2ind(perspectiveImage,65536); % for 16-bit output
         end
         expImage = gray2ind(perspectiveImage,256); % allows for colormap being used in output
-        
+
     end%if
-    
+
     if q.saveas % Save image?
-        
+
         dout = fullfile(outputPath,'Perspectives');
         if ~exist(dout,'dir'), mkdir(dout); end
-        
+
         fname = sprintf( '%s_persp_stSS%g_uPos%g_vPos%g', imageSpecificName, SS_ST, qi.pUV(1), qi.pUV(2) );
-        
+
         if q.title
-            
+
             switch q.saveas
                 case 'bmp'
                     fout = fullfile(dout,[fname '.bmp']);
@@ -86,11 +87,11 @@ for pIdx = 1:nPerspectives
                     error('Incorrect setting of the save flag in the requestVector input variable to the perspectivegen function.');
 
             end%switch
-            
+
         else
-        
+
             % If no title is enabled, export colormap
-            
+
             switch q.saveas
                 case 'bmp'
                     fout = fullfile(dout,[fname '.bmp']);
@@ -126,36 +127,36 @@ for pIdx = 1:nPerspectives
                     error('Incorrect setting of the save flag in the requestVector input variable to the perspectivegen function.');
 
             end%switch
-            
+
         end%if
-        
+
     end%if
-    
+
     if q.display % Display image?
-        
+
         if q.title
             % Image already displayed, nothing to do
         else
             cF = figure;
             displayimage(perspectiveImage,'',q.colormap,q.background);
         end
-            
+
         switch q.display
             case 'slow',    pause;
             case 'fast',    drawnow;
         end
-        
+
     else
-        
+
         try     close(cF);
         catch   % figure not yet opened
         end
-    
+
     end%if
-    
+
     % Timer logic
     progress(pIdx,nPerspectives);
-    
+
 end%if
 
 end%function

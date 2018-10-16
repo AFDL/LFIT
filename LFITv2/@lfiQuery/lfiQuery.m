@@ -19,16 +19,16 @@ classdef lfiQuery
 % This file is part of the Light-Field Imaging Toolkit (LFIT), licensed
 % under version 3 of the GNU General Public License. Refer to the included
 % LICENSE or <http://www.gnu.org/licenses/> for the full text.
-    
+
 
     properties (SetAccess=immutable)
-        
+
         adjust      = '';           % reconstruction type: 'focus', 'perspective', 'both'
-        
+
     end%properties
-    
+
     properties
-        
+
         %
         %  Focus-adjust parameters (defaults set during construction)
         %
@@ -36,30 +36,30 @@ classdef lfiQuery
         fFilter     = [];           % filter parameters (does nothing if METHOD isn't 'filt')
                                     %       1. threshold below which intensity will be disregarded as noise
                                     %       2. filter intensity threshold
-        
+
         fZoom       = '';           % zoom type: 'legacy', 'telecentric'. See documentation for more info.
-        
+
         fAlpha      = [];           % alpha value(s) used in legacy focus-adjust: a=1 nominal focal plane, a<1 focuses further away, a>1 focuses closer to the camera
-        
+
         fPlane      = [];           % z-plane(s) used in telecentric focus-adjust
         fGridX      = [];           % (x,y) grid x-axis
         fGridY      = [];           % (x,y) grid y-axis
         fLength     = [];           % main focal length
         fMag        = [];           % magnification
-        
+
         %
         %  Perspective-adjust parameters (defaults set during construction)
         %
         pUV         = [];           % (u,v) position(s) for which to generate a perspective view; non-integer values ARE indeed supported
-        
+
         %
         %  Other processing parameters
         %
         uvFactor    = 1;            % (u,v) supersampling factor: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
         stFactor    = 1;            % (s,t) supersampling factor: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
-        contrast    = 'simple';     % contrast stretching style: 'simple', 'imadjust', 'stack'
+        contrast    = false;        % contrast stretching style: false, 'simple', 'imadjust', 'stack'
         mask        = 'circ';       % aperture masking of microlenses: false, 'circ'
-        
+
         %
         %  Output configuration
         %
@@ -73,11 +73,11 @@ classdef lfiQuery
         title       = false;        % title flag: FALSE for no caption, 'caption' for caption string only, 'annotation' for alpha/uv value only, 'both' for caption string + alpha/uv value
         caption     = '';           % caption string is the string used in the title for title flag of 'caption' or 'both'
         grouping    = 'image';      % directory grouping: 'image' to save on a per-image basis or 'alpha' to save on a per-alpha basis
-        
+
     end%properties
-    
+
     methods
-        
+
         %
         %  Constructor
         %
@@ -96,10 +96,10 @@ classdef lfiQuery
                         % Set adjust-mode to 'perspective' with sensible defaults
                         q.adjust        = 'perspective';
                         q.pUV           = [0 0];
-                        
+
                     case 'both'
                         error('Combined focus and perspective adjustment is currently unsupported.');
-                        
+
                     otherwise
                         error('Bad query type provided. %s',listOpts('Query',opts));
 
@@ -108,7 +108,7 @@ classdef lfiQuery
                 error('No query type provided. %s',listOpts('Query',opts));
             end
         end
-        
+
         %
         %  Object set methods (alphabetical)
         %
@@ -119,7 +119,7 @@ classdef lfiQuery
                 error('BACKGROUND must a vector of length 3.');
             end
         end
-        
+
         function obj = set.caption( obj, val )
             if ischar(val)
                 obj.caption = strtrim(val);
@@ -127,7 +127,7 @@ classdef lfiQuery
                 error('CAPTION must be a string.');
             end
         end
-        
+
         function obj = set.codec( obj, val )
             opts = {'uncompressed','jpeg','jpeg2000','jpeg2000-lossless','h264','gif'};
             if isempty(val)
@@ -138,7 +138,7 @@ classdef lfiQuery
                 error(listOpts('CODEC',opts));
             end
         end
-        
+
         function obj = set.colormap( obj, val )
             if ischar(val)
                 try     feval(val,256);
@@ -149,16 +149,18 @@ classdef lfiQuery
                 error('COLORMAP must be a string.');
             end
         end
-        
+
         function obj = set.contrast( obj, val )
             opts = {'simple','imadjust','stack'};
-            if ischar(val) && any(strcmpi(val,opts))
+            if ~val
+                obj.contrast = false;               % Enforce FALSE over 0
+            elseif ischar(val) && any(strcmpi(val,opts))
                 obj.contrast = lower(val);
             else
                 error(listOpts('CONTRAST',opts));
             end
         end
-        
+
         function obj = set.display( obj, val )
             opts = {'slow','fast'};
             if ~val
@@ -169,7 +171,7 @@ classdef lfiQuery
                 error(listOpts('DISPLAY',opts));
             end
         end
-        
+
         function obj = set.fAlpha( obj, val )
             if isempty(val)
                 obj.fAlpha = [];
@@ -179,7 +181,7 @@ classdef lfiQuery
                 error('FALPHA must be a vector of positive numbers.');
             end
         end
-        
+
         function obj = set.fFilter( obj, val )
             if isempty(val)
                 obj.fFilter = [];
@@ -189,7 +191,7 @@ classdef lfiQuery
                 error('FFILTER must be vector of length 2.');
             end
         end
-        
+
         function obj = set.fGridX( obj, val )
             if isempty(val)
                 obj.fGridX = [];
@@ -199,7 +201,7 @@ classdef lfiQuery
                 error('FGRIDX must be a vector.');
             end
         end
-        
+
         function obj = set.fGridY( obj, val )
             if isempty(val)
                 obj.fGridY = [];
@@ -209,7 +211,7 @@ classdef lfiQuery
                 error('FGRIDY must be a vector.');
             end
         end
-        
+
         function obj = set.fMethod( obj, val )
             opts = {'add','mult','filt'};
             if isempty(val)
@@ -220,7 +222,7 @@ classdef lfiQuery
                 error(listOpts('FMETHOD',opts));
             end
         end
-        
+
         function obj = set.fLength( obj, val )
             if isempty(val)
                 obj.fLength = [];
@@ -230,7 +232,7 @@ classdef lfiQuery
                 error('FLENGTH must be a number.');
             end
         end
-        
+
         function obj = set.fMag( obj, val )
             if isempty(val)
                 obj.fMag = [];
@@ -240,7 +242,7 @@ classdef lfiQuery
                 error('FMAG must be a number.');
             end
         end
-        
+
         function obj = set.fPlane( obj, val )
             if isempty(val)
                 obj.fPlane = [];
@@ -250,7 +252,7 @@ classdef lfiQuery
                 error('FPLANE must be a vector.');
             end
         end
-        
+
         function obj = set.framerate( obj, val )
             if isnumeric(val) && numel(val)==1
                 obj.framerate = val;
@@ -258,7 +260,7 @@ classdef lfiQuery
                 error('FRAMERATE must be a number.');
             end
         end
-        
+
         function obj = set.fZoom( obj, val )
             opts = {'legacy','telecentric'};
             if isempty(val)
@@ -269,7 +271,7 @@ classdef lfiQuery
                 error(listOpts('FZOOM',opts));
             end
         end
-        
+
         function obj = set.grouping( obj, val )
             opts = {'image','alpha','stack'};
             if ischar(val) && any(strcmpi(val,opts))
@@ -278,7 +280,7 @@ classdef lfiQuery
                 error(listOpts('GROUPING',opts));
             end
         end
-        
+
         function obj = set.mask( obj, val )
             opts = {'circ'};
             if ~val
@@ -303,7 +305,7 @@ classdef lfiQuery
                 error(listOpts('SAVEAS',opts));
             end
         end
-        
+
         function obj = set.stFactor( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=1
                 obj.stFactor = round(val);
@@ -311,7 +313,7 @@ classdef lfiQuery
                 error('STFACTOR must be a positive integer.');
             end
         end
-        
+
         function obj = set.title( obj, val )
             opts = {'caption','annotation','both'};
             if ~val
@@ -322,7 +324,7 @@ classdef lfiQuery
                 error(listOpts('TITLE',opts));
             end
         end
-        
+
         function obj = set.pUV( obj, val )
             if isnumeric(val) && ismatrix(val) && size(val,2)==2
                 obj.pUV = val;                      % Primary variable, two column vectors
@@ -330,7 +332,7 @@ classdef lfiQuery
                 error('PUV must be an M by 2 matrix.');
             end
         end
-        
+
         function obj = set.quality( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=0 && val<=100
                 obj.quality = round(val);
@@ -338,7 +340,7 @@ classdef lfiQuery
                 error('QUALITY must be an integer between 0 and 100.')
             end
         end
-        
+
         function obj = set.uvFactor( obj, val )
             if isnumeric(val) && numel(val)==1 && val>=1
                 obj.uvFactor = round(val);
@@ -346,9 +348,9 @@ classdef lfiQuery
                 error('UVFACTOR must be a positive integer.');
             end
         end
-        
+
     end%methods
-    
+
 end%classdef
 
 function list = listOpts( var, opts )
