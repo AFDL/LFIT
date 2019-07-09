@@ -1,10 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Light Field Imaging Toolkit (LFIT) v2.30 - DEMO PROGRAM %
+% Light Field Imaging Toolkit (LFIT) v2.40 - DEMO PROGRAM %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % AUTHORS:
 %  Original Lead Developer:  Jeffrey Bolan
-%  Current Lead Developer:   Elise Munz
+%  Current Lead Developer:   Mahyar Moaven
 %
 % NOTE:
 %  First read the included documentation PDF.
@@ -109,7 +109,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
         %%%%---------------------------%%%%
         %%%%---BATCH PROCESSING MODE---%%%%
         %%%%---------------------------%%%%
-        
+       
         % Batch process all images in plenopticImagesPath folder
         imageName = dir(fullfile(plenopticImagesPath,'*.tif'));
         
@@ -120,8 +120,8 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
         fprintf('-------------------------------------------------\n');
         
         % Adds toolkit path to MATLAB search path. Checks first for subfolder LFITv2 then looks in user folder for LFITv2
-        LFI_path = toolkitpathv2(false,'<alt path string>'); % assumes default toolkit path unless function called with true and alternate path string; see documentation
-        
+        % LFI_path = toolkitpathv2(false,'<alt path string>'); % assumes default toolkit path unless function called with true and alternate path string; see documentation
+        LFI_path = toolkitpathv2();
         % Calibration
         calImagePath = imageavg(calFolderPath,'avgcal.tif'); % average calibration images
         cal = computecaldata(calFolderPath,calImagePath,loadFlag,saveFlag,imageSetName,sensorType,numMicroX,numMicroY,microPitch,pixelPitch);
@@ -142,7 +142,7 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             %%%%%%%%---------------------------------%%%%%%%%
             
             % ADVICE: Comment out functions that you don't want to execute. To only compute perspective shifts,
-            %         just comment out the non-perspective shift functions below for example.
+            %         comment out the non-perspective shift functions below for example.
             
             %%%%---PERSPECTIVE SHIFT---%%%%
             q               = lfiQuery( 'perspective' );
@@ -150,9 +150,9 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q.saveas        = 'jpg';
             q.quality       = 90;
             q.display       = 'fast';
-            q.contrast      = 'imadjust';
+            q.contrast      = 'slice';
             q.verify;       % Verify that all query parameters are good
-            perspectivegen(q,radArray,sRange,tRange,outputPath,imageSpecificName);
+            genperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
             %%%%---IMAGE REFOCUSING---%%%%
@@ -168,51 +168,50 @@ if startProgram % If not, the GUI was closed somehow without pressing "Run"
             q.saveas        = 'jpg';
             q.quality       = 90;
             q.display       = 'fast';
-            q.contrast      = 'simple';
+            q.contrast      = 'slice';
             q.mask          = 'circ';
             q.verify;       % Verify that all query parameters are good
-            refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName,imageIndex,numImages);
+            refocusedImageStack = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             %%%%---FOCAL STACK GENERATION---%%%%
             % Request Vector Format - Shorthand (see documentation for full details)
             %[alphaArray,SS_UV,SS_ST,saveFlag,displayFlag,contrastFlag,colormap,bgcolor,captionFlag,'A caption string',apertureFlag,refocusType,filterInfo,TelecentricInfo];
-            requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,0,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]};
+            requestVectorFS = {[0 5; .9 1.1;],1,1,4,2,3,'gray',[.8 .8 .8],0,'No caption',1,3,[0 0.9],[1 -18 18 -12 12 -12 12 300 200 10 50 -1 0]};
             q = lfiQuery('focus'); q = q.import(requestVectorFS); % Request vectors may be converted to queries for legacy support
             q.verify;       % Verify that all settings are good
-            [focalStack] = genfocalstack(q,radArray,sRange,tRange,outputPath,imageSpecificName); % has output argument (optional). [focalStack] = genfocalstack(...)
+            [focalStack] = genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName); % has output argument (optional). [focalStack] = genfocalstack(...)
             
             %%%%---ANIMATION - PERSPECTIVES---%%%%
             q               = lfiQuery( 'perspective' );
-            q.pUV           = gentravelvector( 3, size(radArray), 1, 2 );
-            q.stFactor      = 2;
+            q.pUV           = gentravelvector( 2, size(radArray), 1, 1);
+%             q.mask          = 'square'; %should corrspond to last gentravelvector input for appropriate file name
+            q.stFactor      = 1;
             q.saveas        = 'gif';
-            q.framerate     = 10;
+            q.framerate     = 15;
             q.display       = 'fast';
-            q.contrast      = 'imadjust';
+            q.contrast      = 'stack';
             q.verify;       % Verify that all query parameters are good
-            animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);
+            genperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             q.saveas        = 'mp4';
             q.quality       = 90;
             q.verify;       % Verify that all query parameters are good
-            animateperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);      % Same animation, different format
+            genperspective(q,radArray,sRange,tRange,outputPath,imageSpecificName);      % Same animation, different format
             
             %%%%---ANIMATION - REFOCUSING---%%%%
             q               = lfiQuery( 'focus' );
-            q.fMethod       = 'filt';
-            q.fFilter       = [0 0.9];
-            q.fZoom         = 'telecentric';
-            q.fGridX        = linspace(-18,18,300);
-            q.fGridY        = linspace(-12,12,200);
-            q.fPlane        = [0 1 2 3 4 5];            % List of focal planes
+            q.fMethod       = 'add';
+            q.fZoom         = 'legacy';
+            q.fAlpha        = [0.9:0.01:1.1];            % List of focal planes
             q.fLength       = 50;
             q.fMag          = -1;
             q.saveas        = 'gif';
-            q.framerate     = INF; % Play as fast as possible (delay=0)
+            q.quality       = 90;
+            q.framerate     = 15; % Play as fast as possible (delay=0)
             q.display       = 'fast';
-            q.contrast      = 'imadjust';
+            q.contrast      = 'stack';
             q.verify;       % Verify that all query parameters are good
-            animaterefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName);
+            genrefocus(q,radArray,sRange,tRange,outputPath,imageSpecificName);
             
             
             %%%%%%%%-------------------------------%%%%%%%%

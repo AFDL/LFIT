@@ -477,7 +477,7 @@ function pushbutton17_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton17 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-web mailto:edm0003@auburn.edu
+web mailto:mzm0210@auburn.edu
 
 % --- Save State Function
 function saveState(pathname,filename,handles)
