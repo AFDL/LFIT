@@ -57,9 +57,10 @@ classdef lfiQuery
         %
         uvFactor    = 1;            % (u,v) supersampling factor: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
         stFactor    = 1;            % (s,t) supersampling factor: 1 is none, 2 = 2x SS, 4 = 4x SS, etc
-        contrast    = false;        % contrast stretching style: false, 'simple', 'imadjust', 'stack'
+        contrast    = 'none';       % contrast stretching style: false, 'none', 'slice', 'stack'
+        intensity   = [0 1];        % imadjust limits
         mask        = 'circ';       % aperture masking of microlenses: false, 'circ'
-
+        
         %
         %  Output configuration
         %
@@ -151,13 +152,23 @@ classdef lfiQuery
         end
 
         function obj = set.contrast( obj, val )
-            opts = {'simple','imadjust','stack'};
+            opts = {'none','slice','stack'};
             if ~val
                 obj.contrast = false;               % Enforce FALSE over 0
             elseif ischar(val) && any(strcmpi(val,opts))
                 obj.contrast = lower(val);
             else
                 error(listOpts('CONTRAST',opts));
+            end
+        end
+        
+        function obj = set.intensity( obj, val )
+            if isempty(val)
+                obj.intensity = [];
+            elseif isnumeric(val) && isvector(val)
+                obj.intensity = reshape(val,[],1);     % Primary variable, enforce column vector
+            else
+                error('INTENSITY must be vector of length 2.');
             end
         end
 

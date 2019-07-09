@@ -14,11 +14,11 @@ if nargin<3
     switch size(vec,2)
         case 10,                    type = 'perspectivegen';
         case 11,                    type = 'animateperspective';
-        case 14
-            if numel(vec{1,4})>1,   type = 'animaterefocus';
-            else                    type = 'genfocalstack';
-            end
-        case 15,                    type = 'genrefocus';
+        case 14,                    type = 'genrefocus';
+%             if numel(vec{1,4})>1,   type = 'animaterefocus';
+%             else                    type = 'genfocalstack';
+%             end
+%         case 15,                    type = 'genrefocus';
         otherwise,                  error('Unable to determine type of requestVector. You must manually specify.');
     end
 end
@@ -35,8 +35,8 @@ else
     obj.display = flags{ vec{1,5} };
 end
 
-flags = {'simple','imadjust','stack'};
-obj.contrast = flags{ vec{1,6}+1 };
+flags = {'none','slice','stack'};
+obj.contrast = flags{ vec{1,6} };
 
 obj.colormap        = vec{1,7};
 obj.background      = vec{1,8};
@@ -112,7 +112,7 @@ switch lower(type)
         else
             obj.fZoom   = 'telecentric';
             obj.fGridX  = linspace( vec{1,14}(2), vec{1,14}(3), vec{1,14}(8) );
-            obj.fGridY  = linspace( vec{1,14}(5), vec{1,14}(6), vec{1,14}(9) );
+            obj.fGridY  = linspace( vec{1,14}(4), vec{1,14}(5), vec{1,14}(9) );
             obj.fLength = vec{1,14}(11);
             obj.fMag    = vec{1,14}(12);
             obj.fPlane  = vec{1,14}(13);
@@ -135,20 +135,20 @@ switch lower(type)
         end
 
         flags = {'add','mult','filt'};
-        obj.fMethod = flags{ vec{1,13} };
+        obj.fMethod = flags{ vec{1,12} };
 
-        obj.fFilter     = vec{1,14};
+        obj.fFilter     = vec{1,13};
 
-        if vec{1,15}(1) == 0
+        if vec{1,14}(1) == 0
             obj.fZoom   = 'legacy';
             obj.fAlpha  = cell2mat( vec(:,1) );
         else
             obj.fZoom   = 'telecentric';
-            obj.fGridX  = linspace( vec{1,15}(2), vec{1,15}(3), vec{1,15}(8) );
-            obj.fGridY  = linspace( vec{1,15}(5), vec{1,15}(6), vec{1,15}(9) );
-            obj.fLength = vec{1,15}(11);
-            obj.fMag    = vec{1,15}(12);
-            obj.fPlane  = vec{1,15}(13);
+            obj.fGridX  = linspace( vec{1,14}(2), vec{1,14}(3), vec{1,14}(8) );
+            obj.fGridY  = linspace( vec{1,14}(4), vec{1,14}(5), vec{1,14}(9) );
+            obj.fLength = vec{1,14}(11);
+            obj.fMag    = vec{1,14}(12);
+            obj.fPlane  =linspace( vec{1,14}(6), vec{1,14}(7), vec{1,14}(10) );
         end
         
 end%switch

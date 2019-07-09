@@ -20,7 +20,7 @@ onlineVersion = 0;
 try
     
     if verLessThan('matlab', '8.0') == false % when MATLAB added 'Timeout' flag
-        [strOnline,checkSuccess] = urlread('https://raw.githubusercontent.com/AFDL/LFIT/master/LFITv2/currentVersion.txt','Timeout',2); % read current version number of LFI Toolkit from text file (maintained on Elise Munz's Auburn web server)
+        [strOnline,checkSuccess] = urlread('https://raw.githubusercontent.com/AFDL/LFIT/master/LFITv2/currentVersion.txt','Timeout',2); % read current version number of LFI Toolkit from text file
     else
         [strOnline,checkSuccess] = urlread('https://raw.githubusercontent.com/AFDL/LFIT/master/LFITv2/currentVersion.txt'); % basic method without timeout limit (for older versions of MATLAB)
     end
