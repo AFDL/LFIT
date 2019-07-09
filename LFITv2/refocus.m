@@ -324,7 +324,7 @@ end%switch
 switch q.fMethod
     case 'add'
         % Nothing to do
-        
+        syntheticImage = syntheticImage/sum(sum(mask));
     case 'mult'
         syntheticImage( syntheticImage==2 ) = 0;  % Modified by chris
 
@@ -333,9 +333,5 @@ switch q.fMethod
         syntheticImage( filterMatrix<q.fFilter(2) ) = 0;
 
 end%switch
-
-        %%%Check constant magnification
-%         syntheticImage = imwarp(syntheticImage, affine2d([-M/MPrime 0 0; 0 -M/MPrime 0; 0 0 1]));
-        %%%
 
 end%function
