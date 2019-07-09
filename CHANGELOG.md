@@ -1,27 +1,35 @@
-#VERSION CHANGELOG
+# VERSION CHANGELOG
 
-###v2.31: BUGFIX
+### v2.40: 
+* Cleanup/reorganization of GUI code
+* Cleanup of main script
+* Removal of redundant perspective and refocus generation function
+* Renaming of functions for consistency
+* Removal of redundant GUI buttons
+* Unused functions moved to 'additionalFunctionality'
+
+### v2.31: BUGFIX
 * Fixed alternate hexagonal calibration
 * Fixed focal stack output filenames
 
-###v2.30: MAJOR Release
+### v2.30: MAJOR Release
 * Reorganization of GUI to remove extraneous/duplicate options
 * Parallelization of general functions for increased efficiency
 * Replacement of 'request vectors' with object for easier batch mode input
 * New faster hexagonal resampling
 
-###v2.23: BUGFIX.
+### v2.23: BUGFIX.
 * Fixed a bug in Prerun GUI which did not allow the size of the pixel aperture to be changed based on magnification/camera specs.  Fix results in improved depth accuracy of all refocusing options.
 
-###v2.22: General Maintenance.
+### v2.22: General Maintenance.
 * General cleanup of code/commenting.
 * Addition of option for user defined camera parameters
 
-###V2.21: MAJOR Release.
+### v2.21: MAJOR Release.
 * Fixed bug in filtered refocusing.
 * See V2.20 changes
 
-###V2.20: MAJOR Release (BETA).
+### v2.20: MAJOR Release (BETA).
 * Added new refocusing algorithms:
   * Additive (original/old algorithm).
   * Multiplicative
@@ -30,17 +38,17 @@
 * Restructured GUI to include new refocusing options and condense other buttons, all existing capabilities remain.
 * Added new batch mode arguments corresponding to new refocusing options, see documentation PDF for more details.
 
-###v2.11: BUGFIXES.
+### v2.11: BUGFIXES.
 * Fixed a (u,v) supersampling incompatibility in refocus.m for MATLAB 2011b and 2012a regarding griddedInterpolant and extrapolation values.
 * Tweaked boundary check condition for rectangular calibration to prevent selection of points too near the edge (calrect.m).
 
-###v2.10: Improved Hexagonal Calibration.
+### v2.10: Improved Hexagonal Calibration.
 * Added a new primary hexagonal calibration algorithm which is much faster (seconds vs. minutes) than the previous algorithm.
   * The old algorithm is still available as a fallback method.
 * Implemented a calibration menu for the hexagonal case; if the initial calibration is rejected, the user can choose what algorithm to run.
 * Added a post-calibration menu for the hexagonal case to improve the user experience and streamline the calibration process. Pay attention to the command line output.
 
-###v2.09: General Maintenance. 
+### v2.09: General Maintenance. 
 * Removed deprecated functions from the toolkit.
 * Updated toolkitpathv2.m to limit scope when searching for local LFITv2 subfolder.
 * Added input argument to imageavg.m to allow setting of averaged file name.
@@ -48,10 +56,10 @@
   * Added corresponding GUI option as well.
 * Tweaked edge buffer in calrect.m to prevent selection of microlenses too close to the right edge of an image.
 
-###v2.08: HOTFIX.
+### v2.08: HOTFIX.
 * Failed to include normalization updates in previous version; fixed here in v2.08.
 
-###v2.07: BUGFIXES.
+### v2.07: BUGFIXES.
 Bug fixes and other modifications:
 * Fixed bug in where the normalization equation used in the toolkit was implemented incorrectly.
 * Modified interpimage2.m to window out adjacent microlens data for hexagonal cameras (assumes a circular aperture).
@@ -60,20 +68,20 @@ Bug fixes and other modifications:
 * Minor cosmetic update to GUI refocusing schematic diagram.
 * Minor updates to documentation PDF.
 
-###v2.05: Development (BETA).
+### v2.05: Development (BETA).
 New features:
 * Added new option to set contrast on a stack basis (as in focal stack generation) to animaterefocus.m (imadjustflag=2) with corresponding GUI options for video and GIF exports.
 Other modifications:
 * Minor optimizations applied to refocusing movie and focal stack generation functions by preallocating matrices.
 
-###v2.04: HOTFIX (BETA).
+### v2.04: HOTFIX (BETA).
 Bug fixes and other modifications:
 * Fixed bug in GUI where when loading default values, the hexagonal camera button would be checked while internally the rectangular (16 MP) camera variables were used. This is manifested in a crash of the calibration function.
 * Fixed bug in refocus.m where the circular mask was 1 pixel in radius too large leading to bleeding of data between adjacent microlenses.
 * Fixed bug in perspective.m for s,t or no supersampling case.
 * Tentatively fixed bug in definition of s and t ranges, affecting in particular the resampling grid for the hexagonal camera.
 
-###v2.03: MAJOR BUGFIXES.
+### v2.03: MAJOR BUGFIXES.
 Bug fixes and other modifications:
 * Changed coordinate system definitions for (u,v,s,t).
 * Fixed bug in interpimage2.m which caused a uniform 1 pixel shift in the interpolation step.
@@ -101,7 +109,7 @@ Bug fixes and other modifications:
 * Updated tooltips in the GUI panels.
 * Improved error handling in imageavg.m
 
-###v2.01: BUGFIXES.
+### v2.01: BUGFIXES.
 Fixed bugs:
 * Fixed animateperspective.m function where it would crash due to a missing input argument.
 * Fixed bug in perspective.m where it would sometimes crash (the function griddedInterpolant due to having a variable as double rather than single).
@@ -114,7 +122,7 @@ Fixed bugs:
 New features:
 * Added output argument to genfocalstack to permit export of the generated focal stack to the MATLAB workspace.
 
-###v2.00: MAJOR RELEASE.
+### v2.00: MAJOR RELEASE.
 New features:
 * Can now place the LFITv2 folder in the directory containing the main demo script and the new toolkitpathv2 function will find and use it before checking the MATLAB user directory.
 * Wrote a basic GUI frontend for configuring basic program parameters.
